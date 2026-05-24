@@ -252,6 +252,29 @@ body {
 .project-card h3 { color: var(--text-h); font-size: 1rem; margin-bottom: 6px; }
 .project-desc { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 10px; }
 
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.difficulty-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.reward-badge {
+  font-size: 0.72rem;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
 .progress-bar {
   position: relative;
   height: 20px;

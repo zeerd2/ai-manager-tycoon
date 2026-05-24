@@ -1,5 +1,6 @@
 import type { Agent } from './agent';
 import type { Project } from './project';
+import { getDifficultyReward } from './project';
 import type { SprintResult } from './simulation';
 import type { GameState } from './gameState';
 
@@ -60,7 +61,7 @@ export function processPostSprint(
 
   if (result.project.progress >= result.project.maxProgress && !completedProjectIds.includes(result.project.id)) {
     completedProjectIds.push(result.project.id);
-    newFunds += result.project.difficulty * 20;
+    newFunds += getDifficultyReward(result.project);
 
   }
   

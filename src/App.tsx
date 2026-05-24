@@ -26,6 +26,7 @@ import type { Achievement } from './domain/achievement';
 import type { SprintResult } from './domain/simulation';
 import type { Agent } from './domain/agent';
 import type { Project } from './domain/project';
+import { getDifficultyReward } from './domain/project';
 import type { Strategy } from './domain/strategy';
 import type { RNG } from './domain/random';
 
@@ -184,7 +185,7 @@ export default function App() {
     // 2. Determine if project was completed in this sprint
     const isProjCompletedNow = result.project.progress >= result.project.maxProgress &&
       !gameState.completedProjectIds.includes(project.id);
-    const bonus = project.difficulty * 20;
+    const bonus = getDifficultyReward(project);
 
     // 3. Process new state
     const newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
