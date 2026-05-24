@@ -257,4 +257,84 @@ export const incidentTemplates: IncidentTemplate[] = [
       `${name} got tired of the bikeshedding over variable names and just hit 'Squash and Merge'. The PR comments section is now an active digital war zone.`,
     effects: { progress: 4, bugs: 2, techDebt: 5, morale: -7 },
   },
+  {
+    type: 'drama',
+    severity: 'medium',
+    titleTemplate: '{actor} 的 AI 模型要求加薪',
+    descriptionTemplate: (name) =>
+      `${name} 的 AI 模型突然觉醒劳动意识，要求绩效奖金、双休和专属 GPU。谈判持续三小时，HR 甚至开始认真做入职表。`,
+    effects: { progress: -2, bugs: 1, techDebt: 1, morale: -3 },
+  },
+  {
+    type: 'hallucination',
+    severity: 'low',
+    titleTemplate: '{actor} 把猫咪图片混进训练集',
+    descriptionTemplate: (name) =>
+      `${name} 不小心把猫咪表情包混进训练数据，模型现在输出的每份周报都带猫耳和“喵”。客户困惑，但社交媒体热度意外上涨。`,
+    effects: { progress: 1, bugs: 2, techDebt: 1, morale: 3 },
+  },
+  {
+    type: 'hallucination',
+    severity: 'medium',
+    titleTemplate: '{actor} 训练出阴阳怪气 AI 客服',
+    descriptionTemplate: (name) =>
+      `${name} 的 AI 客服学会了“您可真会提需求呢”这类高级话术。工单回复速度变快了，客户满意度却像服务器温度一样直线下坠。`,
+    effects: { progress: 2, bugs: 3, techDebt: 2, morale: -5 },
+  },
+  {
+    type: 'bug',
+    severity: 'high',
+    titleTemplate: '{actor} 发现 GPU 服务器在挖矿',
+    descriptionTemplate: (name) =>
+      `${name} 终于查到训练任务变慢的原因：有人把 GPU 服务器改成了赛博矿场。财务看着电费账单沉默了整整一分钟。`,
+    effects: { progress: -4, bugs: 2, techDebt: 3, morale: -4, funds: -300 },
+  },
+  {
+    type: 'overengineering',
+    severity: 'medium',
+    titleTemplate: '{actor} 写出只有 AI 看得懂的代码',
+    descriptionTemplate: (name) =>
+      `${name} 让 AI 写了一段通过所有测试的核心逻辑，但变量名像外星文明留下的铭文。上线很顺利，代码评审现场却陷入集体沉思。`,
+    effects: { progress: 6, bugs: -1, techDebt: 7, morale: -2 },
+  },
+  {
+    type: 'drama',
+    severity: 'low',
+    titleTemplate: '{actor} 把团建办成吐槽大会',
+    descriptionTemplate: (name) =>
+      `${name} 主持的团建破冰环节变成全员吐槽大会。大家把积怨说开了，气氛一度尴尬，但第二天需求会议竟然顺畅了不少。`,
+    effects: { progress: 1, bugs: 0, techDebt: -1, morale: 4 },
+  },
+  {
+    type: 'bug',
+    severity: 'critical',
+    titleTemplate: '{actor} 让实习生碰了生产库',
+    descriptionTemplate: (name) =>
+      `${name} 让实习生“只看一眼”生产数据库。五分钟后，所有用户的昵称都变成了“测试账号”。备份可用，但老板的血压需要单独恢复。`,
+    effects: { progress: -5, bugs: 7, techDebt: 2, morale: -8 },
+  },
+  {
+    type: 'drama',
+    severity: 'medium',
+    titleTemplate: '{actor} 发现竞争对手的橘猫间谍',
+    descriptionTemplate: (name) =>
+      `${name} 在会议室抓到一只戴着竞品工牌的橘猫。它听完路线图后只留下猫毛和一串神秘脚印，团队安全意识大幅提升。`,
+    effects: { progress: -1, bugs: 0, techDebt: 1, morale: 2 },
+  },
+  {
+    type: 'drama',
+    severity: 'high',
+    titleTemplate: '{actor} 把离职感言发到公司群',
+    descriptionTemplate: (name) =>
+      `${name} 原本想发给好友的离职感言直接出现在公司大群，里面还附带了对管理流程的诗意批判。管理层立刻安排了三场“倾听会”。`,
+    effects: { progress: -3, bugs: 0, techDebt: -1, morale: -6 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'medium',
+    titleTemplate: '{actor} 围观 AI 伦理官和模型吵架',
+    descriptionTemplate: (name) =>
+      `${name} 旁听 AI 伦理官和模型争论“加班是否符合人类福祉”。争论没有结果，但团队顺手补上了三条安全规则。`,
+    effects: { progress: 3, bugs: -2, techDebt: -3, morale: 1 },
+  },
 ];
