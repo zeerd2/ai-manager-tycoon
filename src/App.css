@@ -2820,6 +2820,16 @@ body {
     font-size: 0.85rem !important;
   }
 
+  .event-option-btn:hover {
+    transform: none !important;
+  }
+
+  .event-option-btn:active {
+    background: rgba(0, 240, 255, 0.15) !important;
+    border-color: var(--accent) !important;
+    transform: none !important;
+  }
+
   .option-effects-preview {
     justify-content: flex-start !important;
     font-size: 0.8rem !important;
@@ -2854,7 +2864,7 @@ body {
   }
 
   .result-stat-card {
-    min-width: 110px !important;
+    min-width: 0 !important;
     padding: 8px !important;
   }
 
