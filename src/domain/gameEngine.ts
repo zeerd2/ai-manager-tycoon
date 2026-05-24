@@ -6,6 +6,7 @@ import type { GameState } from './gameState';
 
 export const INITIAL_FUNDS = 5000;
 
+/** 创建初始游戏状态，包含初始资金、工程师列表和可用项目 */
 export function createInitialGameState(agents: Agent[], projects: Project[]): GameState {
   return {
     funds: INITIAL_FUNDS,
@@ -20,6 +21,7 @@ export function createInitialGameState(agents: Agent[], projects: Project[]): Ga
   };
 }
 
+/** 处理 Sprint 结束后的状态更新：资金变化、工程师疲劳/士气/技能增长、项目完成判定、游戏结束检查 */
 export function processPostSprint(
   state: GameState,
   result: SprintResult,
@@ -83,6 +85,7 @@ export function processPostSprint(
   return newState;
 }
 
+/** 检查游戏是否结束：资金耗尽或所有可用工程师士气归零 */
 export function checkGameOver(state: GameState): { gameOver: boolean; reason?: string } {
   if (state.funds <= 0) {
     return {
@@ -102,6 +105,7 @@ export function checkGameOver(state: GameState): { gameOver: boolean; reason?: s
   return { gameOver: false };
 }
 
+/** 检查已满足解锁条件的工程师，返回新解锁的工程师 ID 列表 */
 export function checkUnlocks(state: GameState): string[] {
   const newlyUnlocked: string[] = [];
   state.agents.forEach((agent) => {
@@ -114,6 +118,7 @@ export function checkUnlocks(state: GameState): string[] {
 
 const SAVE_KEY = 'ai_manager_tycoon_save_v2';
 
+/** 保存游戏状态到 localStorage（旧版单槽位，向后兼容） */
 export function saveGame(state: GameState): void {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -122,6 +127,7 @@ export function saveGame(state: GameState): void {
   }
 }
 
+/** 从 localStorage 加载游戏状态（旧版单槽位，向后兼容） */
 export function loadGame(): GameState | null {
   try {
     const saved = localStorage.getItem(SAVE_KEY);
@@ -134,6 +140,7 @@ export function loadGame(): GameState | null {
   return null;
 }
 
+/** 清除 localStorage 中的旧版存档 */
 export function clearSave(): void {
   try {
     localStorage.removeItem(SAVE_KEY);

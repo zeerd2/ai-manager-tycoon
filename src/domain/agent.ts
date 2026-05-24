@@ -22,6 +22,7 @@ export interface Agent {
   unlockedSkills?: string[];  // 已解锁的技能ID列表
 }
 
+/** 计算工程师综合效率值，受技能平均值、士气和疲劳度影响 */
 export function agentEffectiveness(agent: Agent): number {
   const { coding, debugging, architecture, creativity, speed } = agent.skills;
   const base = (coding + debugging + architecture + creativity + speed) / 5;

@@ -10,6 +10,7 @@ export interface PendingTeamEvent {
   involvedAgentIds: string[]; // For specific agent events like gossip or code review
 }
 
+/** 15% 概率触发团队社交事件，返回待处理事件（包含两名随机工程师） */
 export function generateTeamEvent(agents: Agent[], rng: RNG): PendingTeamEvent | null {
   // Only trigger events if there are enough agents
   if (agents.length < 2) return null;
@@ -38,6 +39,7 @@ export interface TeamEventResult {
   bugsDelta: number;
 }
 
+/** 应用团队事件的选择结果，更新关系和游戏数值 */
 export function applyTeamEventEffect(
   effect: TeamEventEffect, 
   involvedAgentIds: string[], 

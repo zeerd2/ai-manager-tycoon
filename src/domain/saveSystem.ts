@@ -36,10 +36,12 @@ const OLD_SAVE_KEY = 'ai_manager_tycoon_save_v2';
 export const MANUAL_SLOTS = ['1', '2', '3'];
 export const AUTO_SLOT = 'auto';
 
+/** 获取存档位的 localStorage key */
 export function getSlotKey(slotId: string): string {
   return `${SLOT_KEY_PREFIX}${slotId}`;
 }
 
+/** 读取自动存档配置，默认启用且间隔 5 分钟 */
 export function getAutosaveConfig(): AutosaveConfig {
   try {
     const saved = localStorage.getItem(AUTOSAVE_CONFIG_KEY);
@@ -52,6 +54,7 @@ export function getAutosaveConfig(): AutosaveConfig {
   return { enabled: true, interval: 5 }; // default enabled, 5 minutes
 }
 
+/** 保存自动存档配置到 localStorage */
 export function setAutosaveConfig(config: AutosaveConfig): void {
   try {
     localStorage.setItem(AUTOSAVE_CONFIG_KEY, JSON.stringify(config));
@@ -60,6 +63,7 @@ export function setAutosaveConfig(config: AutosaveConfig): void {
   }
 }
 
+/** 保存游戏到指定存档位（1/2/3/auto），包含元数据更新 */
 export function saveToSlot(
   slotId: string,
   name: string,
@@ -105,6 +109,7 @@ export function saveToSlot(
   }
 }
 
+/** 从指定存档位加载游戏，自动执行低版本存档迁移 */
 export function loadFromSlot(slotId: string): SaveData | null {
   try {
     const key = getSlotKey(slotId);
@@ -125,6 +130,7 @@ export function loadFromSlot(slotId: string): SaveData | null {
   }
 }
 
+/** 删除指定存档位的数据 */
 export function deleteSlot(slotId: string): void {
   try {
     localStorage.removeItem(getSlotKey(slotId));
@@ -133,6 +139,7 @@ export function deleteSlot(slotId: string): void {
   }
 }
 
+/** 获取所有存档位的元数据列表（用于存档管理界面） */
 export function getSaveSlotsMetadata(): SaveMetadata[] {
   const metadataList: SaveMetadata[] = [];
   const allSlots = [...MANUAL_SLOTS, AUTO_SLOT];
@@ -160,6 +167,7 @@ export function getSaveSlotsMetadata(): SaveMetadata[] {
   return metadataList;
 }
 
+/** 检查并迁移旧版 v2 存档到新多槽位系统 */
 export function checkAndMigrateOldSave(): boolean {
   try {
     const oldSave = localStorage.getItem(OLD_SAVE_KEY);

@@ -16,6 +16,7 @@ export interface RatingResult {
   description: string; // 搞笑评语
 }
 
+/** 根据项目数、Bug、技术债、资金等计算公司评级及评语 */
 export function calculateRating(input: RatingInput): RatingResult {
   const {
     completedProjects,

@@ -2,6 +2,7 @@ import type { Incident, ComboIncidentTemplate } from './incident';
 import type { RNG } from './random';
 import { rollChance } from './random';
 
+/** 检测已触发事件中是否存在可组合的配对，有 50% 概率触发组合事件 */
 export function detectCombos(
   incidents: Incident[],
   comboTemplates: readonly ComboIncidentTemplate[],

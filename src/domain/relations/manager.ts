@@ -7,10 +7,12 @@ export class RelationsManager {
     this.relations = [...initialRelations];
   }
 
+  /** 获取当前所有关系的深拷贝列表 */
   getRelations(): AgentRelation[] {
     return [...this.relations];
   }
 
+  /** 获取两名工程师之间的关系评分（默认 0） */
   getRelation(agentIdA: string, agentIdB: string): number {
     const relation = this.relations.find(
       r => (r.agentIdA === agentIdA && r.agentIdB === agentIdB) || 
@@ -19,6 +21,7 @@ export class RelationsManager {
     return relation ? relation.relationshipScore : 0;
   }
 
+  /** 更新两名工程师之间的关系分值，范围限制在 [-100, 100] */
   updateRelation(agentIdA: string, agentIdB: string, delta: number): void {
     if (agentIdA === agentIdB) return;
     
@@ -40,8 +43,7 @@ export class RelationsManager {
     }
   }
 
-  // Effect on sprint efficiency based on relations
-  // Returns a multiplier, e.g., 1.1 for 10% boost, 0.9 for 10% penalty
+  /** 基于当前团队成员间的平均关系计算协作效率乘数（±20%） */
   getCollaborationMultiplier(agentIds: string[]): number {
     if (agentIds.length < 2) return 1.0;
 

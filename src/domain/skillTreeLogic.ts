@@ -1,6 +1,7 @@
 import type { Agent } from './agent';
 import { agentSkillTrees } from '../data/skillTrees';
 
+/** 尝试为指定工程师解锁技能：检查前置条件、余额，成功后应用技能效果 */
 export function unlockSkill(agent: Agent, skillId: string, companyMoney: number): { success: boolean; cost: number; message?: string } {
   if (!agentSkillTrees[agent.role]) {
     return { success: false, cost: 0, message: "No skill tree for this agent role." };
@@ -37,6 +38,7 @@ export function unlockSkill(agent: Agent, skillId: string, companyMoney: number)
   return { success: true, cost: skillNode.cost };
 }
 
+/** 检查技能是否可解锁（前置条件 + 余额），用于 UI 禁用状态 */
 export function canUnlockSkill(agent: Agent, skillId: string, companyMoney: number): boolean {
   if (!agentSkillTrees[agent.role]) return false;
   const skillNode = agentSkillTrees[agent.role].find(s => s.id === skillId);

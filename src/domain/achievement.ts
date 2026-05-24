@@ -44,6 +44,7 @@ export interface AchievementContext {
 }
 
 // 根据 conditionType 检查是否达成
+/** 根据成就条件类型和当前上下文判断是否达成 */
 export function checkAchievement(
   achievement: Achievement,
   context: AchievementContext,
@@ -143,6 +144,7 @@ export function checkAchievement(
 }
 
 // 进度追踪函数
+/** 获取成就当前进度（current / target），用于 UI 进度条展示 */
 export function getAchievementProgress(
   achievement: Achievement,
   gameState: GameState,

@@ -66,15 +66,18 @@ export interface Project {
   difficultyLevel: DifficultyLevel;
 }
 
+/** 判断项目进度是否已达到完成条件 */
 export function isProjectComplete(project: Project): boolean {
   return project.progress >= project.maxProgress;
 }
 
+/** 根据项目难度等级计算完成奖励金额 */
 export function getDifficultyReward(project: Project): number {
   const config = DIFFICULTY_CONFIGS[project.difficultyLevel ?? 'normal'];
   return Math.round(project.difficulty * 20 * config.rewardMultiplier);
 }
 
+/** 判断指定难度的项目是否已解锁（基于已完成项目数） */
 export function isDifficultyUnlocked(level: DifficultyLevel, completedCount: number): boolean {
   return completedCount >= DIFFICULTY_CONFIGS[level].requiredCompletedProjects;
 }

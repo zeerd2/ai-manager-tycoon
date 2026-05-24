@@ -10,6 +10,7 @@ export interface SprintScores {
   totalCost: number;
 }
 
+/** 计算 Sprint 各项原始数值：进度、Bug、技术债、成本 */
 export function calculateSprintScores(
   agents: Agent[],
   project: Project,

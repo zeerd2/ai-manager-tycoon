@@ -23,6 +23,7 @@ export interface SprintResult {
   summary: string;
 }
 
+/** 执行一轮 Sprint：计算评分、触发事件（普通/组合/稀有）、汇总结果并生成摘要 */
 export function runSprint(
   sprintNumber: number,
   agents: Agent[],
