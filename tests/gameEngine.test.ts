@@ -80,6 +80,7 @@ describe('Game Engine', () => {
         maxProgress: 100,
         bugs: 0,
         techDebt: 0,
+        difficultyLevel: 'intern' as const,
       }
     ];
 

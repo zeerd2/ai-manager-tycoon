@@ -19,6 +19,7 @@ export interface Agent {
   totalSprintsWorked: number; // 累计参与 sprint 次数
   locked: boolean;            // 是否已解锁
   unlockAfterSprints?: number; // 在第 N 轮后解锁
+  unlockedSkills?: string[];  // 已解锁的技能ID列表
 }
 
 export function agentEffectiveness(agent: Agent): number {

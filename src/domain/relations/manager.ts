@@ -28,10 +28,10 @@ export class RelationsManager {
     );
 
     if (index !== -1) {
-      let newScore = this.relations[index].relationshipScore + delta;
+      const newScore = this.relations[index].relationshipScore + delta;
       this.relations[index].relationshipScore = Math.max(-100, Math.min(100, newScore));
     } else {
-      let newScore = Math.max(-100, Math.min(100, delta));
+      const newScore = Math.max(-100, Math.min(100, delta));
       this.relations.push({
         agentIdA,
         agentIdB,

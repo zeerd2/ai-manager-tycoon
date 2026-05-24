@@ -9,14 +9,26 @@ import { createRNG } from './domain/random';
 import {
   createInitialGameState,
   processPostSprint,
-  saveGame,
-  loadGame,
-  clearSave,
   checkUnlocks
 } from './domain/gameEngine';
+import { unlockSkill } from './domain/skillTreeLogic';
 import { checkAchievement } from './domain/achievement';
+import {
+  saveToSlot,
+  deleteSlot,
+  getAutosaveConfig,
+  getSaveSlotsMetadata,
+  setAutosaveConfig
+} from './domain/saveSystem';
+import type { AutosaveConfig } from './domain/saveSystem';
+import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
 import type { SprintResult } from './domain/simulation';
+import type { Agent } from './domain/agent';
+import type { Project } from './domain/project';
+import { getDifficultyReward } from './domain/project';
+import type { Strategy } from './domain/strategy';
+import type { RNG } from './domain/random';
 
 import { generateTeamEvent } from './domain/relations/events';
 import type { PendingTeamEvent, TeamEventResult } from './domain/relations/events';
@@ -25,6 +37,7 @@ import { TeamEventDialog } from './components/TeamEventDialog';
 
 // Components
 import { AgentCard } from './components/AgentCard';
+import { SkillTreeModal } from './components/SkillTreeModal';
 import { ProjectCard } from './components/ProjectCard';
 import { StrategySelector } from './components/StrategySelector';
 import { ResultReport } from './components/ResultReport';
@@ -34,18 +47,25 @@ import { GameOverScreen } from './components/GameOverScreen';
 import { AchievementToast } from './components/AchievementToast';
 import { AchievementPanel } from './components/AchievementPanel';
 import { RelationsNetwork } from './components/RelationsNetwork';
+import { SaveManager } from './components/SaveManager';
 
 import './App.css';
 
 export default function App() {
-  const [gameState, setGameState] = useState(() => {
-    return loadGame() ?? createInitialGameState(sampleAgents, sampleProjects);
+  const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
+  const [isSaveManagerOpen, setIsSaveManagerOpen] = useState(false);
+  const [isStartup, setIsStartup] = useState(true);
+  const [autosaveConfig, setAutosaveConfigState] = useState(() => getAutosaveConfig());
+
+  const [gameState, setGameState] = useState<GameState>(() => {
+    return createInitialGameState(sampleAgents, sampleProjects);
   });
 
   const [selectedAgentIds, setSelectedAgentIds] = useState<Set<string>>(new Set());
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SprintResult | null>(null);
+  const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -55,12 +75,45 @@ export default function App() {
 
   // Event system state
   const [pendingEvent, setPendingEvent] = useState<PendingTeamEvent | null>(null);
-  const [sprintContext, setSprintContext] = useState<any>(null);
+  const [sprintContext, setSprintContext] = useState<{
+    chosenAgents: Agent[];
+    project: Project;
+    strategy: Strategy;
+    rng: RNG;
+  } | null>(null);
 
-  // Automatically save game whenever gameState changes
+  // Automatically save game whenever gameState changes and a slot is active
   useEffect(() => {
-    saveGame(gameState);
-  }, [gameState]);
+    if (currentSlotId) {
+      try {
+        // Query current name if exists
+        const savedSlots = getSaveSlotsMetadata();
+        const activeSlot = savedSlots.find(s => s.id === currentSlotId);
+        const name = activeSlot?.name || (currentSlotId === 'auto' ? '自动存档' : `存档位 ${currentSlotId}`);
+        saveToSlot(currentSlotId, name, gameState);
+      } catch (e) {
+        console.error('Failed to auto-save to current slot', e);
+      }
+    }
+  }, [gameState, currentSlotId]);
+
+  // Periodic autosave loop using separate auto slot
+  useEffect(() => {
+    if (!autosaveConfig.enabled || !currentSlotId || gameState.gameOver) {
+      return;
+    }
+
+    const intervalMs = autosaveConfig.interval * 60 * 1000;
+    const timer = setInterval(() => {
+      try {
+        saveToSlot('auto', '自动存档', gameState);
+      } catch (e) {
+        console.error('Autosave failed', e);
+      }
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [autosaveConfig.enabled, autosaveConfig.interval, currentSlotId, gameState]);
 
   function toggleAgent(id: string) {
     const agent = gameState.agents.find(a => a.id === id);
@@ -80,6 +133,7 @@ export default function App() {
     const chosenAgents = gameState.agents.filter(a => selectedAgentIds.has(a.id));
     const project = gameState.projects.find(p => p.id === selectedProjectId)!;
     const strategy = strategies.find(s => s.id === selectedStrategyId)!;
+    // eslint-disable-next-line react-hooks/purity
     const rng = createRNG(Date.now());
 
     // Check for random team event BEFORE sprint starts
@@ -104,7 +158,13 @@ export default function App() {
     }
   }
 
-  function executeSprint(chosenAgents: any[], project: any, strategy: any, rng: any, eventResult: TeamEventResult | null) {
+  function executeSprint(
+    chosenAgents: Agent[],
+    project: Project,
+    strategy: Strategy,
+    rng: RNG,
+    eventResult: TeamEventResult | null
+  ) {
     // 1. Run simulation
     const result = runSprint(gameState.sprintCount + 1, chosenAgents, project, strategy, incidentTemplates, rng);
 
@@ -125,10 +185,10 @@ export default function App() {
     // 2. Determine if project was completed in this sprint
     const isProjCompletedNow = result.project.progress >= result.project.maxProgress &&
       !gameState.completedProjectIds.includes(project.id);
-    const bonus = project.difficulty * 20;
+    const bonus = getDifficultyReward(project);
 
     // 3. Process new state
-    let newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
+    const newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
 
     if (eventResult) {
        newState.funds += eventResult.fundsDelta;
@@ -149,7 +209,7 @@ export default function App() {
 
     // 4. Check for newly unlocked agents
     const newlyUnlockedIds = checkUnlocks(newState);
-    let unlockedAgentDetails: Array<{ name: string; avatar: string }> = [];
+    const unlockedAgentDetails: Array<{ name: string; avatar: string }> = [];
 
     if (newlyUnlockedIds.length > 0) {
       newState.agents = newState.agents.map(a => {
@@ -212,8 +272,44 @@ export default function App() {
     setSelectedAgentIds(new Set());
   }
 
+  function handleLoadGame(loadedState: GameState, slotId: string) {
+    setGameState(loadedState);
+    setCurrentSlotId(slotId);
+    setIsStartup(false);
+    setIsSaveManagerOpen(false);
+
+    setSelectedAgentIds(new Set());
+    setSelectedProjectId(null);
+    setSelectedStrategyId(null);
+    setLastResult(null);
+  }
+
+  function handleNewGame(slotId: string) {
+    const initialState = createInitialGameState(sampleAgents, sampleProjects);
+    saveToSlot(slotId, `存档位 ${slotId}`, initialState);
+    setGameState(initialState);
+    setCurrentSlotId(slotId);
+    setIsStartup(false);
+    setIsSaveManagerOpen(false);
+
+    setSelectedAgentIds(new Set());
+    setSelectedProjectId(null);
+    setSelectedStrategyId(null);
+    setLastResult(null);
+  }
+
+  const handleUpdateAutosaveConfig = (newConfig: AutosaveConfig) => {
+    setAutosaveConfigState(newConfig);
+    setAutosaveConfig(newConfig);
+  };
+
   function handleReset() {
-    clearSave();
+    if (currentSlotId) {
+      deleteSlot(currentSlotId);
+    }
+    setCurrentSlotId(null);
+    setIsStartup(true);
+    setIsSaveManagerOpen(false);
     setGameState(createInitialGameState(sampleAgents, sampleProjects));
     setSelectedAgentIds(new Set());
     setSelectedProjectId(null);
@@ -225,6 +321,31 @@ export default function App() {
     setProjectBonus(0);
     setPendingEvent(null);
   }
+
+  const handleUnlockSkill = (agentId: string, skillId: string) => {
+    setGameState(prev => {
+      const agentToUpgrade = prev.agents.find(a => a.id === agentId);
+      if (!agentToUpgrade) return prev;
+
+      const clonedAgent = {
+        ...agentToUpgrade,
+        skills: { ...agentToUpgrade.skills },
+        unlockedSkills: [...(agentToUpgrade.unlockedSkills || [])]
+      };
+
+      const result = unlockSkill(clonedAgent, skillId, prev.funds);
+      if (!result.success) {
+        alert(result.message || "解锁失败");
+        return prev;
+      }
+
+      return {
+        ...prev,
+        funds: prev.funds - result.cost,
+        agents: prev.agents.map(a => a.id === agentId ? clonedAgent : a)
+      };
+    });
+  };
 
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
@@ -241,7 +362,7 @@ export default function App() {
 
       <header className="app-header">
         <h1>AI Manager Tycoon</h1>
-        <p className="subtitle">Manage your AI engineering team. Try not to ship too many bugs.</p>
+        <p className="subtitle">管理你的 AI 工程团队。尽量别发布太多 Bug。</p>
       </header>
 
       {/* 2. Company Dashboard */}
@@ -262,12 +383,15 @@ export default function App() {
       )}
 
       <main className="app-main">
-        <div className="header-actions" style={{ justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button className="btn-reset" onClick={handleReset}>Reset Game</button>
+        <div className="header-actions" style={{ justifyContent: 'flex-end', marginBottom: '16px', gap: '12px' }}>
+          <button className="btn-saves-trigger" onClick={() => setIsSaveManagerOpen(true)}>
+            📁 存档管理
+          </button>
+          <button className="btn-reset" onClick={handleReset}>重置游戏</button>
         </div>
 
         <section className="panel team-panel">
-          <h2>Team <span className="count">({selectedAgentIds.size} selected)</span></h2>
+          <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
           <div className="card-grid">
             {gameState.agents.map(a => (
               <AgentCard
@@ -275,6 +399,7 @@ export default function App() {
                 agent={a}
                 selected={selectedAgentIds.has(a.id)}
                 onToggle={toggleAgent}
+                onOpenSkillTree={(agentId) => setActiveSkillTreeAgentId(agentId)}
               />
             ))}
           </div>
@@ -282,7 +407,7 @@ export default function App() {
         </section>
 
         <section className="panel project-panel">
-          <h2>Projects</h2>
+          <h2>项目</h2>
           <div className="card-grid">
             {gameState.projects.map(p => {
               const isCompleted = gameState.completedProjectIds.includes(p.id);
@@ -299,7 +424,7 @@ export default function App() {
         </section>
 
         <section className="panel strategy-panel">
-          <h2>Strategy</h2>
+          <h2>策略</h2>
           <StrategySelector
             strategies={strategies}
             selectedId={selectedStrategyId}
@@ -313,7 +438,7 @@ export default function App() {
             disabled={!canRun}
             onClick={handleRunSprint}
           >
-            Run Sprint
+            执行 Sprint
           </button>
         </div>
 
@@ -335,6 +460,26 @@ export default function App() {
         {/* 5. Achievement Panel */}
         <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
       </main>
+
+      <SaveManager
+        gameState={gameState}
+        onLoadGame={handleLoadGame}
+        onNewGame={handleNewGame}
+        isOpen={isSaveManagerOpen}
+        onClose={() => setIsSaveManagerOpen(false)}
+        isStartup={isStartup}
+        autosaveConfig={autosaveConfig}
+        onUpdateAutosaveConfig={handleUpdateAutosaveConfig}
+      />
+
+      {activeSkillTreeAgentId && (
+        <SkillTreeModal
+          agent={gameState.agents.find(a => a.id === activeSkillTreeAgentId)!}
+          companyMoney={gameState.funds}
+          onClose={() => setActiveSkillTreeAgentId(null)}
+          onUnlock={handleUnlockSkill}
+        />
+      )}
     </div>
   );
 }

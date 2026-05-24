@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# AI Manager Tycoon
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 管理你的 AI 工程师团队，在搞笑的"事故"中生存、成长，最终成为传奇 AI 公司。
 
-Currently, two official plugins are available:
+## 截图
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+<!-- 在此插入游戏截图 -->
+<!-- ![游戏主界面](screenshots/gameplay.png) -->
+<!-- ![公司面板](screenshots/dashboard.png) -->
 
-## React Compiler
+## 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 技术 | 用途 |
+|------|------|
+| React 19 | UI 框架 |
+| TypeScript 6 | 类型安全 |
+| Vite 8 | 构建工具 |
+| Vitest 4 | 单元测试 |
+| ESLint 10 | 代码规范 |
 
-## Expanding the ESLint configuration
+## 快速开始
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev     # 启动开发服务器
+npm run build   # 构建生产版本
+npm test        # 运行测试
+npm run lint    # 代码检查
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 游戏玩法
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 基本规则
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+你经营一家 AI 软件开发公司，手下有一群性格各异的 AI 工程师。每轮 Sprint 你需要：
+
+1. **选择团队成员** - 点击选择参与本轮 Sprint 的 AI 工程师
+2. **选择项目** - 选择一个要推进的项目
+3. **选择策略** - 选择开发策略（如"快稳狠"、"精雕细琢"等）
+4. **执行 Sprint** - 点击 "Run Sprint" 查看结果
+
+### 核心系统
+
+| 系统 | 说明 |
+|------|------|
+| **团队成员** | 每位 AI 工程师有独特的技能、薪资、心情和怪癖 |
+| **项目** | 多个难度不同的项目可选，完成可获奖励 |
+| **策略** | 6 种策略，影响进度、Bug、技术债和士气 |
+| **事件系统** | Sprint 中可能随机触发搞笑事故（bug、过度设计、幻觉等） |
+| **组合事件** | 某些事件组合会触发连锁事件 |
+| **稀有事件** | 3% 概率触发的特殊事件 |
+| **员工关系** | 团队成员之间的关系影响协作效率 |
+| **团队事件** | Sprint 前可能随机触发团队社交事件 |
+| **成就系统** | 16 项成就，涵盖员工、项目、经济、事故四大类别 |
+| **评分系统** | 根据项目完成数、Bug、技术债等综合评分（S/A/B/C/D/F） |
+| **存档系统** | 支持 3 个手动存档位 + 自动存档 |
+| **解锁机制** | 部分高级工程师需要完成一定 Sprint 数后才解锁 |
+
+### 策略一览
+
+| 策略 | 效果 |
+|------|------|
+| Move Fast & Break Things | 进度 ×1.5，Bug ×1.8，技术债 ×1.6 |
+| Careful & Methodical | 进度 ×0.7，Bug ×0.4，技术债 ×0.5 |
+| Pair Programming | 进度 ×0.8，Bug ×0.5，技术债 ×0.7，士气 +5 |
+| Crunch Mode | 进度 ×1.8，Bug ×1.4，技术债 ×2.0，士气 -8 |
+| YOLO Deploy | 进度 ×2.0，Bug ×2.5，技术债 ×2.2 |
+| Refactor Sprint | 进度 ×0.2，Bug ×0.3，技术债 -1.0 |
+
+### 游戏结束条件
+
+- 公司破产（资金 ≤ 0）
+- 所有可用员工 morale 归零（集体罢工）
