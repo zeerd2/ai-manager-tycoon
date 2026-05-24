@@ -61,11 +61,11 @@ export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props)
         </div>
       </div>
       <div className="agent-stats">
-        <div className="stat"><span>Coding</span><span>{agent.skills.coding}</span></div>
-        <div className="stat"><span>Debug</span><span>{agent.skills.debugging}</span></div>
-        <div className="stat"><span>Arch</span><span>{agent.skills.architecture}</span></div>
-        <div className="stat"><span>Create</span><span>{agent.skills.creativity}</span></div>
-        <div className="stat"><span>Speed</span><span>{agent.skills.speed}</span></div>
+        <div className="stat"><span>编程</span><span>{agent.skills.coding}</span></div>
+        <div className="stat"><span>调试</span><span>{agent.skills.debugging}</span></div>
+        <div className="stat"><span>架构</span><span>{agent.skills.architecture}</span></div>
+        <div className="stat"><span>创意</span><span>{agent.skills.creativity}</span></div>
+        <div className="stat"><span>速度</span><span>{agent.skills.speed}</span></div>
       </div>
 
       <div className="agent-bars">
