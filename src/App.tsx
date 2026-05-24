@@ -24,7 +24,7 @@ import type { AutosaveConfig } from './domain/saveSystem';
 import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
 import type { SprintResult } from './domain/simulation';
-import { type Agent, agentEffectiveness } from './domain/agent';
+import type { Agent } from './domain/agent';
 import type { Project } from './domain/project';
 import { getDifficultyReward } from './domain/project';
 import type { Strategy } from './domain/strategy';
@@ -37,12 +37,9 @@ import { TeamEventDialog } from './components/TeamEventDialog';
 
 // Components
 import { AgentCard } from './components/AgentCard';
-import { MobileAgentCard } from './components/MobileAgentCard';
 import { SkillTreeModal } from './components/SkillTreeModal';
 import { ProjectCard } from './components/ProjectCard';
-import { MobileProjectCard } from './components/MobileProjectCard';
 import { StrategySelector } from './components/StrategySelector';
-import { MobileStrategySelector } from './components/MobileStrategySelector';
 import { ResultReport } from './components/ResultReport';
 import { HistoryPanel } from './components/HistoryPanel';
 import { CompanyDashboard } from './components/CompanyDashboard';
@@ -53,7 +50,6 @@ import { RelationsNetwork } from './components/RelationsNetwork';
 import { SaveManager } from './components/SaveManager';
 import { TutorialGuide } from './components/TutorialGuide';
 import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
-import { MobileFullscreenPanel } from './components/MobileFullscreenPanel';
 
 import './App.css';
 
@@ -63,6 +59,16 @@ const MAIN_SECTIONS: Array<{ id: MainSectionId; label: string }> = [
   { id: 'strategy', label: '策略' },
   { id: 'result', label: '结果' },
   { id: 'history', label: '记录' },
+];
+
+type MobileOverlayId = 'team' | 'project' | 'strategy' | 'achievements' | 'history';
+
+const MOBILE_TABS: Array<{ id: MobileOverlayId; label: string }> = [
+  { id: 'team', label: '团队' },
+  { id: 'project', label: '项目' },
+  { id: 'strategy', label: '策略' },
+  { id: 'achievements', label: '成就' },
+  { id: 'history', label: '历史' },
 ];
 
 export default function App() {
@@ -82,7 +88,7 @@ export default function App() {
   const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(true);
   const [activeMainSection, setActiveMainSection] = useState<MainSectionId>('team');
-  const [activeMobilePanel, setActiveMobilePanel] = useState<'team' | 'project' | 'strategy' | null>(null);
+  const [activeMobileOverlay, setActiveMobileOverlay] = useState<MobileOverlayId | null>(null);
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -149,16 +155,6 @@ export default function App() {
       setSelectedProjectId(id);
     }
   }, [gameState.completedProjectIds]);
-
-  const handleSelectProjectMobile = useCallback((id: string) => {
-    handleSelectProject(id);
-    setActiveMobilePanel(null);
-  }, [handleSelectProject]);
-
-  const handleSelectStrategyMobile = useCallback((id: string) => {
-    setSelectedStrategyId(id);
-    setActiveMobilePanel(null);
-  }, []);
 
   function handleRunSprint() {
     if (selectedAgentIds.size === 0 || !selectedProjectId || !selectedStrategyId) return;
@@ -387,6 +383,66 @@ export default function App() {
   const highlightProject = showTutorialHighlight && selectedAgentIds.size > 0 && !selectedProjectId;
   const highlightStrategy = showTutorialHighlight && selectedAgentIds.size > 0 && selectedProjectId && !selectedStrategyId;
   const highlightRun = showTutorialHighlight && selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId;
+  const selectedAgents = gameState.agents.filter(agent => selectedAgentIds.has(agent.id));
+  const selectedProject = gameState.projects.find(project => project.id === selectedProjectId);
+  const selectedStrategy = strategies.find(strategy => strategy.id === selectedStrategyId);
+  const activeMobileTab = activeMobileOverlay ? MOBILE_TABS.find(tab => tab.id === activeMobileOverlay) : null;
+
+  function renderMobileOverlayContent() {
+    switch (activeMobileOverlay) {
+      case 'team':
+        return (
+          <section className="mobile-overlay-section">
+            <h3>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h3>
+            <div className="card-grid">
+              {gameState.agents.map(a => (
+                <AgentCard
+                  key={a.id}
+                  agent={a}
+                  selected={selectedAgentIds.has(a.id)}
+                  onToggle={toggleAgent}
+                  onOpenSkillTree={setActiveSkillTreeAgentId}
+                />
+              ))}
+            </div>
+            <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
+          </section>
+        );
+      case 'project':
+        return (
+          <section className="mobile-overlay-section">
+            <h3>项目</h3>
+            <div className="card-grid">
+              {gameState.projects.map(p => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  selected={selectedProjectId === p.id}
+                  onSelect={handleSelectProject}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      case 'strategy':
+        return (
+          <section className="mobile-overlay-section">
+            <h3>策略</h3>
+            <StrategySelector
+              strategies={strategies}
+              selectedId={selectedStrategyId}
+              onSelect={setSelectedStrategyId}
+            />
+          </section>
+        );
+      case 'achievements':
+        return <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />;
+      case 'history':
+        return <HistoryPanel history={gameState.history} />;
+      default:
+        return null;
+    }
+  }
 
   return (
     <div className="app">
@@ -422,40 +478,83 @@ export default function App() {
       )}
 
       <main className="app-main">
-        <div className="header-actions" style={{ justifyContent: 'flex-end', marginBottom: '16px', gap: '12px' }}>
-          <button className="btn-saves-trigger" onClick={() => setIsSaveManagerOpen(true)}>
-            📁 存档管理
+        <section className="mobile-command-center" aria-label="移动端主控台">
+          <div className="mobile-command-header">
+            <span>移动端主控台</span>
+            <button className="btn-reset" onClick={handleReset}>重置</button>
+          </div>
+
+          <div className="mobile-selection-card">
+            <h2>当前选择</h2>
+            <div className="mobile-selection-row">
+              <span>已选员工</span>
+              <strong>{selectedAgents.length} 人</strong>
+              <div className="mobile-avatar-stack" aria-label="已选员工缩略头像">
+                {selectedAgents.length > 0 ? selectedAgents.map(agent => (
+                  <span key={agent.id}>{agent.avatar}</span>
+                )) : <span>待选</span>}
+              </div>
+            </div>
+            <div className="mobile-selection-row">
+              <span>项目</span>
+              <strong>{selectedProject?.name || '待选择'}</strong>
+            </div>
+            <div className="mobile-selection-row">
+              <span>策略</span>
+              <strong>{selectedStrategy?.name || '待选择'}</strong>
+            </div>
+          </div>
+
+          <button
+            className={`btn-run mobile-start-sprint ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
+            disabled={!canRun}
+            onClick={handleRunSprint}
+          >
+            开始 Sprint
           </button>
-          <button className="btn-reset" onClick={handleReset}>重置游戏</button>
-        </div>
+        </section>
 
-        <TutorialGuide
-          sprintCount={gameState.sprintCount}
-          selectedAgentCount={selectedAgentIds.size}
-          selectedProjectId={selectedProjectId}
-          selectedStrategyId={selectedStrategyId}
-          isOpen={isTutorialOpen}
-          onClose={() => setIsTutorialOpen(false)}
-        />
+        <nav className="mobile-bottom-tabbar" aria-label="移动端底部功能导航">
+          {MOBILE_TABS.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              className="mobile-bottom-tab"
+              aria-controls={`mobile-overlay-${tab.id}`}
+              onClick={() => setActiveMobileOverlay(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
-        <MobileSectionNav
-          sections={MAIN_SECTIONS}
-          activeSection={activeMainSection}
-          onSelect={(id) => {
-            setActiveMainSection(id);
-            if (id === 'team' || id === 'project' || id === 'strategy') {
-              setActiveMobilePanel(id);
-            } else {
-              setActiveMobilePanel(null);
-            }
-          }}
-        />
+        <div className="desktop-workspace">
+          <div className="header-actions" style={{ justifyContent: 'flex-end', marginBottom: '16px', gap: '12px' }}>
+            <button className="btn-saves-trigger" onClick={() => setIsSaveManagerOpen(true)}>
+              📁 存档管理
+            </button>
+            <button className="btn-reset" onClick={handleReset}>重置游戏</button>
+          </div>
 
-        <section
-          id="main-section-team"
-          className={`panel team-panel ${highlightTeam ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'team' ? 'mobile-hidden' : ''}`}
-        >
-          <div className="desktop-only">
+          <TutorialGuide
+            sprintCount={gameState.sprintCount}
+            selectedAgentCount={selectedAgentIds.size}
+            selectedProjectId={selectedProjectId}
+            selectedStrategyId={selectedStrategyId}
+            isOpen={isTutorialOpen}
+            onClose={() => setIsTutorialOpen(false)}
+          />
+
+          <MobileSectionNav
+            sections={MAIN_SECTIONS}
+            activeSection={activeMainSection}
+            onSelect={setActiveMainSection}
+          />
+
+          <section
+            id="main-section-team"
+            className={`panel team-panel ${highlightTeam ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'team' ? 'mobile-hidden' : ''}`}
+          >
             <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
             <div className="card-grid">
               {gameState.agents.map(a => (
@@ -469,52 +568,12 @@ export default function App() {
               ))}
             </div>
             <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
-          </div>
+          </section>
 
-          <div className="mobile-only mobile-summary-card">
-            <h3>已选员工 ({selectedAgentIds.size})</h3>
-            {selectedAgentIds.size === 0 ? (
-              <p className="no-selection-warning">⚠️ 还没有选择任何员工！执行 Sprint 至少需要 1 人。</p>
-            ) : (
-              <div className="selected-agents-list-compact">
-                {gameState.agents
-                  .filter(a => selectedAgentIds.has(a.id))
-                  .map(a => (
-                    <div key={a.id} className="selected-agent-item-compact">
-                      <span className="avatar">{a.avatar}</span>
-                      <div className="info">
-                        <span className="name">{a.name}</span>
-                        <span className="role">{a.role}</span>
-                      </div>
-                      <span className="stat">效率: {agentEffectiveness(a).toFixed(1)}</span>
-                    </div>
-                  ))}
-              </div>
-            )}
-            <button
-              type="button"
-              className="btn-mobile-manage"
-              onClick={() => setActiveMobilePanel('team')}
-            >
-              ⚙️ 管理团队 / 选择员工
-            </button>
-            <div className="action-bar-mobile">
-              <button
-                className="btn-run"
-                disabled={!canRun}
-                onClick={handleRunSprint}
-              >
-                执行 Sprint
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="main-section-project"
-          className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'project' ? 'mobile-hidden' : ''}`}
-        >
-          <div className="desktop-only">
+          <section
+            id="main-section-project"
+            className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'project' ? 'mobile-hidden' : ''}`}
+          >
             <h2>项目</h2>
             <div className="card-grid">
               {gameState.projects.map(p => {
@@ -528,141 +587,82 @@ export default function App() {
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          <div className="mobile-only mobile-summary-card">
-            <h3>当前项目</h3>
-            {!selectedProjectId ? (
-              <p className="no-selection-warning">⚠️ 还没有选择任何项目！执行 Sprint 需要选择一个项目。</p>
-            ) : (() => {
-              const project = gameState.projects.find(p => p.id === selectedProjectId);
-              if (!project) return null;
-              const progressPct = Math.round((project.progress / project.maxProgress) * 100);
-              return (
-                <div className="selected-project-compact">
-                  <h4>{project.name}</h4>
-                  <p className="desc">{project.description}</p>
-                  <div className="progress-bar-compact">
-                    <div className="bar-track">
-                      <div className="bar-fill" style={{ width: `${progressPct}%` }} />
-                    </div>
-                    <span className="label">{project.progress} / {project.maxProgress} ({progressPct}%)</span>
-                  </div>
-                  <div className="project-stats-compact">
-                    <span>🐛 Bugs: {project.bugs}</span>
-                    <span>🏗️ 技术债: {project.techDebt}</span>
-                  </div>
-                </div>
-              );
-            })()}
-            <button
-              type="button"
-              className="btn-mobile-manage"
-              onClick={() => setActiveMobilePanel('project')}
-            >
-              📁 选择项目
-            </button>
-            <div className="action-bar-mobile">
-              <button
-                className="btn-run"
-                disabled={!canRun}
-                onClick={handleRunSprint}
-              >
-                执行 Sprint
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="main-section-strategy"
-          className={`panel strategy-panel ${highlightStrategy ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}
-        >
-          <div className="desktop-only">
+          <section
+            id="main-section-strategy"
+            className={`panel strategy-panel ${highlightStrategy ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}
+          >
             <h2>策略</h2>
             <StrategySelector
               strategies={strategies}
               selectedId={selectedStrategyId}
               onSelect={setSelectedStrategyId}
             />
-          </div>
+          </section>
 
-          <div className="mobile-only mobile-summary-card">
-            <h3>开发策略</h3>
-            {!selectedStrategyId ? (
-              <p className="no-selection-warning">⚠️ 还没有选择任何开发策略！执行 Sprint 需要选择一种策略。</p>
-            ) : (() => {
-              const strategy = strategies.find(s => s.id === selectedStrategyId);
-              if (!strategy) return null;
-              return (
-                <div className="selected-strategy-compact">
-                  <h4>{strategy.name}</h4>
-                  <p className="desc">{strategy.description}</p>
-                  <div className="mods-compact">
-                    <span>进度: x{strategy.modifiers.progressMul}</span>
-                    <span>Bug: x{strategy.modifiers.bugMul}</span>
-                    <span>技术债: x{strategy.modifiers.techDebtMul}</span>
-                    <span>士气: {strategy.modifiers.moraleDelta > 0 ? '+' : ''}{strategy.modifiers.moraleDelta}</span>
-                  </div>
-                </div>
-              );
-            })()}
+          <div className={`action-bar ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}>
             <button
-              type="button"
-              className="btn-mobile-manage"
-              onClick={() => setActiveMobilePanel('strategy')}
+              className={`btn-run ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
+              disabled={!canRun}
+              onClick={handleRunSprint}
             >
-              🎯 选择开发策略
+              执行 Sprint
             </button>
-            <div className="action-bar-mobile">
-              <button
-                className="btn-run"
-                disabled={!canRun}
-                onClick={handleRunSprint}
-              >
-                执行 Sprint
-              </button>
-            </div>
           </div>
-        </section>
 
-        <div className={`action-bar desktop-only ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}>
-          <button
-            className={`btn-run ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
-            disabled={!canRun}
-            onClick={handleRunSprint}
+          <section
+            id="main-section-result"
+            className={`panel result-panel ${!lastResult ? 'result-panel-empty' : ''} ${activeMainSection !== 'result' ? 'mobile-hidden' : ''}`}
           >
-            执行 Sprint
-          </button>
-        </div>
+            {lastResult ? (
+              <ResultReport
+                result={lastResult}
+                projectCompleted={projectCompleted}
+                projectBonus={projectBonus}
+                newlyUnlockedAgents={newlyUnlockedAgents}
+              />
+            ) : (
+              <div className="mobile-result-empty">执行 Sprint 后，这里会显示本轮结果。</div>
+            )}
+          </section>
 
-        <section
-          id="main-section-result"
-          className={`panel result-panel ${!lastResult ? 'result-panel-empty' : ''} ${activeMainSection !== 'result' ? 'mobile-hidden' : ''}`}
-        >
-          {lastResult ? (
-            <ResultReport
-              result={lastResult}
-              projectCompleted={projectCompleted}
-              projectBonus={projectBonus}
-              newlyUnlockedAgents={newlyUnlockedAgents}
-            />
-          ) : (
-            <div className="mobile-result-empty">执行 Sprint 后，这里会显示本轮结果。</div>
-          )}
-        </section>
+          <section
+            id="main-section-history"
+            className={`panel history-panel-wrapper ${activeMainSection !== 'history' ? 'mobile-hidden' : ''}`}
+          >
+            <HistoryPanel history={gameState.history} />
+          </section>
 
-        <section
-          id="main-section-history"
-          className={`panel history-panel-wrapper ${activeMainSection !== 'history' ? 'mobile-hidden' : ''}`}
-        >
-          <HistoryPanel history={gameState.history} />
-        </section>
-
-        <div className={activeMainSection !== 'history' ? 'mobile-hidden' : ''}>
-          <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+          <div className={activeMainSection !== 'history' ? 'mobile-hidden' : ''}>
+            <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+          </div>
         </div>
       </main>
+
+      {activeMobileOverlay && activeMobileTab && (
+        <div
+          id={`mobile-overlay-${activeMobileOverlay}`}
+          className="mobile-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mobile-overlay-title"
+        >
+          <div className="mobile-overlay-header">
+            <h2 id="mobile-overlay-title">{activeMobileTab.label}</h2>
+            <button
+              type="button"
+              className="mobile-overlay-close"
+              onClick={() => setActiveMobileOverlay(null)}
+            >
+              关闭
+            </button>
+          </div>
+          <div className="mobile-overlay-body">
+            {renderMobileOverlayContent()}
+          </div>
+        </div>
+      )}
 
       <SaveManager
         gameState={gameState}
@@ -683,55 +683,6 @@ export default function App() {
           onUnlock={handleUnlockSkill}
         />
       )}
-
-      {/* Mobile Fullscreen Overlay Panels */}
-      <MobileFullscreenPanel
-        title="选择团队员工"
-        isOpen={activeMobilePanel === 'team'}
-        onClose={() => setActiveMobilePanel(null)}
-      >
-        <div className="mobile-list-container">
-          {gameState.agents.map(a => (
-            <MobileAgentCard
-              key={a.id}
-              agent={a}
-              selected={selectedAgentIds.has(a.id)}
-              onToggle={toggleAgent}
-              onOpenSkillTree={setActiveSkillTreeAgentId}
-            />
-          ))}
-        </div>
-        <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
-      </MobileFullscreenPanel>
-
-      <MobileFullscreenPanel
-        title="选择当前项目"
-        isOpen={activeMobilePanel === 'project'}
-        onClose={() => setActiveMobilePanel(null)}
-      >
-        <div className="mobile-list-container">
-          {gameState.projects.map(p => (
-            <MobileProjectCard
-              key={p.id}
-              project={p}
-              selected={selectedProjectId === p.id}
-              onSelect={handleSelectProjectMobile}
-            />
-          ))}
-        </div>
-      </MobileFullscreenPanel>
-
-      <MobileFullscreenPanel
-        title="选择开发策略"
-        isOpen={activeMobilePanel === 'strategy'}
-        onClose={() => setActiveMobilePanel(null)}
-      >
-        <MobileStrategySelector
-          strategies={strategies}
-          selectedId={selectedStrategyId}
-          onSelect={handleSelectStrategyMobile}
-        />
-      </MobileFullscreenPanel>
     </div>
   );
 }
