@@ -18,6 +18,11 @@ import { checkAchievement } from './domain/achievement';
 import type { Achievement } from './domain/achievement';
 import type { SprintResult } from './domain/simulation';
 
+import { generateTeamEvent } from './domain/relations/events';
+import type { PendingTeamEvent, TeamEventResult } from './domain/relations/events';
+import { RelationsManager } from './domain/relations/manager';
+import { TeamEventDialog } from './components/TeamEventDialog';
+
 // Components
 import { AgentCard } from './components/AgentCard';
 import { ProjectCard } from './components/ProjectCard';
@@ -28,6 +33,7 @@ import { CompanyDashboard } from './components/CompanyDashboard';
 import { GameOverScreen } from './components/GameOverScreen';
 import { AchievementToast } from './components/AchievementToast';
 import { AchievementPanel } from './components/AchievementPanel';
+import { RelationsNetwork } from './components/RelationsNetwork';
 
 import './App.css';
 
@@ -46,6 +52,10 @@ export default function App() {
   const [newlyUnlockedAgents, setNewlyUnlockedAgents] = useState<Array<{ name: string; avatar: string }>>([]);
   const [projectCompleted, setProjectCompleted] = useState(false);
   const [projectBonus, setProjectBonus] = useState(0);
+
+  // Event system state
+  const [pendingEvent, setPendingEvent] = useState<PendingTeamEvent | null>(null);
+  const [sprintContext, setSprintContext] = useState<any>(null);
 
   // Automatically save game whenever gameState changes
   useEffect(() => {
@@ -72,8 +82,45 @@ export default function App() {
     const strategy = strategies.find(s => s.id === selectedStrategyId)!;
     const rng = createRNG(Date.now());
 
+    // Check for random team event BEFORE sprint starts
+    const event = generateTeamEvent(gameState.agents.filter(a => !a.locked), rng);
+
+    if (event) {
+      setPendingEvent(event);
+      setSprintContext({ chosenAgents, project, strategy, rng });
+      return; // Pause sprint execution until event is resolved
+    }
+
+    // No event, proceed normally
+    executeSprint(chosenAgents, project, strategy, rng, null);
+  }
+
+  function handleEventResolve(eventResult: TeamEventResult) {
+    setPendingEvent(null);
+    if (sprintContext) {
+      const { chosenAgents, project, strategy, rng } = sprintContext;
+      executeSprint(chosenAgents, project, strategy, rng, eventResult);
+      setSprintContext(null);
+    }
+  }
+
+  function executeSprint(chosenAgents: any[], project: any, strategy: any, rng: any, eventResult: TeamEventResult | null) {
     // 1. Run simulation
     const result = runSprint(gameState.sprintCount + 1, chosenAgents, project, strategy, incidentTemplates, rng);
+
+    const relationsManager = new RelationsManager(gameState.relations || []);
+
+    // Apply event results to sprint outcome if there was one
+    if (eventResult) {
+      result.moraleDelta += eventResult.moraleDelta;
+      result.project.progress = Math.min(result.project.maxProgress, result.project.progress + eventResult.progressDelta);
+      result.project.bugs += Math.max(0, eventResult.bugsDelta);
+      result.summary += ` | Event resolved: ${eventResult.message}`;
+    }
+
+    // Apply relations multiplier
+    const collabMultiplier = relationsManager.getCollaborationMultiplier(chosenAgents.map(a => a.id));
+    result.project.progress = Math.round(result.project.progress * collabMultiplier);
 
     // 2. Determine if project was completed in this sprint
     const isProjCompletedNow = result.project.progress >= result.project.maxProgress &&
@@ -82,6 +129,23 @@ export default function App() {
 
     // 3. Process new state
     let newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
+
+    if (eventResult) {
+       newState.funds += eventResult.fundsDelta;
+    }
+
+    // Save relations back to state
+    newState.relations = relationsManager.getRelations();
+
+    // After a successful project, increase relations among participants
+    if (isProjCompletedNow) {
+       for (let i = 0; i < chosenAgents.length; i++) {
+         for (let j = i + 1; j < chosenAgents.length; j++) {
+            relationsManager.updateRelation(chosenAgents[i].id, chosenAgents[j].id, 5);
+         }
+       }
+       newState.relations = relationsManager.getRelations();
+    }
 
     // 4. Check for newly unlocked agents
     const newlyUnlockedIds = checkUnlocks(newState);
@@ -158,12 +222,22 @@ export default function App() {
     setNewlyUnlockedAgents([]);
     setProjectCompleted(false);
     setProjectBonus(0);
+    setPendingEvent(null);
   }
 
-  const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver;
+  const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
   return (
     <div className="app">
+      {pendingEvent && (
+        <TeamEventDialog
+          event={pendingEvent}
+          agents={gameState.agents}
+          relationsManager={new RelationsManager(gameState.relations || [])}
+          onResolve={handleEventResolve}
+        />
+      )}
+
       <header className="app-header">
         <h1>AI Manager Tycoon</h1>
         <p className="subtitle">Manage your AI engineering team. Try not to ship too many bugs.</p>
@@ -203,6 +277,7 @@ export default function App() {
               />
             ))}
           </div>
+          <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
         </section>
 
         <section className="panel project-panel">

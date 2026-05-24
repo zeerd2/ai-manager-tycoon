@@ -2,6 +2,8 @@ import type { Agent } from './agent';
 import type { Project } from './project';
 import type { SprintResult } from './simulation';
 
+import type { AgentRelation } from './relations/types';
+
 export interface GameState {
   funds: number;
   sprintCount: number;
@@ -12,4 +14,5 @@ export interface GameState {
   gameOver: boolean;
   gameOverReason?: string;
   history: SprintResult[];
+  relations: AgentRelation[];
 }
