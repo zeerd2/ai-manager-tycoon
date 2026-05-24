@@ -2420,12 +2420,153 @@ body {
     text-align: left;
   }
 
+  .relation-item {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
   .action-bar {
     padding: 12px 0 0;
   }
 
+  /* Save Manager Overlay Mobile */
   .save-manager-overlay {
     align-items: stretch;
     padding: 12px;
+  }
+
+  .save-manager-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .save-manager-body {
+    padding: 16px;
+  }
+
+  .save-manager-header {
+    padding: 12px 16px;
+  }
+
+  .save-manager-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .close-btn {
+    font-size: 1.5rem;
+  }
+
+  .slots-list {
+    gap: 12px;
+  }
+
+  .slot-card {
+    padding: 12px;
+  }
+
+  .slot-num {
+    font-size: 1rem;
+    width: 36px;
+    margin-right: 12px;
+  }
+
+  .slot-title {
+    font-size: 0.95rem;
+  }
+
+  .slot-meta {
+    font-size: 0.8rem;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .slot-actions {
+    gap: 6px;
+  }
+
+  .save-action-form {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .save-action-form input {
+    font-size: 0.85rem;
+  }
+
+  /* Event Dialog Mobile */
+  .event-dialog {
+    padding: 16px;
+    width: 95%;
+  }
+
+  .event-description {
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+  }
+
+  .event-option-btn {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+  }
+
+  .option-effects-preview {
+    font-size: 0.8rem;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Result Stat Card Mobile */
+  .result-stat-card {
+    min-width: 110px;
+    padding: 8px;
+  }
+
+  .result-stat-label {
+    font-size: 0.75rem;
+  }
+
+  .result-stat-value {
+    font-size: 1.1rem;
+  }
+
+  /* Game Over Screen Mobile */
+  .game-over-content {
+    padding: 24px 16px;
+    width: 95%;
+  }
+
+  .game-over-title {
+    font-size: 2rem;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .game-over-reason {
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+
+  .game-over-stats {
+    padding: 12px;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .game-over-stat .value {
+    font-size: 1.6rem;
+  }
+
+  .game-over-stat-detail {
+    font-size: 0.85rem;
+    gap: 6px;
+  }
+
+  .game-over-achievements {
+    margin-bottom: 20px;
+  }
+
+  .game-over-achievements-list {
+    grid-template-columns: 1fr;
+    max-height: 120px;
   }
 }
