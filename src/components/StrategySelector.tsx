@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Strategy } from '../domain/strategy';
 
 interface Props {
@@ -6,7 +7,7 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-export function StrategySelector({ strategies, selectedId, onSelect }: Props) {
+export const StrategySelector = memo(function StrategySelector({ strategies, selectedId, onSelect }: Props) {
   return (
     <div className="strategy-selector">
       {strategies.map(s => (
@@ -35,4 +36,4 @@ export function StrategySelector({ strategies, selectedId, onSelect }: Props) {
       ))}
     </div>
   );
-}
+});

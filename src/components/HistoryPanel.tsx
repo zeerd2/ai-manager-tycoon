@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import type { SprintResult } from '../domain/simulation';
 
 interface Props {
   history: SprintResult[];
 }
 
-export function HistoryPanel({ history }: Props) {
+export const HistoryPanel = memo(function HistoryPanel({ history }: Props) {
   if (history.length === 0) {
     return <div className="history-panel"><p className="empty">暂无已完成的 Sprint。</p></div>;
   }
@@ -36,4 +37,4 @@ export function HistoryPanel({ history }: Props) {
       </div>
     </div>
   );
-}
+});

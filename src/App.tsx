@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { sampleAgents } from './data/sampleAgents';
 import { sampleProjects } from './data/sampleProjects';
 import { incidentTemplates } from './data/incidentTemplates';
@@ -115,7 +115,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, [autosaveConfig.enabled, autosaveConfig.interval, currentSlotId, gameState]);
 
-  function toggleAgent(id: string) {
+  const toggleAgent = useCallback((id: string) => {
     const agent = gameState.agents.find(a => a.id === id);
     if (agent?.locked) return; // Locked agents cannot be selected
 
@@ -125,7 +125,13 @@ export default function App() {
       else next.add(id);
       return next;
     });
-  }
+  }, [gameState.agents]);
+
+  const handleSelectProject = useCallback((id: string) => {
+    if (!gameState.completedProjectIds.includes(id)) {
+      setSelectedProjectId(id);
+    }
+  }, [gameState.completedProjectIds]);
 
   function handleRunSprint() {
     if (selectedAgentIds.size === 0 || !selectedProjectId || !selectedStrategyId) return;
@@ -272,7 +278,7 @@ export default function App() {
     setSelectedAgentIds(new Set());
   }
 
-  function handleLoadGame(loadedState: GameState, slotId: string) {
+  const handleLoadGame = useCallback((loadedState: GameState, slotId: string) => {
     setGameState(loadedState);
     setCurrentSlotId(slotId);
     setIsStartup(false);
@@ -282,9 +288,9 @@ export default function App() {
     setSelectedProjectId(null);
     setSelectedStrategyId(null);
     setLastResult(null);
-  }
+  }, []);
 
-  function handleNewGame(slotId: string) {
+  const handleNewGame = useCallback((slotId: string) => {
     const initialState = createInitialGameState(sampleAgents, sampleProjects);
     saveToSlot(slotId, `存档位 ${slotId}`, initialState);
     setGameState(initialState);
@@ -296,14 +302,14 @@ export default function App() {
     setSelectedProjectId(null);
     setSelectedStrategyId(null);
     setLastResult(null);
-  }
+  }, []);
 
-  const handleUpdateAutosaveConfig = (newConfig: AutosaveConfig) => {
+  const handleUpdateAutosaveConfig = useCallback((newConfig: AutosaveConfig) => {
     setAutosaveConfigState(newConfig);
     setAutosaveConfig(newConfig);
-  };
+  }, []);
 
-  function handleReset() {
+  const handleReset = useCallback(() => {
     if (currentSlotId) {
       deleteSlot(currentSlotId);
     }
@@ -320,9 +326,9 @@ export default function App() {
     setProjectCompleted(false);
     setProjectBonus(0);
     setPendingEvent(null);
-  }
+  }, [currentSlotId]);
 
-  const handleUnlockSkill = (agentId: string, skillId: string) => {
+  const handleUnlockSkill = useCallback((agentId: string, skillId: string) => {
     setGameState(prev => {
       const agentToUpgrade = prev.agents.find(a => a.id === agentId);
       if (!agentToUpgrade) return prev;
@@ -345,7 +351,7 @@ export default function App() {
         agents: prev.agents.map(a => a.id === agentId ? clonedAgent : a)
       };
     });
-  };
+  }, []);
 
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
@@ -399,7 +405,7 @@ export default function App() {
                 agent={a}
                 selected={selectedAgentIds.has(a.id)}
                 onToggle={toggleAgent}
-                onOpenSkillTree={(agentId) => setActiveSkillTreeAgentId(agentId)}
+                onOpenSkillTree={setActiveSkillTreeAgentId}
               />
             ))}
           </div>
@@ -410,13 +416,12 @@ export default function App() {
           <h2>项目</h2>
           <div className="card-grid">
             {gameState.projects.map(p => {
-              const isCompleted = gameState.completedProjectIds.includes(p.id);
               return (
                 <ProjectCard
                   key={p.id}
                   project={p}
                   selected={selectedProjectId === p.id}
-                  onSelect={isCompleted ? () => {} : setSelectedProjectId}
+                  onSelect={handleSelectProject}
                 />
               );
             })}

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Project, DifficultyLevel } from '../domain/project';
 import { DIFFICULTY_CONFIGS } from '../domain/project';
 
@@ -15,7 +16,7 @@ const DIFFICULTY_COLORS: Record<DifficultyLevel, string> = {
   legend: '#a855f7',
 };
 
-export function ProjectCard({ project, selected, onSelect }: Props) {
+export const ProjectCard = memo(function ProjectCard({ project, selected, onSelect }: Props) {
   const progressPct = Math.round((project.progress / project.maxProgress) * 100);
   const config = DIFFICULTY_CONFIGS[project.difficultyLevel];
   const color = DIFFICULTY_COLORS[project.difficultyLevel];
@@ -49,4 +50,4 @@ export function ProjectCard({ project, selected, onSelect }: Props) {
       </div>
     </div>
   );
-}
+});

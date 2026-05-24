@@ -118,10 +118,31 @@ export function checkUnlocks(state: GameState): string[] {
 
 const SAVE_KEY = 'ai_manager_tycoon_save_v2';
 
+const storageCache = new Map<string, string | null>();
+
+function cachedGetItem(key: string): string | null {
+  if (storageCache.has(key)) {
+    return storageCache.get(key) ?? null;
+  }
+  const val = localStorage.getItem(key);
+  storageCache.set(key, val);
+  return val;
+}
+
+function cachedSetItem(key: string, value: string): void {
+  storageCache.set(key, value);
+  localStorage.setItem(key, value);
+}
+
+function cachedRemoveItem(key: string): void {
+  storageCache.delete(key);
+  localStorage.removeItem(key);
+}
+
 /** 保存游戏状态到 localStorage（旧版单槽位，向后兼容） */
 export function saveGame(state: GameState): void {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    cachedSetItem(SAVE_KEY, JSON.stringify(state));
   } catch (e) {
     console.error('Failed to save game', e);
   }
@@ -130,7 +151,7 @@ export function saveGame(state: GameState): void {
 /** 从 localStorage 加载游戏状态（旧版单槽位，向后兼容） */
 export function loadGame(): GameState | null {
   try {
-    const saved = localStorage.getItem(SAVE_KEY);
+    const saved = cachedGetItem(SAVE_KEY);
     if (saved) {
       return JSON.parse(saved) as GameState;
     }
@@ -143,7 +164,7 @@ export function loadGame(): GameState | null {
 /** 清除 localStorage 中的旧版存档 */
 export function clearSave(): void {
   try {
-    localStorage.removeItem(SAVE_KEY);
+    cachedRemoveItem(SAVE_KEY);
   } catch (e) {
     console.error('Failed to clear save', e);
   }

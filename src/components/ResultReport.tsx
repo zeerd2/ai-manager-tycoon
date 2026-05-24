@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import type { SprintResult } from '../domain/simulation';
 import type { Incident } from '../domain/incident';
 
@@ -142,7 +142,7 @@ function formatEffects(effects: Incident['effects']): string {
   return parts.join(' | ') || '无明显影响';
 }
 
-export function ResultReport({ result, projectCompleted, projectBonus, newlyUnlockedAgents }: Props) {
+export const ResultReport = memo(function ResultReport({ result, projectCompleted, projectBonus, newlyUnlockedAgents }: Props) {
   const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
@@ -286,4 +286,4 @@ export function ResultReport({ result, projectCompleted, projectBonus, newlyUnlo
       </div>
     </div>
   );
-}
+});

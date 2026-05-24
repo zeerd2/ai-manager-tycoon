@@ -41,10 +41,31 @@ export function getSlotKey(slotId: string): string {
   return `${SLOT_KEY_PREFIX}${slotId}`;
 }
 
+const storageCache = new Map<string, string | null>();
+
+function cachedGetItem(key: string): string | null {
+  if (storageCache.has(key)) {
+    return storageCache.get(key) ?? null;
+  }
+  const val = localStorage.getItem(key);
+  storageCache.set(key, val);
+  return val;
+}
+
+function cachedSetItem(key: string, value: string): void {
+  storageCache.set(key, value);
+  localStorage.setItem(key, value);
+}
+
+function cachedRemoveItem(key: string): void {
+  storageCache.delete(key);
+  localStorage.removeItem(key);
+}
+
 /** 读取自动存档配置，默认启用且间隔 5 分钟 */
 export function getAutosaveConfig(): AutosaveConfig {
   try {
-    const saved = localStorage.getItem(AUTOSAVE_CONFIG_KEY);
+    const saved = cachedGetItem(AUTOSAVE_CONFIG_KEY);
     if (saved) {
       return JSON.parse(saved) as AutosaveConfig;
     }
@@ -57,7 +78,7 @@ export function getAutosaveConfig(): AutosaveConfig {
 /** 保存自动存档配置到 localStorage */
 export function setAutosaveConfig(config: AutosaveConfig): void {
   try {
-    localStorage.setItem(AUTOSAVE_CONFIG_KEY, JSON.stringify(config));
+    cachedSetItem(AUTOSAVE_CONFIG_KEY, JSON.stringify(config));
   } catch (e) {
     console.error('Failed to save autosave config', e);
   }
@@ -82,7 +103,7 @@ export function saveToSlot(
       projectHistory: extra?.projectHistory || state.history || []
     };
 
-    localStorage.setItem(getSlotKey(slotId), JSON.stringify(saveData));
+    cachedSetItem(getSlotKey(slotId), JSON.stringify(saveData));
 
     // Update metadata list
     const metadataList = getSaveSlotsMetadata();
@@ -113,7 +134,7 @@ export function saveToSlot(
 export function loadFromSlot(slotId: string): SaveData | null {
   try {
     const key = getSlotKey(slotId);
-    const saved = localStorage.getItem(key);
+    const saved = cachedGetItem(key);
     if (!saved) return null;
 
     const data = JSON.parse(saved) as SaveData;
@@ -133,7 +154,7 @@ export function loadFromSlot(slotId: string): SaveData | null {
 /** 删除指定存档位的数据 */
 export function deleteSlot(slotId: string): void {
   try {
-    localStorage.removeItem(getSlotKey(slotId));
+    cachedRemoveItem(getSlotKey(slotId));
   } catch (e) {
     console.error(`Failed to delete slot ${slotId}`, e);
   }
@@ -146,7 +167,7 @@ export function getSaveSlotsMetadata(): SaveMetadata[] {
 
   for (const slotId of allSlots) {
     try {
-      const saved = localStorage.getItem(getSlotKey(slotId));
+      const saved = cachedGetItem(getSlotKey(slotId));
       if (saved) {
         const data = JSON.parse(saved) as SaveData;
         metadataList.push({
@@ -170,12 +191,12 @@ export function getSaveSlotsMetadata(): SaveMetadata[] {
 /** 检查并迁移旧版 v2 存档到新多槽位系统 */
 export function checkAndMigrateOldSave(): boolean {
   try {
-    const oldSave = localStorage.getItem(OLD_SAVE_KEY);
+    const oldSave = cachedGetItem(OLD_SAVE_KEY);
     if (!oldSave) return false;
 
     // Check if slot 1 is empty
     const slot1Key = getSlotKey('1');
-    if (localStorage.getItem(slot1Key)) {
+    if (cachedGetItem(slot1Key)) {
       // Slot 1 is already taken, don't overwrite automatically
       return false;
     }

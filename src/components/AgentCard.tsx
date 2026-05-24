@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Agent } from '../domain/agent';
 import { agentEffectiveness } from '../domain/agent';
 
@@ -8,7 +9,7 @@ interface Props {
   onOpenSkillTree?: (agentId: string) => void;
 }
 
-export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props) {
+export const AgentCard = memo(function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props) {
   const eff = agentEffectiveness(agent).toFixed(1);
 
   if (agent.locked) {
@@ -105,4 +106,4 @@ export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props)
       <p className="quirk">"{agent.quirk}"</p>
     </div>
   );
-}
+});

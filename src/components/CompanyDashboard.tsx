@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { calculateRating } from '../domain/rating';
 import { achievements } from '../data/achievements';
 import type { GameState } from '../domain/gameState';
@@ -6,7 +7,7 @@ interface Props {
   gameState: GameState;
 }
 
-export function CompanyDashboard({ gameState }: Props) {
+export const CompanyDashboard = memo(function CompanyDashboard({ gameState }: Props) {
   const { funds, sprintCount, projects, completedProjectIds, unlockedAchievementIds, history } = gameState;
 
   // Calculate rating input
@@ -64,4 +65,4 @@ export function CompanyDashboard({ gameState }: Props) {
       </div>
     </div>
   );
-}
+});

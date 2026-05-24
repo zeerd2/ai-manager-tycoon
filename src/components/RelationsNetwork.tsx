@@ -1,4 +1,4 @@
-
+import { memo } from 'react';
 import type { AgentRelation } from '../domain/relations/types';
 import type { Agent } from '../domain/agent';
 import { RelationsManager } from '../domain/relations/manager';
@@ -8,7 +8,7 @@ interface Props {
   relations: AgentRelation[];
 }
 
-export function RelationsNetwork({ agents, relations }: Props) {
+export const RelationsNetwork = memo(function RelationsNetwork({ agents, relations }: Props) {
   const manager = new RelationsManager(relations);
   const unlockedAgents = agents.filter(a => !a.locked);
 
@@ -58,4 +58,4 @@ export function RelationsNetwork({ agents, relations }: Props) {
       </div>
     </div>
   );
-}
+});

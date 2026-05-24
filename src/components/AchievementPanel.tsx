@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { achievements } from '../data/achievements';
 import { getAchievementProgress } from '../domain/achievement';
 import type { GameState } from '../domain/gameState';
@@ -8,7 +9,7 @@ interface Props {
   gameState?: GameState;
 }
 
-export function AchievementPanel({ unlockedAchievementIds, gameState }: Props) {
+export const AchievementPanel = memo(function AchievementPanel({ unlockedAchievementIds, gameState }: Props) {
   const [activeCategory, setActiveCategory] = useState<'all' | 'employee' | 'project' | 'economic' | 'incident'>('all');
 
   const categories = [
@@ -106,4 +107,4 @@ export function AchievementPanel({ unlockedAchievementIds, gameState }: Props) {
       </div>
     </div>
   );
-}
+});
