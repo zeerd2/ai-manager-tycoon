@@ -23,6 +23,10 @@ import type { AutosaveConfig } from './domain/saveSystem';
 import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
 import type { SprintResult } from './domain/simulation';
+import type { Agent } from './domain/agent';
+import type { Project } from './domain/project';
+import type { Strategy } from './domain/strategy';
+import type { RNG } from './domain/random';
 
 import { generateTeamEvent } from './domain/relations/events';
 import type { PendingTeamEvent, TeamEventResult } from './domain/relations/events';
@@ -67,7 +71,12 @@ export default function App() {
 
   // Event system state
   const [pendingEvent, setPendingEvent] = useState<PendingTeamEvent | null>(null);
-  const [sprintContext, setSprintContext] = useState<any>(null);
+  const [sprintContext, setSprintContext] = useState<{
+    chosenAgents: Agent[];
+    project: Project;
+    strategy: Strategy;
+    rng: RNG;
+  } | null>(null);
 
   // Automatically save game whenever gameState changes and a slot is active
   useEffect(() => {
@@ -120,6 +129,7 @@ export default function App() {
     const chosenAgents = gameState.agents.filter(a => selectedAgentIds.has(a.id));
     const project = gameState.projects.find(p => p.id === selectedProjectId)!;
     const strategy = strategies.find(s => s.id === selectedStrategyId)!;
+    // eslint-disable-next-line react-hooks/purity
     const rng = createRNG(Date.now());
 
     // Check for random team event BEFORE sprint starts
@@ -144,7 +154,13 @@ export default function App() {
     }
   }
 
-  function executeSprint(chosenAgents: any[], project: any, strategy: any, rng: any, eventResult: TeamEventResult | null) {
+  function executeSprint(
+    chosenAgents: Agent[],
+    project: Project,
+    strategy: Strategy,
+    rng: RNG,
+    eventResult: TeamEventResult | null
+  ) {
     // 1. Run simulation
     const result = runSprint(gameState.sprintCount + 1, chosenAgents, project, strategy, incidentTemplates, rng);
 
