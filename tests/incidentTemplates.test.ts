@@ -15,6 +15,9 @@ const newFunnyIncidentTitles = [
 ];
 
 describe('incidentTemplates', () => {
+  const validTypes = ['bug', 'overengineering', 'hallucination', 'burnout', 'breakthrough', 'drama'];
+  const validSeverities = ['low', 'medium', 'high', 'critical'];
+
   it('includes the new funny AI and office incident templates', () => {
     const titles = incidentTemplates.map((template) => template.titleTemplate);
 
@@ -37,6 +40,45 @@ describe('incidentTemplates', () => {
       expect(Math.abs(template.effects.bugs)).toBeLessThanOrEqual(7);
       expect(Math.abs(template.effects.techDebt)).toBeLessThanOrEqual(8);
       expect(Math.abs(template.effects.morale)).toBeLessThanOrEqual(8);
+    }
+  });
+
+  it('all templates have valid incident types', () => {
+    for (const template of incidentTemplates) {
+      expect(validTypes).toContain(template.type);
+    }
+  });
+
+  it('all templates have valid severity levels', () => {
+    for (const template of incidentTemplates) {
+      expect(validSeverities).toContain(template.severity);
+    }
+  });
+
+  it('all description templates correctly interpolate actor names', () => {
+    for (const template of incidentTemplates) {
+      const description = template.descriptionTemplate('测试工程师');
+      expect(description).toContain('测试工程师');
+      expect(description.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('all templates have unique title templates', () => {
+    const titles = incidentTemplates.map(t => t.titleTemplate);
+    const uniqueTitles = new Set(titles);
+    expect(uniqueTitles.size).toBe(titles.length);
+  });
+
+  it('effects values stay within reasonable ranges across all templates', () => {
+    for (const template of incidentTemplates) {
+      expect(template.effects.progress).toBeGreaterThanOrEqual(-15);
+      expect(template.effects.progress).toBeLessThanOrEqual(15);
+      expect(template.effects.bugs).toBeGreaterThanOrEqual(-5);
+      expect(template.effects.bugs).toBeLessThanOrEqual(15);
+      expect(template.effects.techDebt).toBeGreaterThanOrEqual(-15);
+      expect(template.effects.techDebt).toBeLessThanOrEqual(20);
+      expect(template.effects.morale).toBeGreaterThanOrEqual(-15);
+      expect(template.effects.morale).toBeLessThanOrEqual(15);
     }
   });
 });

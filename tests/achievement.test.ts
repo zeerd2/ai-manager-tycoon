@@ -6,6 +6,7 @@ import type { GameState } from '../src/domain/gameState';
 import type { Project } from '../src/domain/project';
 import type { Strategy } from '../src/domain/strategy';
 import type { Agent } from '../src/domain/agent';
+import type { SprintResult } from '../src/domain/simulation';
 
 const makeContext = (overrides: Partial<AchievementContext> = {}): AchievementContext => ({
   completedProjectIds: [],
@@ -415,6 +416,12 @@ describe('checkAchievement', () => {
       expect(checkAchievement(ach, ctx)).toBe(false);
     });
   });
+
+  it('returns false for unknown conditionType', () => {
+    const unknownAch = { ...getAchievement('first-blood'), conditionType: 'unknown_type' };
+    const ctx = makeContext({ completedProjectIds: ['proj-1'] });
+    expect(checkAchievement(unknownAch, ctx)).toBe(false);
+  });
 });
 
 describe('getAchievementProgress', () => {
@@ -477,5 +484,81 @@ describe('getAchievementProgress', () => {
     const ach = getAchievement('financial-freedom');
     const state = makeGameState({ funds: 6500 });
     expect(getAchievementProgress(ach, state)).toEqual({ current: 6500, target: 8000, display: '6500 / 8000' });
+  });
+
+  it('tracks progress for team-wipe', () => {
+    const ach = getAchievement('team-wipe');
+    const state = makeGameState({
+      agents: [
+        { morale: 0, locked: false, skills: {} as Agent['skills'] } as Agent,
+        { morale: 5, locked: false, skills: {} as Agent['skills'] } as Agent,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 1, target: 2, display: '1 / 2' });
+  });
+
+  it('tracks progress for 10x-company', () => {
+    const ach = getAchievement('10x-company');
+    const state = makeGameState({ completedProjectIds: ['p1', 'p2'] });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 2, target: 3, display: '2 / 3' });
+  });
+
+  it('returns null progress for speed-run (not yet tracked in getAchievementProgress)', () => {
+    const ach = getAchievement('speed-run');
+    const state = makeGameState({ completedProjectIds: ['p1'], sprintCount: 3 });
+    expect(getAchievementProgress(ach, state)).toBeNull();
+  });
+
+  it('tracks progress for iron-man', () => {
+    const ach = getAchievement('iron-man');
+    const state = makeGameState({
+      agents: [
+        { consecutiveSprints: 4, locked: false, skills: {} as Agent['skills'] } as Agent,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 4, target: 6, display: '4 / 6' });
+  });
+
+  it('tracks progress for talent-scout', () => {
+    const ach = getAchievement('talent-scout');
+    const state = makeGameState({
+      agents: [
+        { locked: false, skills: { coding: 90, debugging: 80, architecture: 70, creativity: 60, speed: 50 } } as Agent,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 350, target: 450, display: '350 / 450' });
+  });
+
+  it('tracks progress for agent-max-skills', () => {
+    const ach = getAchievement('max-skill');
+    const state = makeGameState({
+      agents: [
+        { locked: false, skills: { coding: 100, debugging: 100, architecture: 50, creativity: 50, speed: 50 } } as Agent,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 2, target: 5, display: '2 / 5' });
+  });
+
+  it('returns null progress for survivor (not yet tracked in getAchievementProgress)', () => {
+    const ach = getAchievement('survivor');
+    const state = makeGameState({ completedProjectIds: ['p1'] });
+    expect(getAchievementProgress(ach, state)).toBeNull();
+  });
+
+  it('tracks progress for murphy-law', () => {
+    const ach = getAchievement('murphy-law');
+    const state = makeGameState({
+      history: [
+        { bugsDelta: 10, progressDelta: 0, sprintNumber: 1 } as unknown as SprintResult,
+        { bugsDelta: 15, progressDelta: 0, sprintNumber: 2 } as unknown as SprintResult,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 25, target: 50, display: '25 / 50' });
+  });
+
+  it('returns null progress for unknown achievement type', () => {
+    const unknownAch = { ...getAchievement('first-blood'), conditionType: 'nonexistent' };
+    const state = makeGameState();
+    expect(getAchievementProgress(unknownAch, state)).toBeNull();
   });
 });

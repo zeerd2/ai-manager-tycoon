@@ -91,6 +91,71 @@ describe('Save System', () => {
     });
   });
 
+  describe('Overwrite and Extended Fields', () => {
+    it('should overwrite existing save slot and update metadata', () => {
+      saveToSlot('1', '第一个存档', mockState);
+
+      const updatedState = { ...mockState, funds: 9999, sprintCount: 10 };
+      saveToSlot('1', '覆盖后的存档', updatedState);
+
+      const loaded = loadFromSlot('1');
+      expect(loaded!.gameState.funds).toBe(9999);
+      expect(loaded!.gameState.sprintCount).toBe(10);
+
+      const metadata = getSaveSlotsMetadata();
+      const slot1Meta = metadata.find(m => m.id === '1')!;
+      expect(slot1Meta.name).toBe('覆盖后的存档');
+      expect(slot1Meta.funds).toBe(9999);
+    });
+
+    it('should preserve extra fields when saving and loading', () => {
+      const extraFields = {
+        skillTrees: { tree1: { unlocked: true } },
+        relationships: { agent1: { trust: 80 } },
+        achievements: ['first-blood', 'bug-factory'],
+        projectHistory: [{ projectId: 'p1', completedAt: '2025-01-01' }],
+      };
+
+      saveToSlot('2', '额外数据存档', mockState, extraFields);
+      const loaded = loadFromSlot('2');
+
+      expect(loaded!.skillTrees).toEqual(extraFields.skillTrees);
+      expect(loaded!.relationships).toEqual(extraFields.relationships);
+      expect(loaded!.achievements).toEqual(extraFields.achievements);
+      expect(loaded!.projectHistory).toEqual(extraFields.projectHistory);
+    });
+
+    it('should save auto slot and include it in metadata', () => {
+      saveToSlot('auto', '自动存档', mockState);
+      const metadata = getSaveSlotsMetadata();
+      const autoSlot = metadata.find(m => m.id === 'auto');
+      expect(autoSlot).toBeDefined();
+      expect(autoSlot!.name).toBe('自动存档');
+    });
+
+    it('should handle multiple saves across all slots', () => {
+      saveToSlot('1', '存档一', { ...mockState, funds: 1000 });
+      saveToSlot('2', '存档二', { ...mockState, funds: 2000 });
+      saveToSlot('3', '存档三', { ...mockState, funds: 3000 });
+      saveToSlot('auto', '自动', { ...mockState, funds: 4000 });
+
+      const metadata = getSaveSlotsMetadata();
+      expect(metadata).toHaveLength(4);
+
+      expect(metadata.find(m => m.id === '1')!.funds).toBe(1000);
+      expect(metadata.find(m => m.id === '2')!.funds).toBe(2000);
+      expect(metadata.find(m => m.id === '3')!.funds).toBe(3000);
+      expect(metadata.find(m => m.id === 'auto')!.funds).toBe(4000);
+    });
+
+    it('should return null when loading from empty or deleted slot', () => {
+      expect(loadFromSlot('empty')).toBeNull();
+      saveToSlot('1', 'test', mockState);
+      deleteSlot('1');
+      expect(loadFromSlot('1')).toBeNull();
+    });
+  });
+
   describe('Migration Support', () => {
     it('should migrate old save format to slot 1 if empty', () => {
       const oldV2State = {
