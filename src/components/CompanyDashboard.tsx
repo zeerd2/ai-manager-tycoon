@@ -39,7 +39,7 @@ export const CompanyDashboard = memo(function CompanyDashboard({ gameState }: Pr
 
   return (
     <div className="company-dashboard">
-      <div className="dashboard-item funds-container">
+      <div className="dashboard-item funds-container" title="当前公司持有的运营资金。每回合结束时扣除工程师薪资并计算开销，若资金归零或为负，公司将面临破产（游戏结束）！">
         <span className="label">💰 资金:</span>
         <div className={`funds-bar ${isLowFunds ? 'danger-flash' : ''}`}>
           <div className="funds-bar-fill" style={{ width: `${fundsPercent}%` }}></div>
@@ -47,19 +47,19 @@ export const CompanyDashboard = memo(function CompanyDashboard({ gameState }: Pr
         </div>
       </div>
 
-      <div className="dashboard-item">
+      <div className="dashboard-item" title="基于已完成项目数、累计 Bugs、技术债、历史总支出和剩余资金对你进行的综合管理评级评估。">
         <span className="label">📊 评级:</span>
         <span className={`rating-badge rating-${ratingResult.rating}`}>
           {ratingResult.rating} ({ratingResult.title})
         </span>
       </div>
 
-      <div className="dashboard-item">
+      <div className="dashboard-item" title="当前已解锁的游戏成就数。尝试解锁更多成就以达成完美通关！">
         <span className="label">🏆 成就:</span>
         <span className="value">{unlockedAchievementsCount} / {totalAchievements}</span>
       </div>
 
-      <div className="dashboard-item">
+      <div className="dashboard-item" title="当前所处的回合数（Sprint数）。随着回合数的推进，候选人池会自动解锁更强大的 AI 工程师。">
         <span className="label">回合 #</span>
         <span className="value highlight">{sprintCount}</span>
       </div>

@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface Props {
   sprintCount: number;
   selectedAgentCount: number;
   selectedProjectId: string | null;
   selectedStrategyId: string | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export function getTutorialStepText(
@@ -25,6 +27,28 @@ export function getTutorialStepText(
       return '✨ 全部准备就绪！现在请点击页面最下方的【执行 Sprint】按钮来推进你团队的第一个回合！';
     }
   }
+  if (sprintCount === 1) {
+    if (selectedAgentCount === 0) {
+      return '👉 第一步：请选择本回合参与工作的工程师。建议挑选之前未连续工作的工程师让他们轮流休息，这样能迅速清空他们的疲劳值！';
+    } else if (!selectedProjectId) {
+      return '👉 第二步：选择你想继续推进的项目。你可以继续做刚才那个，也可以开新项目，但建议专注先把“TODO App”开发完以获取奖励资金。';
+    } else if (!selectedStrategyId) {
+      return '👉 第三步：选择开发策略。可以尝试不同的策略（如“追求速度”或“质量优先”），观察它们对进度和 Bug 的修正系数。';
+    } else {
+      return '✨ 准备就绪！现在点击页面最下方的【执行 Sprint】按钮，开始你的第二个回合！';
+    }
+  }
+  if (sprintCount === 2) {
+    if (selectedAgentCount === 0) {
+      return '👉 第一步：选择本回合要工作的工程师。如果资金充足，你还可以点击卡片上的【技能树】按钮来升级解锁更强大的技能属性！';
+    } else if (!selectedProjectId) {
+      return '👉 第二步：选择本回合的开发项目。你的 TODO App 应该快要接近 100% 了，继续加油！';
+    } else if (!selectedStrategyId) {
+      return '👉 第三步：选择适合的策略。如果当前项目累积了太多 Bug 或技术债，可以尝试选择能清理 Bug 的特定策略。';
+    } else {
+      return '✨ 最后一轮引导准备完毕！点击【执行 Sprint】按钮开始推进，第三个回合结束后新手引导将自动结束！';
+    }
+  }
   return '';
 }
 
@@ -32,10 +56,10 @@ export const TutorialGuide: React.FC<Props> = ({
   sprintCount,
   selectedAgentCount,
   selectedProjectId,
-  selectedStrategyId
+  selectedStrategyId,
+  isOpen,
+  onClose
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
-
   if (sprintCount >= 3 || !isOpen) return null;
 
   const renderContent = () => {
@@ -58,13 +82,17 @@ export const TutorialGuide: React.FC<Props> = ({
           </div>
         );
       }
-      case 1:
+      case 1: {
+        const stepText = getTutorialStepText(sprintCount, selectedAgentCount, selectedProjectId, selectedStrategyId);
         return (
           <div className="tutorial-step">
             <h4>💡 新手引导：第二步 (Sprint 1) — 结算报告与精力管理</h4>
             <p className="tutorial-intro">
               太棒了！你已经完成了第一个 Sprint。仔细阅读下方的<strong>「Sprint 报告」</strong>，这里会展示你取得的进度、产生的 Bug 数量以及突发事件。
             </p>
+            <div className="tutorial-highlight-box pulse">
+              {stepText}
+            </div>
             <div className="tutorial-highlight-box">
               <strong>🔋 工程师状态管理：</strong><br />
               每个工程师的卡片都有<strong>士气</strong>和<strong>疲劳</strong>条。工程师每工作一个回合，疲劳度就会上升，连续工作 3 个回合及以上会导致<strong>「过劳警告」</strong>并降低士气。<br />
@@ -75,13 +103,18 @@ export const TutorialGuide: React.FC<Props> = ({
             </p>
           </div>
         );
-      case 2:
+      }
+      case 2: {
+        const stepText = getTutorialStepText(sprintCount, selectedAgentCount, selectedProjectId, selectedStrategyId);
         return (
           <div className="tutorial-step">
             <h4>💡 新手引导：第三步 (Sprint 2) — 技能树、新员工与人际网络</h4>
             <p className="tutorial-intro">
               随着项目的不断推进，是时候了解一些高级工程管理机制了：
             </p>
+            <div className="tutorial-highlight-box pulse">
+              {stepText}
+            </div>
             <div className="tutorial-highlight-box">
               <strong>🌳 工程师技能树：</strong>点击工程师卡片上的“技能树”按钮，可以消耗资金来解锁和升级他们的各项技能，升级后将能带来极大的被动效率加成。<br />
               <strong>🔓 工程师解锁：</strong>随着 Sprint 回合数的推进，候选人池会自动解锁更强大的 AI 工程师（如第 2 回合解锁的 AlphaFold 3）。<br />
@@ -92,6 +125,7 @@ export const TutorialGuide: React.FC<Props> = ({
             </p>
           </div>
         );
+      }
       default:
         return null;
     }
@@ -101,7 +135,7 @@ export const TutorialGuide: React.FC<Props> = ({
     <div className="tutorial-guide-banner">
       <div className="tutorial-guide-header">
         <span className="tutorial-icon">🎮 经理入门指南</span>
-        <button className="tutorial-close-btn" onClick={() => setIsOpen(false)} title="关闭引导">
+        <button className="tutorial-close-btn" onClick={onClose} title="关闭引导">
           不再显示 &times;
         </button>
       </div>

@@ -67,6 +67,7 @@ export default function App() {
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SprintResult | null>(null);
   const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(true);
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -356,6 +357,12 @@ export default function App() {
 
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
+  const showTutorialHighlight = gameState.sprintCount < 3 && isTutorialOpen;
+  const highlightTeam = showTutorialHighlight && selectedAgentIds.size === 0;
+  const highlightProject = showTutorialHighlight && selectedAgentIds.size > 0 && !selectedProjectId;
+  const highlightStrategy = showTutorialHighlight && selectedAgentIds.size > 0 && selectedProjectId && !selectedStrategyId;
+  const highlightRun = showTutorialHighlight && selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId;
+
   return (
     <div className="app">
       {pendingEvent && (
@@ -402,9 +409,11 @@ export default function App() {
           selectedAgentCount={selectedAgentIds.size}
           selectedProjectId={selectedProjectId}
           selectedStrategyId={selectedStrategyId}
+          isOpen={isTutorialOpen}
+          onClose={() => setIsTutorialOpen(false)}
         />
 
-        <section className="panel team-panel">
+        <section className={`panel team-panel ${highlightTeam ? 'tutorial-highlight-panel' : ''}`}>
           <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
           <div className="card-grid">
             {gameState.agents.map(a => (
@@ -420,7 +429,7 @@ export default function App() {
           <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
         </section>
 
-        <section className="panel project-panel">
+        <section className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''}`}>
           <h2>项目</h2>
           <div className="card-grid">
             {gameState.projects.map(p => {
@@ -436,7 +445,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel strategy-panel">
+        <section className={`panel strategy-panel ${highlightStrategy ? 'tutorial-highlight-panel' : ''}`}>
           <h2>策略</h2>
           <StrategySelector
             strategies={strategies}
@@ -447,7 +456,7 @@ export default function App() {
 
         <div className="action-bar">
           <button
-            className="btn-run"
+            className={`btn-run ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
             disabled={!canRun}
             onClick={handleRunSprint}
           >

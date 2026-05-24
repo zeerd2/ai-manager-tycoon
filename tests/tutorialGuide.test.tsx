@@ -35,4 +35,40 @@ describe('getTutorialStepText Logic', () => {
     expect(result).toContain('准备就绪');
     expect(result).toContain('执行 Sprint');
   });
+
+  it('should guide through sprint 1 step-by-step', () => {
+    const step1 = getTutorialStepText(1, 0, null, null);
+    expect(step1).toContain('第一步');
+    expect(step1).toContain('工程师');
+
+    const step2 = getTutorialStepText(1, 1, null, null);
+    expect(step2).toContain('第二步');
+    expect(step2).toContain('项目');
+
+    const step3 = getTutorialStepText(1, 1, 'todo-app', null);
+    expect(step3).toContain('第三步');
+    expect(step3).toContain('策略');
+
+    const step4 = getTutorialStepText(1, 1, 'todo-app', 'agile');
+    expect(step4).toContain('准备就绪');
+    expect(step4).toContain('执行 Sprint');
+  });
+
+  it('should guide through sprint 2 step-by-step', () => {
+    const step1 = getTutorialStepText(2, 0, null, null);
+    expect(step1).toContain('第一步');
+    expect(step1).toContain('技能树');
+
+    const step2 = getTutorialStepText(2, 1, null, null);
+    expect(step2).toContain('第二步');
+    expect(step2).toContain('项目');
+
+    const step3 = getTutorialStepText(2, 1, 'todo-app', null);
+    expect(step3).toContain('第三步');
+    expect(step3).toContain('策略');
+
+    const step4 = getTutorialStepText(2, 1, 'todo-app', 'agile');
+    expect(step4).toContain('准备完毕');
+    expect(step4).toContain('执行 Sprint');
+  });
 });
