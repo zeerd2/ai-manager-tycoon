@@ -26,15 +26,15 @@ export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props)
           </div>
         </div>
         <div className="agent-stats" style={{ opacity: 0.5 }}>
-          <div className="stat"><span>Coding</span><span>{agent.skills.coding}</span></div>
-          <div className="stat"><span>Debug</span><span>{agent.skills.debugging}</span></div>
-          <div className="stat"><span>Arch</span><span>{agent.skills.architecture}</span></div>
-          <div className="stat"><span>Create</span><span>{agent.skills.creativity}</span></div>
-          <div className="stat"><span>Speed</span><span>{agent.skills.speed}</span></div>
+          <div className="stat"><span>编程</span><span>{agent.skills.coding}</span></div>
+          <div className="stat"><span>调试</span><span>{agent.skills.debugging}</span></div>
+          <div className="stat"><span>架构</span><span>{agent.skills.architecture}</span></div>
+          <div className="stat"><span>创意</span><span>{agent.skills.creativity}</span></div>
+          <div className="stat"><span>速度</span><span>{agent.skills.speed}</span></div>
         </div>
         <div className="agent-meta" style={{ opacity: 0.5 }}>
-          <span>Eff: {eff}</span>
-          <span>Morale: {agent.morale}</span>
+          <span>效率: {eff}</span>
+          <span>士气: {agent.morale}</span>
           <span>${agent.salary}/sprint</span>
         </div>
         <p className="quirk" style={{ opacity: 0.3 }}>"{agent.quirk}"</p>
@@ -70,14 +70,14 @@ export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props)
 
       <div className="agent-bars">
         <div className="bar-container">
-          <span className="bar-label">Morale: {agent.morale}</span>
+          <span className="bar-label">士气: {agent.morale}</span>
           <div className="bar-track">
             <div className="bar-fill morale-fill" style={{ width: `${agent.morale}%` }}></div>
           </div>
         </div>
 
         <div className="bar-container">
-          <span className="bar-label">Fatigue: {agent.fatigue}</span>
+          <span className="bar-label">疲劳: {agent.fatigue}</span>
           <div className="bar-track">
             <div className="bar-fill fatigue-fill" style={{ width: `${agent.fatigue}%` }}></div>
           </div>
@@ -85,8 +85,8 @@ export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props)
       </div>
 
       <div className="agent-meta">
-        <span>Eff: {eff}</span>
-        <span>Sprints: {agent.totalSprintsWorked}</span>
+        <span>效率: {eff}</span>
+        <span>已工作: {agent.totalSprintsWorked}</span>
         <span>${agent.salary}/sprint</span>
       </div>
       {onOpenSkillTree && (
@@ -98,7 +98,7 @@ export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props)
             }}
             className="btn-skill-tree-trigger"
           >
-            Skill Tree ({agent.unlockedSkills?.length || 0})
+            技能树 ({agent.unlockedSkills?.length || 0})
           </button>
         </div>
       )}

@@ -210,31 +210,31 @@ export function ResultReport({ result, projectCompleted, projectBonus, newlyUnlo
 
       <div className="result-stats-row">
         <div className="result-stat-card">
-          <span className="result-stat-label">🚀 Progress</span>
+           <span className="result-stat-label">🚀 进度</span>
           <span className={`result-stat-value positive ${pulseClass}`}>
             +{progressDelta}
           </span>
         </div>
         <div className="result-stat-card">
-          <span className="result-stat-label">💰 Cost</span>
+           <span className="result-stat-label">💰 花费</span>
           <span className={`result-stat-value ${pulseClass}`}>
             ${result.cost}
           </span>
         </div>
         <div className="result-stat-card">
-          <span className="result-stat-label">🐛 New Bugs</span>
+           <span className="result-stat-label">🐛 新 Bug</span>
           <span className={`result-stat-value ${bugsDelta > 0 ? 'negative' : 'positive'} ${pulseClass}`}>
             {bugsDelta > 0 ? '+' : ''}{bugsDelta}
           </span>
         </div>
         <div className="result-stat-card">
-          <span className="result-stat-label">🛠️ Tech Debt</span>
+           <span className="result-stat-label">🛠️ 技术债</span>
           <span className={`result-stat-value ${techDebtDelta > 0 ? 'negative' : 'positive'} ${pulseClass}`}>
             {techDebtDelta > 0 ? '+' : ''}{techDebtDelta}
           </span>
         </div>
         <div className="result-stat-card">
-          <span className="result-stat-label">😊 Morale</span>
+           <span className="result-stat-label">😊 士气</span>
           <span className={`result-stat-value ${moraleDelta >= 0 ? 'positive' : 'negative'} ${pulseClass}`}>
             {moraleDelta > 0 ? '+' : ''}{moraleDelta}
           </span>
@@ -243,7 +243,7 @@ export function ResultReport({ result, projectCompleted, projectBonus, newlyUnlo
 
       {result.incidents.length > 0 && (
         <div className="result-incidents">
-          <h3>Incident Reports</h3>
+          <h3>事件报告</h3>
           {result.incidents.map((inc, i) => {
             const isCombo = inc.isCombo === true;
             const isRare = inc.isRare === true;

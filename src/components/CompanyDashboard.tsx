@@ -59,7 +59,7 @@ export function CompanyDashboard({ gameState }: Props) {
       </div>
 
       <div className="dashboard-item">
-        <span className="label">Sprint #</span>
+        <span className="label">回合 #</span>
         <span className="value highlight">{sprintCount}</span>
       </div>
     </div>

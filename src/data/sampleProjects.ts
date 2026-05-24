@@ -17,8 +17,8 @@ export const sampleProjects: Project[] = [
   },
   {
     id: 'chatbot',
-    name: 'Enterprise Chatbot',
-    description: 'Build a chatbot that answers HR questions. The CEO wants it done yesterday.',
+    name: '企业级聊天机器人',
+    description: '构建一个回答 HR 问题的聊天机器人。CEO 说这事昨天就该做完。',
     difficulty: 40,
     urgency: 50,
     risk: 25,
@@ -30,8 +30,8 @@ export const sampleProjects: Project[] = [
   },
   {
     id: 'dashboard',
-    name: 'Real-time Analytics Dashboard',
-    description: 'Display numbers that go up. Stakeholders love numbers that go up.',
+    name: '实时数据大屏',
+    description: '展示一堆往上涨的数字。投资人最喜欢看数字往上涨了。',
     difficulty: 35,
     urgency: 40,
     risk: 20,
@@ -45,8 +45,8 @@ export const sampleProjects: Project[] = [
   // === 普通项目 (normal) ===
   {
     id: 'autopilot',
-    name: 'AI Code Autopilot',
-    description: 'An AI that writes code for other AIs. What could possibly go wrong?',
+    name: 'AI 代码自动驾驶',
+    description: '一个帮其他 AI 写代码的 AI。这能出什么问题？',
     difficulty: 55,
     urgency: 60,
     risk: 45,
@@ -58,8 +58,8 @@ export const sampleProjects: Project[] = [
   },
   {
     id: 'recommender',
-    name: 'Content Recommendation Engine',
-    description: 'Recommend content so good that users forget to eat. Ethicists are concerned.',
+    name: '内容推荐引擎',
+    description: '推荐让用户沉迷到忘记吃饭的内容。伦理学家表示高度担忧。',
     difficulty: 60,
     urgency: 65,
     risk: 50,
@@ -125,7 +125,7 @@ export const sampleProjects: Project[] = [
   },
   {
     id: 'hr-chatbot',
-    name: 'Passive-Aggressive HR Chatbot',
+    name: '阴阳怪气 HR 机器人',
     description: '一个阴阳怪气的 HR 聊天机器人。员工满意度下降 40%，但离职率也下降了（因为没人敢走）。',
     difficulty: 80,
     urgency: 75,
@@ -140,7 +140,7 @@ export const sampleProjects: Project[] = [
   // === 地狱项目 (hell) ===
   {
     id: 'doom-scroll',
-    name: 'Doom-Scroll Recommender',
+    name: '无限刷屏推荐系统',
     description: '推荐系统让用户无限刷屏。伦理委员会集体辞职，但 DAU 翻了三倍。',
     difficulty: 88,
     urgency: 80,
@@ -153,7 +153,7 @@ export const sampleProjects: Project[] = [
   },
   {
     id: 'waifu-gen',
-    name: 'AI Waifu Generator',
+    name: 'AI 虚拟女友生成器',
     description: '生成虚拟女友。CEO 说这是"元宇宙战略"的一部分。投资人表示担忧。',
     difficulty: 85,
     urgency: 85,

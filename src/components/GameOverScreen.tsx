@@ -31,7 +31,7 @@ export function GameOverScreen({ gameState, onReset }: Props) {
   return (
     <div className="game-over-screen">
       <div className="game-over-content">
-        <h1 className="game-over-title">GAME OVER</h1>
+        <h1 className="game-over-title">游戏结束</h1>
 
         <p className="game-over-reason">{gameOverReason}</p>
 

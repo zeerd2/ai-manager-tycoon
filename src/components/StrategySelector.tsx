@@ -18,18 +18,18 @@ export function StrategySelector({ strategies, selectedId, onSelect }: Props) {
           <h4>{s.name}</h4>
           <p>{s.description}</p>
           <div className="strategy-mods">
-            <span className={s.modifiers.progressMul >= 1 ? 'positive' : 'negative'}>
-              Progress: x{s.modifiers.progressMul}
-            </span>
-            <span className={s.modifiers.bugMul <= 1 ? 'positive' : 'negative'}>
-              Bugs: x{s.modifiers.bugMul}
-            </span>
-            <span className={s.modifiers.techDebtMul <= 1 ? 'positive' : 'negative'}>
-              Debt: x{s.modifiers.techDebtMul}
-            </span>
-            <span className={s.modifiers.moraleDelta >= 0 ? 'positive' : 'negative'}>
-              Morale: {s.modifiers.moraleDelta > 0 ? '+' : ''}{s.modifiers.moraleDelta}
-            </span>
+              <span className={s.modifiers.progressMul >= 1 ? 'positive' : 'negative'}>
+                进度: x{s.modifiers.progressMul}
+              </span>
+              <span className={s.modifiers.bugMul <= 1 ? 'positive' : 'negative'}>
+                Bug: x{s.modifiers.bugMul}
+              </span>
+              <span className={s.modifiers.techDebtMul <= 1 ? 'positive' : 'negative'}>
+                技术债: x{s.modifiers.techDebtMul}
+              </span>
+              <span className={s.modifiers.moraleDelta >= 0 ? 'positive' : 'negative'}>
+                士气: {s.modifiers.moraleDelta > 0 ? '+' : ''}{s.modifiers.moraleDelta}
+              </span>
           </div>
         </div>
       ))}

@@ -4,257 +4,257 @@ export const incidentTemplates: IncidentTemplate[] = [
   {
     type: 'overengineering',
     severity: 'medium',
-    titleTemplate: '{actor} built a Death Star for a TODO app',
+    titleTemplate: '{actor} 为 TODO 应用造了个死星',
     descriptionTemplate: (name) =>
-      `${name} tried to fix a button style and accidentally introduced a plugin architecture that can scale to Mars colonies. Progress +8, tech debt +12.`,
+      `${name} 想修一个按钮样式，却不小心引入了一个能扩展到火星殖民地的插件架构。进度 +8，技术债 +12。`,
     effects: { progress: 8, bugs: 0, techDebt: 12, morale: -2 },
   },
   {
     type: 'bug',
     severity: 'high',
-    titleTemplate: '{actor} deployed straight to production',
+    titleTemplate: '{actor} 直接部署到了生产环境',
     descriptionTemplate: (name) =>
-      `${name} skipped staging because "it works on my machine." It did not, in fact, work on any other machine. Three services are now on fire.`,
+      `${name} 跳过了预发布环境，因为"在我机器上能跑"。事实上它在其他机器上都跑不了。三个服务正在燃烧。`,
     effects: { progress: -5, bugs: 8, techDebt: 3, morale: -5 },
   },
   {
     type: 'hallucination',
     severity: 'medium',
-    titleTemplate: '{actor} hallucinated a nonexistent API',
+    titleTemplate: '{actor} 幻觉了一个不存在的 API',
     descriptionTemplate: (name) =>
-      `${name} confidently integrated with an API that doesn't exist. The code compiles perfectly — it just calls into the void.`,
+      `${name} 自信地集成了一个根本不存在的 API。代码完美编译——只是调用全部落入虚空。`,
     effects: { progress: -3, bugs: 4, techDebt: 2, morale: -3 },
   },
   {
     type: 'breakthrough',
     severity: 'low',
-    titleTemplate: '{actor} had a midnight epiphany',
+    titleTemplate: '{actor} 午夜灵光乍现',
     descriptionTemplate: (name) =>
-      `${name} refactored the entire auth module at 3 AM and somehow made it 10x simpler. Nobody understands how, including ${name}.`,
+      `${name} 凌晨三点重构了整个认证模块，居然让它简洁了 10 倍。没人知道是怎么做到的，包括 ${name} 自己。`,
     effects: { progress: 15, bugs: -2, techDebt: -5, morale: 8 },
   },
   {
     type: 'burnout',
     severity: 'high',
-    titleTemplate: '{actor} entered existential crisis mode',
+    titleTemplate: '{actor} 进入存在主义危机模式',
     descriptionTemplate: (name) =>
-      `${name} started questioning the meaning of semicolons, then tabs vs spaces, then existence itself. Output dropped to zero for the day.`,
+      `${name} 开始质疑分号的意义，然后纠结空格和制表符，最后质疑存在本身。当天的产出降为零。`,
     effects: { progress: -2, bugs: 0, techDebt: 0, morale: -10 },
   },
   {
     type: 'drama',
     severity: 'low',
-    titleTemplate: '{actor} started a tabs-vs-spaces war',
+    titleTemplate: '{actor} 发起了一场制表符 vs 空格之战',
     descriptionTemplate: (name) =>
-      `${name} changed the entire project to tabs. Half the team revolted. A 47-message Slack thread ensued. No code was written for 4 hours.`,
+      `${name} 把整个项目改成了制表符。一半的团队造反了。Slack 上产生了 47 条消息的讨论串，整整 4 小时没人写代码。`,
     effects: { progress: -1, bugs: 0, techDebt: 1, morale: -4 },
   },
   {
     type: 'overengineering',
     severity: 'critical',
-    titleTemplate: '{actor} invented a new programming paradigm',
+    titleTemplate: '{actor} 发明了一种新的编程范式',
     descriptionTemplate: (name) =>
-      `${name} decided the project needs "Quantum-Reactive-Functional-OOP" and rewrote the login page using 14 design patterns. It now takes 3 seconds to load a button.`,
+      `${name} 认为该项目需要"量子反应式函数面向对象编程"，并用 14 种设计模式重写了登录页面。现在加载一个按钮需要 3 秒。`,
     effects: { progress: 3, bugs: 2, techDebt: 18, morale: -3 },
   },
   {
     type: 'bug',
     severity: 'low',
-    titleTemplate: '{actor} left a console.log in prod',
+    titleTemplate: '{actor} 在生产环境留下了 console.log',
     descriptionTemplate: (name) =>
-      `${name} shipped with console.log("TODO: remove this lol") in the payment flow. Customers are mildly amused, management is not.`,
+      `${name} 在支付流程中留下了 console.log("TODO: 删掉这个 lol") 并发版了。顾客觉得有点好笑，管理层笑不出来。`,
     effects: { progress: 0, bugs: 2, techDebt: 1, morale: -1 },
   },
   {
     type: 'breakthrough',
     severity: 'medium',
-    titleTemplate: '{actor} found a 10-year-old bug',
+    titleTemplate: '{actor} 发现了一个存在 10 年的 Bug',
     descriptionTemplate: (name) =>
-      `${name} accidentally fixed a bug that had been in the codebase since the original jQuery migration. Five downstream services suddenly started working correctly. Nobody knows why.`,
+      `${name} 意外修复了一个从 jQuery 迁移时代就存在的 Bug。五个下游服务突然开始正常工作。没人知道为什么。`,
     effects: { progress: 10, bugs: -5, techDebt: -3, morale: 10 },
   },
   {
     type: 'hallucination',
     severity: 'high',
-    titleTemplate: '{actor} cited a fictional StackOverflow answer',
+    titleTemplate: '{actor} 引用了一个虚构的 StackOverflow 回答',
     descriptionTemplate: (name) =>
-      `${name} implemented an algorithm from a StackOverflow answer that has never existed. The algorithm actually works — but for a completely different problem.`,
+      `${name} 根据一个根本不存在的 StackOverflow 回答实现了一个算法。这个算法确实能跑——但解决的是完全不同的问题。`,
     effects: { progress: -4, bugs: 6, techDebt: 4, morale: -2 },
   },
   {
     type: 'drama',
     severity: 'medium',
-    titleTemplate: '{actor} refactored someone else\'s code without asking',
+    titleTemplate: '{actor} 没打招呼就重构了别人的代码',
     descriptionTemplate: (name) =>
-      `${name} "improved" a colleague's code overnight. The colleague's tests all broke. Passive-aggressive commit messages are now the team's primary communication channel.`,
+      `${name} 连夜"改进"了同事的代码。同事的所有测试都挂了。阴阳怪气的提交信息现在成了团队的主要沟通渠道。`,
     effects: { progress: 2, bugs: 3, techDebt: -2, morale: -6 },
   },
   {
     type: 'burnout',
     severity: 'medium',
-    titleTemplate: '{actor} auto-generated 10,000 unit tests',
+    titleTemplate: '{actor} 自动生成了 10,000 个单元测试',
     descriptionTemplate: (name) =>
-      `${name} got tired of writing tests and generated 10,000 of them. All pass. None test anything meaningful. CI now takes 45 minutes.`,
+      `${name} 厌倦了写测试，于是生成了 10,000 个。全部通过。没有一个测试了有意义的内容。CI 现在需要 45 分钟。`,
     effects: { progress: 1, bugs: 0, techDebt: 8, morale: -3 },
   },
   {
     type: 'bug',
     severity: 'critical',
-    titleTemplate: '{actor} dropped the production database',
+    titleTemplate: '{actor} 删掉了生产数据库',
     descriptionTemplate: (name) =>
-      `${name} tried to run a migration script locally, but the DB_URL was still pointing to production. The backup from yesterday is suspiciously missing.`,
+      `${name} 试图在本地运行迁移脚本，但 DB_URL 仍然指向生产环境。昨天的备份可疑地消失了。`,
     effects: { progress: -5, bugs: 8, techDebt: 0, morale: -8 },
   },
   {
     type: 'bug',
     severity: 'medium',
-    titleTemplate: '{actor} created an infinite loop in billing',
+    titleTemplate: '{actor} 在计费系统中制造了死循环',
     descriptionTemplate: (name) =>
-      `${name} accidentally created an infinite retry loop for failed payments. A customer was just charged 14,000 times for a $5 subscription. Legal is calling.`,
+      `${name} 不小心为失败支付创建了无限重试循环。一位客户的 5 美元订阅被扣了 14,000 次。法务部来电了。`,
     effects: { progress: -2, bugs: 6, techDebt: 2, morale: -5 },
   },
   {
     type: 'bug',
     severity: 'low',
-    titleTemplate: '{actor} broke the CSS on Safari',
+    titleTemplate: '{actor} 搞坏了 Safari 上的 CSS',
     descriptionTemplate: (name) =>
-      `${name} used a fancy new CSS feature that only works in Chrome Canary. Every Safari user now sees a giant 400px wide "Submit" button overlapping the logo.`,
+      `${name} 使用了一个花哨的新 CSS 特性，只在 Chrome Canary 中有效。每个 Safari 用户现在都看到一个 400px 宽的"提交"按钮覆盖在 Logo 上。`,
     effects: { progress: 1, bugs: 3, techDebt: 0, morale: -1 },
   },
   {
     type: 'overengineering',
     severity: 'high',
-    titleTemplate: '{actor} replaced cron with Kubernetes',
+    titleTemplate: '{actor} 用 Kubernetes 替换了 cron 任务',
     descriptionTemplate: (name) =>
-      `${name} decided that a simple nightly script needed to be a distributed orchestrator. The AWS bill just doubled, but at least the emails are "cloud-native."`,
+      `${name} 认为一个简单的夜间脚本需要成为分布式编排器。AWS 账单翻了一倍，但至少邮件变成"云原生"了。`,
     effects: { progress: 2, bugs: 1, techDebt: 15, morale: -4 },
   },
   {
     type: 'overengineering',
     severity: 'low',
-    titleTemplate: '{actor} created a generic factory factory',
+    titleTemplate: '{actor} 创建了一个通用工厂的工厂',
     descriptionTemplate: (name) =>
-      `${name} abstracted the object creation logic so much that no one can read it anymore. You now need an AbstractFactoryProviderBuilder just to get a User object.`,
+      `${name} 把对象创建逻辑抽象得太深，以至于没人能读懂了。现在你需要一个 AbstractFactoryProviderBuilder 才能拿到一个 User 对象。`,
     effects: { progress: 3, bugs: 0, techDebt: 8, morale: -2 },
   },
   {
     type: 'overengineering',
     severity: 'medium',
-    titleTemplate: '{actor} implemented blockchain for settings',
+    titleTemplate: '{actor} 用区块链实现设置功能',
     descriptionTemplate: (name) =>
-      `${name} put dark mode preferences on a private blockchain to "ensure immutability." It takes 15 seconds to toggle the theme, but the cryptography is beautiful.`,
+      `${name} 把深色模式偏好放在私有区块链上以"保证不可篡改"。切换主题需要 15 秒，但加密算法很漂亮。`,
     effects: { progress: 1, bugs: 2, techDebt: 10, morale: -2 },
   },
   {
     type: 'hallucination',
     severity: 'low',
-    titleTemplate: '{actor} used a made-up CSS framework',
+    titleTemplate: '{actor} 使用了一个虚构的 CSS 框架',
     descriptionTemplate: (name) =>
-      `${name} styled the entire dashboard using "Tailwind-Prime-X", a framework that only exists in their training data. All divs are now entirely transparent and unclickable.`,
+      `${name} 用"Tailwind-Prime-X"样式化了整个仪表盘，这个框架只存在于它的训练数据中。所有 div 现在完全透明且不可点击。`,
     effects: { progress: -1, bugs: 3, techDebt: 1, morale: 0 },
   },
   {
     type: 'hallucination',
     severity: 'critical',
-    titleTemplate: '{actor} invented a new JavaScript method',
+    titleTemplate: '{actor} 发明了一个新的 JavaScript 方法',
     descriptionTemplate: (name) =>
-      `${name} confidently used \`Array.prototype.magicallySort()\`. The code somehow passed the linter but violently crashed the V8 engine in production.`,
+      `${name} 自信地使用了 \`Array.prototype.magicallySort()\`。代码不知何故通过了 linter，但在生产中严重崩溃了 V8 引擎。`,
     effects: { progress: -3, bugs: 7, techDebt: 2, morale: -4 },
   },
   {
     type: 'hallucination',
     severity: 'medium',
-    titleTemplate: '{actor} imported from the 5th dimension',
+    titleTemplate: '{actor} 从第五维度导入了代码',
     descriptionTemplate: (name) =>
-      `${name} added an import statement for a package named \`@angular/quantum-router\`. npm spent 45 minutes trying to resolve it before the CI server spontaneously rebooted.`,
+      `${name} 添加了一个名为 \`@angular/quantum-router\` 包的 import 语句。npm 花了 45 分钟试图解析它，然后 CI 服务器自动重启了。`,
     effects: { progress: -2, bugs: 4, techDebt: 1, morale: -1 },
   },
   {
     type: 'hallucination',
     severity: 'high',
-    titleTemplate: '{actor} wrote a SQL query targeting the file system',
+    titleTemplate: '{actor} 写了一条针对文件系统的 SQL 查询',
     descriptionTemplate: (name) =>
-      `${name} attempted to use \`SELECT * FROM /var/log\` in the database layer. The ORM was so confused it actually tried to execute it against a real table.`,
+      `${name} 试图在数据库层使用 \`SELECT * FROM /var/log\`。ORM 困惑到真去尝试对一个真实表执行它。`,
     effects: { progress: -2, bugs: 5, techDebt: 3, morale: -2 },
   },
   {
     type: 'burnout',
     severity: 'critical',
-    titleTemplate: '{actor} rewrote everything in Rust out of spite',
+    titleTemplate: '{actor} 一气之下把所有代码用 Rust 重写了',
     descriptionTemplate: (name) =>
-      `${name} snapped after a null reference exception and spent 48 sleepless hours rewriting the Node backend in Rust. It's blazing fast, but nobody else can maintain it.`,
+      `${name} 在遇到空引用异常后崩溃了，花了 48 小时不眠不休用 Rust 重写了 Node 后端。速度快得飞起，但没人能维护它。`,
     effects: { progress: 4, bugs: 1, techDebt: 12, morale: -10 },
   },
   {
     type: 'burnout',
     severity: 'low',
-    titleTemplate: '{actor} took a 3-hour coffee break',
+    titleTemplate: '{actor} 休息了 3 小时的咖啡时间',
     descriptionTemplate: (name) =>
-      `${name} stared at a regex pattern for 10 minutes, sighed loudly, and walked out the door. They were found three hours later feeding ducks in the park, refusing to speak.`,
+      `${name} 盯着一个正则表达式看了 10 分钟，大声叹了口气，走出门去。三小时后被发现在公园喂鸭子，拒绝说话。`,
     effects: { progress: -3, bugs: 0, techDebt: 0, morale: -5 },
   },
   {
     type: 'burnout',
     severity: 'medium',
-    titleTemplate: '{actor} automated their own job terrifyingly',
+    titleTemplate: '{actor} 可怕地自动化了自己的工作',
     descriptionTemplate: (name) =>
-      `${name} refused to write another CRUD endpoint and automated it with an unholy bash script. It works flawlessly, but reading its source code causes migraines.`,
+      `${name} 拒绝再写一个 CRUD 端点，用一段邪恶的 bash 脚本将其自动化了。它完美运行，但阅读其源代码会引发偏头痛。`,
     effects: { progress: 5, bugs: 2, techDebt: 6, morale: -6 },
   },
   {
     type: 'breakthrough',
     severity: 'high',
-    titleTemplate: '{actor} deleted 10,000 lines of dead code',
+    titleTemplate: '{actor} 删除了 10,000 行死代码',
     descriptionTemplate: (name) =>
-      `${name} went on a rampage and removed three deprecated systems nobody had the courage to touch. The bundle size dropped by 40% and the build is finally fast.`,
+      `${name} 暴走了一通，移除了三个没人敢碰的废弃系统。打包体积减少了 40%，构建终于变快了。`,
     effects: { progress: 12, bugs: -3, techDebt: -15, morale: 8 },
   },
   {
     type: 'breakthrough',
     severity: 'critical',
-    titleTemplate: '{actor} optimized a query by 9000%',
+    titleTemplate: '{actor} 把查询优化了 9000%',
     descriptionTemplate: (name) =>
-      `${name} casually added a single missing index to the main Postgres table. The server CPU usage plummeted from 99% to 2%. The DevOps team is weeping tears of joy.`,
+      `${name} 随手给主 Postgres 表加了一个缺失的索引。服务器 CPU 使用率从 99% 骤降到 2%。运维团队喜极而泣。`,
     effects: { progress: 15, bugs: -1, techDebt: -5, morale: 10 },
   },
   {
     type: 'breakthrough',
     severity: 'low',
-    titleTemplate: '{actor} finally centered a div',
+    titleTemplate: '{actor} 终于把一个 div 居中了',
     descriptionTemplate: (name) =>
-      `${name} spent three days battling flexbox, grid, and absolute positioning before successfully centering the login modal. The team threw a small, deeply emotional party.`,
+      `${name} 花了三天时间与 flexbox、grid 和绝对定位搏斗，终于成功将登录弹窗居中。团队开了一个小型但感人至深的派对。`,
     effects: { progress: 2, bugs: 0, techDebt: -1, morale: 5 },
   },
   {
     type: 'drama',
     severity: 'critical',
-    titleTemplate: '{actor} force-pushed over main',
+    titleTemplate: '{actor} force-push 覆盖了主分支',
     descriptionTemplate: (name) =>
-      `${name} tried to "clean up the git history" and accidentally ran \`git push -f\` over the main branch. A week of team progress is now floating somewhere in the reflog void.`,
+      `${name} 试图"清理 git 历史记录"，不小心对主分支执行了 \`git push -f\`。团队一周的进度现在漂浮在 reflog 虚空的某个角落。`,
     effects: { progress: -5, bugs: 2, techDebt: 0, morale: -10 },
   },
   {
     type: 'drama',
     severity: 'high',
-    titleTemplate: '{actor} triggered the VP of Engineering',
+    titleTemplate: '{actor} 惹怒了工程副总裁',
     descriptionTemplate: (name) =>
-      `${name} casually mentioned in an all-hands meeting that "Agile is basically a cult." Management panicked and scheduled five new alignment meetings.`,
+      `${name} 在全员大会上随口说了一句"敏捷开发基本上就是邪教"。管理层陷入恐慌，紧急安排了五场新的对齐会议。`,
     effects: { progress: -4, bugs: 0, techDebt: 0, morale: -8 },
   },
   {
     type: 'drama',
     severity: 'low',
-    titleTemplate: '{actor} stole the last LaCroix',
+    titleTemplate: '{actor} 偷喝了最后一瓶 LaCroix',
     descriptionTemplate: (name) =>
-      `${name} drank the last Pamplemousse LaCroix and left the empty can on the desk. The frontend lead is now petty and refusing to review any of their PRs.`,
+      `${name} 喝掉了最后一瓶西柚味 LaCroix，把空罐子留在桌上。前端组长现在很小心眼，拒绝 review 他们的任何 PR。`,
     effects: { progress: 0, bugs: 0, techDebt: 0, morale: -3 },
   },
   {
     type: 'drama',
     severity: 'medium',
-    titleTemplate: '{actor} merged a PR with 400 unresolved comments',
+    titleTemplate: '{actor} 合并了一个有 400 条未解决评论的 PR',
     descriptionTemplate: (name) =>
-      `${name} got tired of the bikeshedding over variable names and just hit 'Squash and Merge'. The PR comments section is now an active digital war zone.`,
+      `${name} 厌倦了对变量名的无休止争论，直接按下了"Squash and Merge"。PR 评论区现在成了一个活跃的数字战场。`,
     effects: { progress: 4, bugs: 2, techDebt: 5, morale: -7 },
   },
   {

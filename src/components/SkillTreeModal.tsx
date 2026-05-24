@@ -18,11 +18,11 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({ agent, companyMo
       <div className="save-manager-overlay" style={{ zIndex: 1100 }}>
         <div className="save-manager-modal" style={{ maxWidth: '400px', padding: '24px' }}>
           <div className="save-manager-header" style={{ padding: '0 0 16px 0', marginBottom: '16px' }}>
-            <h2>{agent.name}'s Skill Tree</h2>
+            <h2>{agent.name} 的技能树</h2>
             <button onClick={onClose} className="close-btn">✕</button>
           </div>
-          <p style={{ color: 'var(--text-dim)', marginBottom: '20px' }}>No skill tree available for {agent.role}.</p>
-          <button onClick={onClose} className="btn-reset" style={{ width: '100%' }}>Close</button>
+          <p style={{ color: 'var(--text-dim)', marginBottom: '20px' }}>{agent.role} 没有可用的技能树。</p>
+          <button onClick={onClose} className="btn-reset" style={{ width: '100%' }}>关闭</button>
         </div>
       </div>
     );
@@ -37,14 +37,14 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({ agent, companyMo
       <div className="save-manager-modal" style={{ maxWidth: '750px' }}>
         <div className="save-manager-header">
           <div>
-            <h2>{agent.name}'s Skill Tree</h2>
+            <h2>{agent.name} 的技能树</h2>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-              Role: <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{agent.role}</span>
+              角色: <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{agent.role}</span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--positive)' }}>
-              Funds: ${companyMoney}
+              资金: ${companyMoney}
             </div>
             <button onClick={onClose} className="close-btn">✕</button>
           </div>
@@ -80,7 +80,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({ agent, companyMo
 
                   {skill.prerequisites.length > 0 && (
                     <div className="skill-requirements">
-                      <span>Prereq: </span>
+                      <span>前置: </span>
                       <span className={skill.prerequisites.every(p => agent.unlockedSkills?.includes(p)) ? 'met' : 'unmet'}>
                         {reqNames}
                       </span>
@@ -93,7 +93,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({ agent, companyMo
                       disabled={!canUnlock}
                       className="skill-unlock-btn"
                     >
-                      {companyMoney >= skill.cost ? 'Unlock Skill' : 'Insufficient Funds'}
+                      {companyMoney >= skill.cost ? '解锁技能' : '资金不足'}
                     </button>
                   )}
                 </div>

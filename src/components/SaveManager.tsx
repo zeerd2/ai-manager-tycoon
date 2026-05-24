@@ -274,7 +274,7 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
                         <>
                           <div className="slot-title">{metadata.name}</div>
                           <div className="slot-meta">
-                            <span>Sprints: <strong>{metadata.sprintCount}</strong></span>
+                            <span>Sprint: <strong>{metadata.sprintCount}</strong></span>
                             <span>资金: <strong>${metadata.funds}</strong></span>
                             <span>已完成项目: <strong>{metadata.completedProjectsCount}</strong></span>
                           </div>
@@ -353,7 +353,7 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
                           <>
                             <div className="slot-title">自动保存存档</div>
                             <div className="slot-meta">
-                              <span>Sprints: <strong>{autoMetadata.sprintCount}</strong></span>
+                              <span>Sprint: <strong>{autoMetadata.sprintCount}</strong></span>
                               <span>资金: <strong>${autoMetadata.funds}</strong></span>
                               <span>已完成项目: <strong>{autoMetadata.completedProjectsCount}</strong></span>
                             </div>

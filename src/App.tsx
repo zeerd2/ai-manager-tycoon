@@ -362,7 +362,7 @@ export default function App() {
 
       <header className="app-header">
         <h1>AI Manager Tycoon</h1>
-        <p className="subtitle">Manage your AI engineering team. Try not to ship too many bugs.</p>
+        <p className="subtitle">管理你的 AI 工程团队。尽量别发布太多 Bug。</p>
       </header>
 
       {/* 2. Company Dashboard */}
@@ -387,11 +387,11 @@ export default function App() {
           <button className="btn-saves-trigger" onClick={() => setIsSaveManagerOpen(true)}>
             📁 存档管理
           </button>
-          <button className="btn-reset" onClick={handleReset}>Reset Game</button>
+          <button className="btn-reset" onClick={handleReset}>重置游戏</button>
         </div>
 
         <section className="panel team-panel">
-          <h2>Team <span className="count">({selectedAgentIds.size} selected)</span></h2>
+          <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
           <div className="card-grid">
             {gameState.agents.map(a => (
               <AgentCard
@@ -407,7 +407,7 @@ export default function App() {
         </section>
 
         <section className="panel project-panel">
-          <h2>Projects</h2>
+          <h2>项目</h2>
           <div className="card-grid">
             {gameState.projects.map(p => {
               const isCompleted = gameState.completedProjectIds.includes(p.id);
@@ -424,7 +424,7 @@ export default function App() {
         </section>
 
         <section className="panel strategy-panel">
-          <h2>Strategy</h2>
+          <h2>策略</h2>
           <StrategySelector
             strategies={strategies}
             selectedId={selectedStrategyId}
@@ -438,7 +438,7 @@ export default function App() {
             disabled={!canRun}
             onClick={handleRunSprint}
           >
-            Run Sprint
+            执行 Sprint
           </button>
         </div>
 

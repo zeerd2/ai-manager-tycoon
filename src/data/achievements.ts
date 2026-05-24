@@ -3,7 +3,7 @@ import type { Achievement } from '../domain/achievement';
 export const achievements: Achievement[] = [
   {
     id: 'first-blood',
-    name: 'First Blood',
+    name: '一血',
     emoji: '🎯',
     description: '完成第一个项目',
     conditionType: 'first_project_completed',
@@ -12,7 +12,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'bug-factory',
-    name: 'Bug Factory',
+    name: 'Bug 批发商',
     emoji: '🏭',
     description: '单轮产生 20+ bugs',
     conditionType: 'single_sprint_20_bugs',
@@ -21,7 +21,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'under-budget',
-    name: 'Under Budget',
+    name: '勤俭持家',
     emoji: '💰',
     description: '完成项目时剩余资金超过 80%',
     conditionType: 'complete_project_80_percent_funds',
@@ -30,7 +30,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'team-wipe',
-    name: 'Team Wipe',
+    name: '全员自闭',
     emoji: '💀',
     description: '所有员工同时 morale 为 0',
     conditionType: 'all_agents_zero_morale',
@@ -39,7 +39,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: '10x-company',
-    name: '10x Company',
+    name: '10x 神级公司',
     emoji: '🚀',
     description: '一局游戏内完成 3 个以上项目',
     conditionType: 'three_projects_one_game',
@@ -48,7 +48,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'speed-run',
-    name: 'Speed Run',
+    name: '速通狂魔',
     emoji: '⚡',
     description: '5 轮内完成一个项目',
     conditionType: 'project_in_5_sprints',
@@ -57,7 +57,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'iron-man',
-    name: 'Iron Man',
+    name: '钢铁之躯',
     emoji: '🦾',
     description: '让一个员工连续参与 6 轮不休息',
     conditionType: 'agent_6_consecutive',
@@ -66,7 +66,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'penny-pincher',
-    name: 'Penny Pincher',
+    name: '葛朗台',
     emoji: '🪙',
     description: '只用最便宜的员工完成一个项目',
     conditionType: 'cheapest_agent_only',
