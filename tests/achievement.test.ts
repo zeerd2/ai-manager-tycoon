@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { checkAchievement } from '../src/domain/achievement';
+import { checkAchievement, getAchievementProgress } from '../src/domain/achievement';
 import { achievements } from '../src/data/achievements';
 import type { AchievementContext } from '../src/domain/achievement';
+import type { GameState } from '../src/domain/gameState';
 
 const makeContext = (overrides: Partial<AchievementContext> = {}): AchievementContext => ({
   completedProjectIds: [],
@@ -235,5 +236,243 @@ describe('checkAchievement', () => {
       });
       expect(checkAchievement(ach, ctx)).toBe(false);
     });
+  });
+
+  describe('max-skill', () => {
+    const ach = getAchievement('max-skill');
+
+    it('returns true if any agent has all skills >= 100', () => {
+      const ctx = makeContext({
+        agents: [
+          {
+            morale: 80,
+            locked: false,
+            skills: { coding: 100, debugging: 100, architecture: 100, creativity: 100, speed: 100 },
+          },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if no agent has all skills >= 100', () => {
+      const ctx = makeContext({
+        agents: [
+          {
+            morale: 80,
+            locked: false,
+            skills: { coding: 100, debugging: 99, architecture: 100, creativity: 100, speed: 100 },
+          },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('big-team', () => {
+    const ach = getAchievement('big-team');
+
+    it('returns true if 6 or more agents are unlocked', () => {
+      const ctx = makeContext({
+        agents: [
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if less than 6 agents are unlocked', () => {
+      const ctx = makeContext({
+        agents: [
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: true },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('talent-scout', () => {
+    const ach = getAchievement('talent-scout');
+
+    it('returns true if any agent has sum of skills >= 450', () => {
+      const ctx = makeContext({
+        agents: [
+          {
+            morale: 80,
+            locked: false,
+            skills: { coding: 90, debugging: 90, architecture: 90, creativity: 90, speed: 90 }, // sum = 450
+          },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if no agent has sum of skills >= 450', () => {
+      const ctx = makeContext({
+        agents: [
+          {
+            morale: 80,
+            locked: false,
+            skills: { coding: 80, debugging: 80, architecture: 80, creativity: 80, speed: 80 }, // sum = 400
+          },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('legendary-project', () => {
+    const ach = getAchievement('legendary-project');
+
+    it('returns true if completedProjectIds includes autopilot', () => {
+      const ctx = makeContext({ completedProjectIds: ['chatbot', 'autopilot'] });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if completedProjectIds does not include autopilot', () => {
+      const ctx = makeContext({ completedProjectIds: ['chatbot'] });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('financial-freedom', () => {
+    const ach = getAchievement('financial-freedom');
+
+    it('returns true if funds is 8000 or more', () => {
+      const ctx = makeContext({ fundsRemaining: 8000 });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if funds is less than 8000', () => {
+      const ctx = makeContext({ fundsRemaining: 7999 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('big-spender', () => {
+    const ach = getAchievement('big-spender');
+
+    it('returns true if total spent is 10000 or more', () => {
+      const ctx = makeContext({ totalFundsSpent: 10000 });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if total spent is less than 10000', () => {
+      const ctx = makeContext({ totalFundsSpent: 9999 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('survivor', () => {
+    const ach = getAchievement('survivor');
+
+    it('returns true if completed project and at least one sprint had >= 15 bugs', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['chatbot'],
+        history: [{ bugsDelta: 10, progressDelta: 20 }, { bugsDelta: 15, progressDelta: 5 }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if no project completed or no sprint had >= 15 bugs', () => {
+      const ctx1 = makeContext({
+        completedProjectIds: [],
+        history: [{ bugsDelta: 15, progressDelta: 20 }],
+      });
+      expect(checkAchievement(ach, ctx1)).toBe(false);
+
+      const ctx2 = makeContext({
+        completedProjectIds: ['chatbot'],
+        history: [{ bugsDelta: 14, progressDelta: 20 }],
+      });
+      expect(checkAchievement(ach, ctx2)).toBe(false);
+    });
+  });
+
+  describe('murphy-law', () => {
+    const ach = getAchievement('murphy-law');
+
+    it('returns true if total bugs is 50 or more', () => {
+      const ctx = makeContext({
+        history: [{ bugsDelta: 30, progressDelta: 10 }, { bugsDelta: 20, progressDelta: 10 }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false if total bugs is less than 50', () => {
+      const ctx = makeContext({
+        history: [{ bugsDelta: 30, progressDelta: 10 }, { bugsDelta: 19, progressDelta: 10 }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+});
+
+describe('getAchievementProgress', () => {
+  const getAchievement = (id: string) => achievements.find(a => a.id === id)!;
+  const makeGameState = (overrides: Partial<GameState> = {}): GameState => ({
+    funds: 5000,
+    sprintCount: 0,
+    agents: [],
+    projects: [],
+    completedProjectIds: [],
+    unlockedAchievementIds: [],
+    gameOver: false,
+    history: [],
+    ...overrides,
+  });
+
+  it('tracks progress for first-blood', () => {
+    const ach = getAchievement('first-blood');
+    const state1 = makeGameState({ completedProjectIds: [] });
+    expect(getAchievementProgress(ach, state1)).toEqual({ current: 0, target: 1, display: '0 / 1' });
+
+    const state2 = makeGameState({ completedProjectIds: ['chatbot'] });
+    expect(getAchievementProgress(ach, state2)).toEqual({ current: 1, target: 1, display: '1 / 1' });
+  });
+
+  it('tracks progress for bug-factory', () => {
+    const ach = getAchievement('bug-factory');
+    const state1 = makeGameState({
+      history: [
+        {
+          sprintNumber: 1,
+          project: {} as any,
+          agents: [],
+          strategy: {} as any,
+          progressDelta: 10,
+          bugsDelta: 12,
+          techDebtDelta: 5,
+          moraleDelta: 0,
+          cost: 100,
+          incidents: [],
+          summary: '',
+        },
+      ],
+    });
+    expect(getAchievementProgress(ach, state1)).toEqual({ current: 12, target: 20, display: '12 / 20' });
+  });
+
+  it('tracks progress for big-team', () => {
+    const ach = getAchievement('big-team');
+    const state = makeGameState({
+      agents: [
+        { id: '1', locked: false, skills: {} } as any,
+        { id: '2', locked: true, skills: {} } as any,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 1, target: 6, display: '1 / 6' });
+  });
+
+  it('tracks progress for financial-freedom', () => {
+    const ach = getAchievement('financial-freedom');
+    const state = makeGameState({ funds: 6500 });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 6500, target: 8000, display: '6500 / 8000' });
   });
 });

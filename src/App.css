@@ -1372,3 +1372,121 @@ body {
   font-size: 1.2rem;
 }
 
+/* Achievements System Category Tabs & Rarity & Progress */
+.achievement-panel-container h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.category-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.category-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-h);
+}
+
+.category-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.achievement-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.achievement-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.rarity-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.rarity-common {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rarity-rare {
+  background: rgba(0, 136, 255, 0.15);
+  color: #0088ff;
+  border: 1px solid rgba(0, 136, 255, 0.3);
+}
+
+.rarity-epic {
+  background: rgba(187, 0, 255, 0.15);
+  color: #bb00ff;
+  border: 1px solid rgba(187, 0, 255, 0.3);
+}
+
+.rarity-legendary {
+  background: rgba(255, 170, 0, 0.15);
+  color: #ffa500;
+  border: 1px solid rgba(255, 170, 0, 0.3);
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.2);
+}
+
+.achievement-progress-container {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.achievement-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+}
+
+.achievement-progress-bar {
+  height: 4px;
+  background: #080c18;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.achievement-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.achievement-card.unlocked .achievement-progress-fill {
+  background: var(--positive);
+}
+

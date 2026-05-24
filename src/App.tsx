@@ -109,6 +109,7 @@ export default function App() {
         locked: a.locked,
         salary: a.salary,
         consecutiveSprints: a.consecutiveSprints,
+        skills: a.skills,
       })),
       sprintCount: newState.sprintCount,
       projectsInOneGame: newState.completedProjectIds.length,
@@ -257,7 +258,7 @@ export default function App() {
         </section>
 
         {/* 5. Achievement Panel */}
-        <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} />
+        <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
       </main>
     </div>
   );
