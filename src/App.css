@@ -3017,7 +3017,7 @@ body {
     background: var(--bg);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
   }
 
   body.modal-open {
@@ -3262,5 +3262,334 @@ body {
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--accent);
+  }
+
+  /* Mobile Selection Lists and Cards */
+  .mobile-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  /* Mobile Agent Card */
+  .mobile-agent-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    user-select: none;
+  }
+
+  .mobile-agent-card:active {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .mobile-agent-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+    background: rgba(0, 240, 255, 0.02);
+  }
+
+  .mobile-agent-card.locked {
+    opacity: 0.6;
+    border-style: dashed;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.01);
+  }
+
+  .mobile-agent-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .avatar-selection-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobile-agent-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .mobile-agent-header .avatar {
+    font-size: 1.5rem;
+  }
+
+  .mobile-agent-header .info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-agent-header .name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .mobile-agent-header .name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-h);
+    margin: 0;
+  }
+
+  .mobile-agent-header .overwork-badge {
+    font-size: 0.65rem;
+    background: rgba(255, 75, 75, 0.15);
+    border: 1px solid var(--negative);
+    color: var(--negative);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+
+  .mobile-agent-header .role {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+
+  .btn-skill-tree-trigger-mobile {
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-skill-tree-trigger-mobile:active {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .mobile-agent-header .lock-badge {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .mobile-agent-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .mobile-agent-stats-grid .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .mobile-agent-stats-grid .stat-item .label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+  }
+
+  .mobile-agent-stats-grid .stat-item .value {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-h);
+  }
+
+  .text-accent {
+    color: var(--accent) !important;
+  }
+  .text-negative {
+    color: var(--negative) !important;
+  }
+  .text-positive {
+    color: var(--positive) !important;
+  }
+
+  .mobile-agent-skills-mini {
+    display: flex;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    padding-left: 2px;
+  }
+
+  /* Mobile Project Card */
+  .mobile-project-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .mobile-project-card:active {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .mobile-project-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+    background: rgba(0, 240, 255, 0.02);
+  }
+
+  .mobile-project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mobile-project-header .difficulty-badge {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .mobile-project-header .reward-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--warning);
+  }
+
+  .mobile-project-card .project-title {
+    font-size: 0.95rem;
+    color: var(--text-h);
+    margin: 0;
+  }
+
+  .mobile-project-card .project-desc {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .mobile-project-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    padding-top: 6px;
+    font-size: 0.7rem;
+  }
+
+  .mobile-project-stats .stat-row {
+    display: flex;
+    gap: 12px;
+    color: var(--text-dim);
+  }
+
+  .mobile-project-stats .health-row {
+    display: flex;
+    gap: 12px;
+    font-weight: 600;
+  }
+
+  .mobile-project-stats .health-row .bugs {
+    color: var(--negative);
+  }
+
+  .mobile-project-stats .health-row .debt {
+    color: var(--warning);
+  }
+
+  /* Mobile Strategy Selector & Cards */
+  .mobile-strategy-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .mobile-strategy-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .mobile-strategy-card:active {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .mobile-strategy-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+    background: rgba(0, 240, 255, 0.02);
+  }
+
+  .mobile-strategy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mobile-strategy-header h4 {
+    font-size: 0.95rem;
+    color: var(--text-h);
+    margin: 0;
+  }
+
+  .mobile-strategy-radio {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .mobile-strategy-card .strategy-desc {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .mobile-strategy-mods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  .mobile-strategy-mods span.positive {
+    color: var(--positive);
+  }
+
+  .mobile-strategy-mods span.negative {
+    color: var(--negative);
   }
 }

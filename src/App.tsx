@@ -37,9 +37,12 @@ import { TeamEventDialog } from './components/TeamEventDialog';
 
 // Components
 import { AgentCard } from './components/AgentCard';
+import { MobileAgentCard } from './components/MobileAgentCard';
 import { SkillTreeModal } from './components/SkillTreeModal';
 import { ProjectCard } from './components/ProjectCard';
+import { MobileProjectCard } from './components/MobileProjectCard';
 import { StrategySelector } from './components/StrategySelector';
+import { MobileStrategySelector } from './components/MobileStrategySelector';
 import { ResultReport } from './components/ResultReport';
 import { HistoryPanel } from './components/HistoryPanel';
 import { CompanyDashboard } from './components/CompanyDashboard';
@@ -687,9 +690,9 @@ export default function App() {
         isOpen={activeMobilePanel === 'team'}
         onClose={() => setActiveMobilePanel(null)}
       >
-        <div className="card-grid">
+        <div className="mobile-list-container">
           {gameState.agents.map(a => (
-            <AgentCard
+            <MobileAgentCard
               key={a.id}
               agent={a}
               selected={selectedAgentIds.has(a.id)}
@@ -706,9 +709,9 @@ export default function App() {
         isOpen={activeMobilePanel === 'project'}
         onClose={() => setActiveMobilePanel(null)}
       >
-        <div className="card-grid">
+        <div className="mobile-list-container">
           {gameState.projects.map(p => (
-            <ProjectCard
+            <MobileProjectCard
               key={p.id}
               project={p}
               selected={selectedProjectId === p.id}
@@ -723,7 +726,7 @@ export default function App() {
         isOpen={activeMobilePanel === 'strategy'}
         onClose={() => setActiveMobilePanel(null)}
       >
-        <StrategySelector
+        <MobileStrategySelector
           strategies={strategies}
           selectedId={selectedStrategyId}
           onSelect={handleSelectStrategyMobile}
