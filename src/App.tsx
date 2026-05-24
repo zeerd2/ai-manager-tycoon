@@ -48,6 +48,7 @@ import { AchievementToast } from './components/AchievementToast';
 import { AchievementPanel } from './components/AchievementPanel';
 import { RelationsNetwork } from './components/RelationsNetwork';
 import { SaveManager } from './components/SaveManager';
+import { TutorialGuide } from './components/TutorialGuide';
 
 import './App.css';
 
@@ -395,6 +396,13 @@ export default function App() {
           </button>
           <button className="btn-reset" onClick={handleReset}>重置游戏</button>
         </div>
+
+        <TutorialGuide
+          sprintCount={gameState.sprintCount}
+          selectedAgentCount={selectedAgentIds.size}
+          selectedProjectId={selectedProjectId}
+          selectedStrategyId={selectedStrategyId}
+        />
 
         <section className="panel team-panel">
           <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>

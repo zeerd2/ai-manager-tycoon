@@ -34,7 +34,7 @@ export const RelationsNetwork = memo(function RelationsNetwork({ agents, relatio
 
   return (
     <div className="relations-network">
-      <h3>团队关系网络</h3>
+      <h3 title="关系度会在同一组的工程师成功完成项目时上升（+5）。高关系度的工程师一起工作能获得协作进度产出加成！">团队关系网络 💡</h3>
       <div className="relations-grid">
         {unlockedAgents.map((agentA, i) => (
           unlockedAgents.slice(i + 1).map(agentB => {
