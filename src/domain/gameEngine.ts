@@ -15,6 +15,7 @@ export function createInitialGameState(agents: Agent[], projects: Project[]): Ga
     unlockedAchievementIds: [],
     gameOver: false,
     history: [],
+    relations: [],
   };
 }
 
