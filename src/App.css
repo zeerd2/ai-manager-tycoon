@@ -2530,7 +2530,9 @@ body {
   }
 
   .save-manager-header {
-    padding: 14px 16px !important;
+    padding: 12px 14px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
   }
 
   .save-manager-header h2 {
@@ -2539,6 +2541,17 @@ body {
 
   .save-manager-body {
     padding: 12px !important;
+  }
+
+  .close-btn {
+    font-size: 1.6rem !important;
+    padding: 8px !important;
+    cursor: pointer;
+  }
+
+  .tab-btn {
+    font-size: 0.8rem !important;
+    padding: 10px 6px !important;
   }
 
   /* Skill Tree responsive layout */
@@ -2611,8 +2624,15 @@ body {
   }
 
   /* Team Event Dialog */
+  .event-dialog-overlay {
+    padding: 10px !important;
+  }
+
   .event-dialog {
     padding: 16px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    width: 95% !important;
   }
 
   .event-dialog h2 {
@@ -2714,8 +2734,16 @@ body {
   }
 
   /* Game Over Screen */
+  .game-over-screen {
+    padding: 10px !important;
+    overflow-y: auto !important;
+  }
+
   .game-over-content {
     padding: 20px !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    width: 95% !important;
   }
 
   .game-over-title {
@@ -2744,6 +2772,55 @@ body {
 
   .game-over-achievements-list {
     grid-template-columns: 1fr !important;
+  }
+
+  /* Confirmation overlay */
+  .confirm-modal-overlay {
+    padding: 10px !important;
+  }
+
+  .confirm-modal {
+    padding: 16px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    width: 95% !important;
+  }
+
+  .confirm-btn {
+    padding: 10px 20px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Save Slots / Skill Tree Buttons & Modals */
+  .btn-action {
+    padding: 10px 18px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .skill-unlock-btn {
+    padding: 10px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Tutorial Guide */
+  .tutorial-guide-banner {
+    padding: 12px 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .tutorial-guide-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .tutorial-close-btn {
+    font-size: 0.8rem !important;
+    padding: 6px 10px !important;
+  }
+
+  /* History Panel */
+  .history-stats {
+    gap: 8px 12px !important;
   }
 
   /* Relations Network */
