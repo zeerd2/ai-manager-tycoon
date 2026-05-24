@@ -16,6 +16,15 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
@@ -24,6 +33,7 @@ body {
 }
 
 .app {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -2368,12 +2378,28 @@ body {
   50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 240, 255, 0.8); }
 }
 
-/* ==========================================
-   Mobile Responsive Adjustments
-   ========================================== */
-@media (max-width: 768px) {
+.mobile-section-nav {
+  display: none;
+}
+
+.result-panel-empty {
+  display: none;
+}
+
+.mobile-result-empty {
+  background: rgba(18, 22, 43, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-dim);
+  padding: 18px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
   .app {
+    max-width: 100%;
     padding: 12px;
+    overflow-x: hidden;
   }
 
   .app-header {
@@ -2382,30 +2408,38 @@ body {
   }
 
   .app-header h1 {
-    font-size: 1.5rem;
+    font-size: clamp(1.55rem, 8vw, 2rem);
   }
 
   .subtitle {
-    font-size: 0.85rem;
+    font-size: 0.88rem;
   }
 
   .header-actions {
+    justify-content: stretch !important;
+    flex-direction: column;
+    gap: 8px !important;
     flex-wrap: wrap;
-    gap: 10px;
+  }
+
+  .btn-saves-trigger,
+  .btn-reset,
+  .btn-run {
+    width: 100% !important;
+    min-height: 44px;
     justify-content: center;
   }
 
   /* Company Dashboard Grid Layout */
   .company-dashboard {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-    padding: 10px !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 12px !important;
     margin-bottom: 16px !important;
   }
 
   .funds-container {
-    grid-column: span 2 !important;
     width: 100% !important;
     min-width: 0 !important;
   }
@@ -2419,10 +2453,80 @@ body {
     white-space: nowrap !important;
   }
 
+  .mobile-section-nav {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-bottom: 16px;
+    padding: 8px 0;
+    background: linear-gradient(180deg, var(--bg) 70%, rgba(10, 14, 26, 0));
+  }
+
+  .mobile-section-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mobile-section-tab {
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(18, 22, 43, 0.92);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .mobile-section-tab.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-selected);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.22);
+  }
+
+  .mobile-hidden {
+    display: none;
+  }
+
+  .result-panel-empty {
+    display: block;
+  }
+
+  .panel {
+    margin-bottom: 16px;
+    min-width: 0;
+  }
+
   /* Grid Layout to Single Column */
-  .card-grid {
+  .card-grid,
+  .strategy-selector,
+  .skill-tree-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
+  }
+
+  .agent-card,
+  .project-card,
+  .strategy-card,
+  .result-report,
+  .history-item,
+  .relations-network {
+    min-width: 0;
+  }
+
+  .agent-header,
+  .project-header,
+  .history-header,
+  .result-title-row,
+  .relation-item {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 6px !important;
   }
 
   /* Agent Card */
@@ -2443,6 +2547,7 @@ body {
   }
 
   .agent-stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 2px !important;
   }
 
@@ -2489,11 +2594,6 @@ body {
   }
 
   /* Strategy Selector */
-  .strategy-selector {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
   .strategy-card {
     padding: 12px !important;
   }
@@ -2513,7 +2613,7 @@ body {
 
   /* Action Bar & Buttons */
   .action-bar {
-    padding: 12px !important;
+    padding: 12px 0 0 !important;
   }
 
   .btn-run {
@@ -2524,6 +2624,11 @@ body {
   }
 
   /* Save Slots Modal & Skill Tree Modal */
+  .save-manager-overlay {
+    align-items: stretch !important;
+    padding: 12px !important;
+  }
+
   .save-manager-modal {
     width: 95% !important;
     max-height: 95vh !important;
@@ -2540,7 +2645,7 @@ body {
   }
 
   .save-manager-body {
-    padding: 12px !important;
+    padding: 16px !important;
   }
 
   .close-btn {
@@ -2555,11 +2660,6 @@ body {
   }
 
   /* Skill Tree responsive layout */
-  .skill-tree-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-
   .skill-card {
     min-height: auto !important;
     padding: 12px !important;
@@ -2579,12 +2679,11 @@ body {
     margin-bottom: 8px !important;
   }
 
-  .skill-unlock-btn {
-    padding: 8px !important;
-    font-size: 0.78rem !important;
+  /* Save Slots */
+  .slots-list {
+    gap: 12px !important;
   }
 
-  /* Save Slots */
   .slot-card {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -2599,6 +2698,12 @@ body {
     padding-bottom: 6px !important;
     width: 100% !important;
     text-align: left !important;
+    font-size: 1rem !important;
+    width: 36px !important;
+  }
+
+  .slot-title {
+    font-size: 0.95rem !important;
   }
 
   .slot-meta {
@@ -2611,16 +2716,18 @@ body {
     width: 100% !important;
     justify-content: flex-end !important;
     margin-top: 4px !important;
+    gap: 6px !important;
   }
 
   .save-action-form {
     flex-direction: column !important;
     width: 100% !important;
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .save-action-form input {
     width: 100% !important;
+    font-size: 0.85rem !important;
   }
 
   /* Team Event Dialog */
@@ -2650,13 +2757,15 @@ body {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 6px !important;
-    padding: 12px !important;
-    font-size: 0.9rem !important;
+    padding: 10px 12px !important;
+    font-size: 0.85rem !important;
   }
 
   .option-effects-preview {
     justify-content: flex-start !important;
-    font-size: 0.75rem !important;
+    font-size: 0.8rem !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
   }
 
   /* Result Report & Incidents */
@@ -2686,18 +2795,18 @@ body {
   }
 
   .result-stat-card {
-    min-width: 0 !important;
-    padding: 8px 4px !important;
+    min-width: 110px !important;
+    padding: 8px !important;
   }
 
   .result-stat-label {
-    font-size: 0.7rem !important;
+    font-size: 0.75rem !important;
     gap: 4px !important;
     margin-bottom: 4px !important;
   }
 
   .result-stat-value {
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
   }
 
   .result-incident-card {
@@ -2740,7 +2849,7 @@ body {
   }
 
   .game-over-content {
-    padding: 20px !important;
+    padding: 24px 16px !important;
     max-height: 92vh !important;
     overflow-y: auto !important;
     width: 95% !important;
@@ -2748,6 +2857,8 @@ body {
 
   .game-over-title {
     font-size: 2rem !important;
+    letter-spacing: 2px !important;
+    margin-bottom: 12px !important;
   }
 
   .game-over-reason {
@@ -2762,16 +2873,21 @@ body {
   }
 
   .game-over-stat .value {
-    font-size: 1.8rem !important;
+    font-size: 1.6rem !important;
   }
 
   .game-over-stat-detail {
     font-size: 0.85rem !important;
-    gap: 4px !important;
+    gap: 6px !important;
+  }
+
+  .game-over-achievements {
+    margin-bottom: 20px !important;
   }
 
   .game-over-achievements-list {
     grid-template-columns: 1fr !important;
+    max-height: 120px !important;
   }
 
   /* Confirmation overlay */
@@ -2832,6 +2948,11 @@ body {
   .relation-score {
     font-size: 0.78rem !important;
     padding: 1px 6px !important;
+    text-align: left !important;
+  }
+
+  .relation-agent:last-child {
+    text-align: left !important;
   }
 
   /* Achievement Panel Category Tabs & Grid */
@@ -2871,4 +2992,3 @@ body {
     font-size: 0.6rem !important;
   }
 }
-
