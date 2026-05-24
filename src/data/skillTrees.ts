@@ -6,8 +6,8 @@ export const agentSkillTrees: SkillTree = {
   'Tech Lead': [
     {
       id: 'tl_1',
-      name: 'Microservices Guru',
-      description: 'Increases architecture by 10.',
+      name: '微服务大师',
+      description: '架构能力 +10。',
       cost: 500,
       prerequisites: [],
       unlocked: false,
@@ -15,8 +15,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'tl_2',
-      name: 'Test Driven Perfection',
-      description: 'Increases debugging by 15. Requires Microservices Guru.',
+      name: '测试驱动完美主义',
+      description: '调试能力 +15。需要微服务大师。',
       cost: 800,
       prerequisites: ['tl_1'],
       unlocked: false,
@@ -26,8 +26,8 @@ export const agentSkillTrees: SkillTree = {
   'Senior Engineer': [
     {
       id: 'se_1',
-      name: 'Design Pattern Master',
-      description: 'Increases coding by 10.',
+      name: '设计模式大师',
+      description: '编码能力 +10。',
       cost: 400,
       prerequisites: [],
       unlocked: false,
@@ -35,8 +35,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'se_2',
-      name: 'Refactoring Ninja',
-      description: 'Increases speed by 15. Requires Design Pattern Master.',
+      name: '重构忍者',
+      description: '速度 +15。需要设计模式大师。',
       cost: 600,
       prerequisites: ['se_1'],
       unlocked: false,
@@ -46,8 +46,8 @@ export const agentSkillTrees: SkillTree = {
   'Mid Engineer': [
     {
       id: 'me_1',
-      name: 'Code Monkey',
-      description: 'Increases speed by 20.',
+      name: '代码猴子',
+      description: '速度 +20。',
       cost: 300,
       prerequisites: [],
       unlocked: false,
@@ -55,8 +55,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'me_2',
-      name: 'Stack Overflow Expert',
-      description: 'Increases debugging by 10. Requires Code Monkey.',
+      name: 'Stack Overflow 专家',
+      description: '调试能力 +10。需要代码猴子。',
       cost: 500,
       prerequisites: ['me_1'],
       unlocked: false,
@@ -66,8 +66,8 @@ export const agentSkillTrees: SkillTree = {
   'Intern': [
     {
       id: 'in_1',
-      name: 'Eager Learner',
-      description: 'Increases creativity by 10.',
+      name: '好学宝宝',
+      description: '创造力 +10。',
       cost: 100,
       prerequisites: [],
       unlocked: false,
@@ -75,8 +75,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'in_2',
-      name: 'Coffee Fetcher',
-      description: 'Increases morale by 20. Requires Eager Learner.',
+      name: '咖啡搬运工',
+      description: '士气 +20。需要好学宝宝。',
       cost: 200,
       prerequisites: ['in_1'],
       unlocked: false,
@@ -86,8 +86,8 @@ export const agentSkillTrees: SkillTree = {
   'Product Engineer': [
     {
       id: 'pe_1',
-      name: 'User Centric',
-      description: 'Increases creativity by 15.',
+      name: '用户中心主义',
+      description: '创造力 +15。',
       cost: 450,
       prerequisites: [],
       unlocked: false,
@@ -95,8 +95,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'pe_2',
-      name: 'Growth Hacker',
-      description: 'Increases coding by 10. Requires User Centric.',
+      name: '增长黑客',
+      description: '编码能力 +10。需要用户中心主义。',
       cost: 650,
       prerequisites: ['pe_1'],
       unlocked: false,
@@ -106,8 +106,8 @@ export const agentSkillTrees: SkillTree = {
   'Open Source Enthusiast': [
     {
       id: 'os_1',
-      name: 'PR Approver',
-      description: 'Increases architecture by 10.',
+      name: 'PR 审批官',
+      description: '架构能力 +10。',
       cost: 200,
       prerequisites: [],
       unlocked: false,
@@ -115,8 +115,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'os_2',
-      name: 'Community Leader',
-      description: 'Increases morale by 15. Requires PR Approver.',
+      name: '社区领袖',
+      description: '士气 +15。需要 PR 审批官。',
       cost: 350,
       prerequisites: ['os_1'],
       unlocked: false,
@@ -127,8 +127,8 @@ export const agentSkillTrees: SkillTree = {
   'AI Researcher': [
     {
       id: 'ar_1',
-      name: 'Paper Reading Speedrun',
-      description: 'Increases speed by 10.',
+      name: '论文速读',
+      description: '速度 +10。',
       cost: 300,
       prerequisites: [],
       unlocked: false,
@@ -136,8 +136,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'ar_2',
-      name: 'Novel Architecture Design',
-      description: 'Increases architecture by 20. Requires Paper Reading Speedrun.',
+      name: '新颖架构设计',
+      description: '架构能力 +20。需要论文速读。',
       cost: 600,
       prerequisites: ['ar_1'],
       unlocked: false,
@@ -145,8 +145,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'ar_3',
-      name: 'SOTA Attainment',
-      description: 'Increases creativity by 25. Requires Novel Architecture Design.',
+      name: 'SOTA 达成',
+      description: '创造力 +25。需要新颖架构设计。',
       cost: 1000,
       prerequisites: ['ar_2'],
       unlocked: false,
@@ -156,8 +156,8 @@ export const agentSkillTrees: SkillTree = {
   'Data Labeler': [
     {
       id: 'dl_1',
-      name: 'Edge Case Identifier',
-      description: 'Increases debugging by 15.',
+      name: '边界病例识别师',
+      description: '调试能力 +15。',
       cost: 150,
       prerequisites: [],
       unlocked: false,
@@ -165,8 +165,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'dl_2',
-      name: 'Uncanny Focus',
-      description: 'Increases speed by 10. Requires Edge Case Identifier.',
+      name: '超长待机专注',
+      description: '速度 +10。需要边界病例识别师。',
       cost: 300,
       prerequisites: ['dl_1'],
       unlocked: false,
@@ -174,8 +174,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'dl_3',
-      name: 'Zero-Shot Comprehension',
-      description: 'Increases creativity by 10. Requires Uncanny Focus.',
+      name: '零样本理解',
+      description: '创造力 +10。需要超长待机专注。',
       cost: 500,
       prerequisites: ['dl_2'],
       unlocked: false,
@@ -185,8 +185,8 @@ export const agentSkillTrees: SkillTree = {
   'Prompt Engineer': [
     {
       id: 'prm_1',
-      name: 'Few-Shot Master',
-      description: 'Increases coding by 15.',
+      name: '少样本大师',
+      description: '编码能力 +15。',
       cost: 250,
       prerequisites: [],
       unlocked: false,
@@ -194,8 +194,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'prm_2',
-      name: 'Chain of Thought',
-      description: 'Increases architecture by 15. Requires Few-Shot Master.',
+      name: '思维链',
+      description: '架构能力 +15。需要少样本大师。',
       cost: 450,
       prerequisites: ['prm_1'],
       unlocked: false,
@@ -203,8 +203,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'prm_3',
-      name: 'Jailbreak Specialist',
-      description: 'Increases creativity by 30. Requires Chain of Thought.',
+      name: '越狱专家',
+      description: '创造力 +30。需要思维链。',
       cost: 800,
       prerequisites: ['prm_2'],
       unlocked: false,
@@ -214,8 +214,8 @@ export const agentSkillTrees: SkillTree = {
   'AI Ethics Officer': [
     {
       id: 'eo_1',
-      name: 'Bias Detector',
-      description: 'Increases debugging by 20.',
+      name: '偏见检测器',
+      description: '调试能力 +20。',
       cost: 400,
       prerequisites: [],
       unlocked: false,
@@ -223,8 +223,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'eo_2',
-      name: 'Alignment Check',
-      description: 'Increases architecture by 10. Requires Bias Detector.',
+      name: '对齐检查',
+      description: '架构能力 +10。需要偏见检测器。',
       cost: 600,
       prerequisites: ['eo_1'],
       unlocked: false,
@@ -232,8 +232,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'eo_3',
-      name: 'Existential Risk Mitigation',
-      description: 'Increases morale by 30. Requires Alignment Check.',
+      name: '存在风险缓解',
+      description: '士气 +30。需要对齐检查。',
       cost: 1200,
       prerequisites: ['eo_2'],
       unlocked: false,
@@ -243,8 +243,8 @@ export const agentSkillTrees: SkillTree = {
   'MLOps Engineer': [
     {
       id: 'ml_1',
-      name: 'Pipeline Automation',
-      description: 'Increases speed by 20.',
+      name: '流水线自动化',
+      description: '速度 +20。',
       cost: 350,
       prerequisites: [],
       unlocked: false,
@@ -252,8 +252,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'ml_2',
-      name: 'Model Quantization',
-      description: 'Increases coding by 15. Requires Pipeline Automation.',
+      name: '模型量化',
+      description: '编码能力 +15。需要流水线自动化。',
       cost: 550,
       prerequisites: ['ml_1'],
       unlocked: false,
@@ -261,8 +261,8 @@ export const agentSkillTrees: SkillTree = {
     },
     {
       id: 'ml_3',
-      name: 'GPU Whisperer',
-      description: 'Increases architecture by 25. Requires Model Quantization.',
+      name: 'GPU 驯兽师',
+      description: '架构能力 +25。需要模型量化。',
       cost: 900,
       prerequisites: ['ml_2'],
       unlocked: false,
