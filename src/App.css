@@ -2395,7 +2395,7 @@ body {
   text-align: center;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .app {
     max-width: 100%;
     padding: 12px;
