@@ -3,6 +3,9 @@ import { checkAchievement, getAchievementProgress } from '../src/domain/achievem
 import { achievements } from '../src/data/achievements';
 import type { AchievementContext } from '../src/domain/achievement';
 import type { GameState } from '../src/domain/gameState';
+import type { Project } from '../src/domain/project';
+import type { Strategy } from '../src/domain/strategy';
+import type { Agent } from '../src/domain/agent';
 
 const makeContext = (overrides: Partial<AchievementContext> = {}): AchievementContext => ({
   completedProjectIds: [],
@@ -443,9 +446,9 @@ describe('getAchievementProgress', () => {
       history: [
         {
           sprintNumber: 1,
-          project: {} as any,
+          project: {} as unknown as Project,
           agents: [],
-          strategy: {} as any,
+          strategy: {} as unknown as Strategy,
           progressDelta: 10,
           bugsDelta: 12,
           techDebtDelta: 5,
@@ -463,8 +466,8 @@ describe('getAchievementProgress', () => {
     const ach = getAchievement('big-team');
     const state = makeGameState({
       agents: [
-        { id: '1', locked: false, skills: {} } as any,
-        { id: '2', locked: true, skills: {} } as any,
+        { id: '1', locked: false, skills: {} } as unknown as Agent,
+        { id: '2', locked: true, skills: {} } as unknown as Agent,
       ],
     });
     expect(getAchievementProgress(ach, state)).toEqual({ current: 1, target: 6, display: '1 / 6' });
