@@ -9,12 +9,18 @@ import { createRNG } from './domain/random';
 import {
   createInitialGameState,
   processPostSprint,
-  saveGame,
-  loadGame,
-  clearSave,
   checkUnlocks
 } from './domain/gameEngine';
 import { checkAchievement } from './domain/achievement';
+import {
+  saveToSlot,
+  deleteSlot,
+  getAutosaveConfig,
+  getSaveSlotsMetadata,
+  setAutosaveConfig
+} from './domain/saveSystem';
+import type { AutosaveConfig } from './domain/saveSystem';
+import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
 import type { SprintResult } from './domain/simulation';
 
@@ -34,12 +40,18 @@ import { GameOverScreen } from './components/GameOverScreen';
 import { AchievementToast } from './components/AchievementToast';
 import { AchievementPanel } from './components/AchievementPanel';
 import { RelationsNetwork } from './components/RelationsNetwork';
+import { SaveManager } from './components/SaveManager';
 
 import './App.css';
 
 export default function App() {
-  const [gameState, setGameState] = useState(() => {
-    return loadGame() ?? createInitialGameState(sampleAgents, sampleProjects);
+  const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
+  const [isSaveManagerOpen, setIsSaveManagerOpen] = useState(false);
+  const [isStartup, setIsStartup] = useState(true);
+  const [autosaveConfig, setAutosaveConfigState] = useState(() => getAutosaveConfig());
+
+  const [gameState, setGameState] = useState<GameState>(() => {
+    return createInitialGameState(sampleAgents, sampleProjects);
   });
 
   const [selectedAgentIds, setSelectedAgentIds] = useState<Set<string>>(new Set());
@@ -57,10 +69,38 @@ export default function App() {
   const [pendingEvent, setPendingEvent] = useState<PendingTeamEvent | null>(null);
   const [sprintContext, setSprintContext] = useState<any>(null);
 
-  // Automatically save game whenever gameState changes
+  // Automatically save game whenever gameState changes and a slot is active
   useEffect(() => {
-    saveGame(gameState);
-  }, [gameState]);
+    if (currentSlotId) {
+      try {
+        // Query current name if exists
+        const savedSlots = getSaveSlotsMetadata();
+        const activeSlot = savedSlots.find(s => s.id === currentSlotId);
+        const name = activeSlot?.name || (currentSlotId === 'auto' ? '自动存档' : `存档位 ${currentSlotId}`);
+        saveToSlot(currentSlotId, name, gameState);
+      } catch (e) {
+        console.error('Failed to auto-save to current slot', e);
+      }
+    }
+  }, [gameState, currentSlotId]);
+
+  // Periodic autosave loop using separate auto slot
+  useEffect(() => {
+    if (!autosaveConfig.enabled || !currentSlotId || gameState.gameOver) {
+      return;
+    }
+
+    const intervalMs = autosaveConfig.interval * 60 * 1000;
+    const timer = setInterval(() => {
+      try {
+        saveToSlot('auto', '自动存档', gameState);
+      } catch (e) {
+        console.error('Autosave failed', e);
+      }
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [autosaveConfig.enabled, autosaveConfig.interval, currentSlotId, gameState]);
 
   function toggleAgent(id: string) {
     const agent = gameState.agents.find(a => a.id === id);
@@ -128,7 +168,7 @@ export default function App() {
     const bonus = project.difficulty * 20;
 
     // 3. Process new state
-    let newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
+    const newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
 
     if (eventResult) {
        newState.funds += eventResult.fundsDelta;
@@ -149,7 +189,7 @@ export default function App() {
 
     // 4. Check for newly unlocked agents
     const newlyUnlockedIds = checkUnlocks(newState);
-    let unlockedAgentDetails: Array<{ name: string; avatar: string }> = [];
+    const unlockedAgentDetails: Array<{ name: string; avatar: string }> = [];
 
     if (newlyUnlockedIds.length > 0) {
       newState.agents = newState.agents.map(a => {
@@ -212,8 +252,44 @@ export default function App() {
     setSelectedAgentIds(new Set());
   }
 
+  function handleLoadGame(loadedState: GameState, slotId: string) {
+    setGameState(loadedState);
+    setCurrentSlotId(slotId);
+    setIsStartup(false);
+    setIsSaveManagerOpen(false);
+
+    setSelectedAgentIds(new Set());
+    setSelectedProjectId(null);
+    setSelectedStrategyId(null);
+    setLastResult(null);
+  }
+
+  function handleNewGame(slotId: string) {
+    const initialState = createInitialGameState(sampleAgents, sampleProjects);
+    saveToSlot(slotId, `存档位 ${slotId}`, initialState);
+    setGameState(initialState);
+    setCurrentSlotId(slotId);
+    setIsStartup(false);
+    setIsSaveManagerOpen(false);
+
+    setSelectedAgentIds(new Set());
+    setSelectedProjectId(null);
+    setSelectedStrategyId(null);
+    setLastResult(null);
+  }
+
+  const handleUpdateAutosaveConfig = (newConfig: AutosaveConfig) => {
+    setAutosaveConfigState(newConfig);
+    setAutosaveConfig(newConfig);
+  };
+
   function handleReset() {
-    clearSave();
+    if (currentSlotId) {
+      deleteSlot(currentSlotId);
+    }
+    setCurrentSlotId(null);
+    setIsStartup(true);
+    setIsSaveManagerOpen(false);
     setGameState(createInitialGameState(sampleAgents, sampleProjects));
     setSelectedAgentIds(new Set());
     setSelectedProjectId(null);
@@ -262,7 +338,10 @@ export default function App() {
       )}
 
       <main className="app-main">
-        <div className="header-actions" style={{ justifyContent: 'flex-end', marginBottom: '16px' }}>
+        <div className="header-actions" style={{ justifyContent: 'flex-end', marginBottom: '16px', gap: '12px' }}>
+          <button className="btn-saves-trigger" onClick={() => setIsSaveManagerOpen(true)}>
+            📁 存档管理
+          </button>
           <button className="btn-reset" onClick={handleReset}>Reset Game</button>
         </div>
 
@@ -335,6 +414,17 @@ export default function App() {
         {/* 5. Achievement Panel */}
         <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
       </main>
+
+      <SaveManager
+        gameState={gameState}
+        onLoadGame={handleLoadGame}
+        onNewGame={handleNewGame}
+        isOpen={isSaveManagerOpen}
+        onClose={() => setIsSaveManagerOpen(false)}
+        isStartup={isStartup}
+        autosaveConfig={autosaveConfig}
+        onUpdateAutosaveConfig={handleUpdateAutosaveConfig}
+      />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { detectCombos } from '../src/domain/comboIncident';
-import { createRNG } from '../src/domain/random';
 import type { Incident, ComboIncidentTemplate } from '../src/domain/incident';
 import { runSprint } from '../src/domain/simulation';
 import type { Strategy } from '../src/domain/strategy';

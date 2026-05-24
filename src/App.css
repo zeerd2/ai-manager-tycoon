@@ -1489,8 +1489,6 @@ body {
 .achievement-card.unlocked .achievement-progress-fill {
   background: var(--positive);
 }
-
-
 /* Event Dialog */
 .event-dialog-overlay {
   position: fixed;
@@ -1634,4 +1632,472 @@ body {
   text-align: center;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
+}
+
+/* ==========================================
+   WS-26: Save Slot Management Styles
+   ========================================== */
+
+.save-manager-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 15, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.save-manager-overlay.startup {
+  background: rgba(5, 7, 15, 0.98);
+}
+
+.save-manager-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.save-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.save-manager-header h2 {
+  font-size: 1.4rem;
+  color: var(--text-h);
+  margin: 0;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.8rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: var(--negative);
+}
+
+.save-manager-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: var(--text-h);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+.save-manager-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Slots list */
+.slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slot-card {
+  display: flex;
+  align-items: center;
+  background: rgba(10, 14, 26, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.slot-card:hover {
+  border-color: var(--border-selected);
+  background: rgba(10, 14, 26, 0.5);
+}
+
+.slot-card.occupied {
+  border-left: 4px solid var(--accent);
+}
+
+.slot-card.empty {
+  border-left: 4px solid var(--text-dim);
+  border-style: dashed;
+}
+
+.slot-card.auto-slot {
+  border-left-color: var(--warning);
+  background: rgba(255, 215, 0, 0.02);
+}
+
+.slot-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  width: 50px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  margin-right: 16px;
+}
+
+.slot-card.occupied .slot-num {
+  color: var(--accent);
+}
+
+.slot-card.auto-slot .slot-num {
+  color: var(--warning);
+  font-size: 0.9rem;
+}
+
+.slot-info {
+  flex-grow: 1;
+}
+
+.slot-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+
+.slot-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.slot-meta strong {
+  color: var(--text-h);
+}
+
+.slot-time {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.slot-empty-text {
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.slot-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.save-action-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.save-action-form input {
+  background: #080c18;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  flex-grow: 1;
+}
+
+.save-action-form input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.btn-action {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-new {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-new:hover {
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.btn-save {
+  background: var(--accent);
+  color: #05070f;
+  border: none;
+}
+
+.btn-save:hover {
+  box-shadow: 0 0 10px var(--accent);
+  transform: translateY(-1px);
+}
+
+.btn-load {
+  background: transparent;
+  color: var(--positive);
+  border-color: var(--positive);
+}
+
+.btn-load:hover {
+  background: rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+}
+
+.btn-delete {
+  background: transparent;
+  color: var(--negative);
+  border-color: var(--negative);
+}
+
+.btn-delete:hover {
+  background: rgba(255, 51, 102, 0.1);
+  box-shadow: 0 0 8px rgba(255, 51, 102, 0.3);
+}
+
+/* Settings panel */
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: rgba(10, 14, 26, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-row label {
+  color: var(--text-h);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.setting-row select {
+  background: #080c18;
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.setting-row select:focus {
+  border-color: var(--accent);
+}
+
+.setting-row select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-tip {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Checkbox design */
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 28px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  user-select: none;
+}
+
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: #080c18;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+  border-color: var(--accent);
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkbox-container .checkmark:after {
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 9px;
+  border: solid #05070f;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Confirmation overlay */
+.confirm-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 7, 15, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+
+.confirm-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--negative);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
+}
+
+.confirm-modal h3 {
+  color: var(--negative);
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+}
+
+.confirm-modal p {
+  color: var(--text-h);
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.confirm-btn {
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-yes {
+  background: var(--negative);
+  color: #fff;
+  border: none;
+}
+
+.confirm-yes:hover {
+  box-shadow: 0 0 10px var(--negative);
+}
+
+.confirm-no {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.confirm-no:hover {
+  border-color: var(--text-h);
+}
+
+.btn-saves-trigger {
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-saves-trigger:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }

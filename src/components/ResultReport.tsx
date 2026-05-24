@@ -146,9 +146,12 @@ export function ResultReport({ result, projectCompleted, projectBonus, newlyUnlo
   const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
-    setPulse(true);
-    const timer = setTimeout(() => setPulse(false), 500);
-    return () => clearTimeout(timer);
+    const timer1 = setTimeout(() => setPulse(true), 0);
+    const timer2 = setTimeout(() => setPulse(false), 550);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [result]);
 
   const { progressDelta, bugsDelta, techDebtDelta, moraleDelta } = result;
