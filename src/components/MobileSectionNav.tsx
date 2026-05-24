@@ -1,4 +1,4 @@
-export type MainSectionId = 'team' | 'project' | 'strategy' | 'result' | 'history';
+export type MainSectionId = 'team' | 'project' | 'strategy' | 'achievement' | 'history';
 
 interface MainSection {
   id: MainSectionId;
@@ -7,13 +7,13 @@ interface MainSection {
 
 interface Props {
   sections: MainSection[];
-  activeSection: MainSectionId;
+  activeSection: MainSectionId | null;
   onSelect: (id: MainSectionId) => void;
 }
 
 export function MobileSectionNav({ sections, activeSection, onSelect }: Props) {
   return (
-    <nav className="mobile-section-nav" aria-label="移动端主界面导航">
+    <nav className="mobile-section-nav mobile-bottom-nav" aria-label="移动端底部功能导航">
       <div className="mobile-section-tabs" role="tablist">
         {sections.map(section => (
           <button
@@ -22,7 +22,7 @@ export function MobileSectionNav({ sections, activeSection, onSelect }: Props) {
             className={`mobile-section-tab ${activeSection === section.id ? 'active' : ''}`}
             role="tab"
             aria-selected={activeSection === section.id}
-            aria-controls={`main-section-${section.id}`}
+            aria-controls="mobile-secondary-panel"
             onClick={() => onSelect(section.id)}
           >
             {section.label}

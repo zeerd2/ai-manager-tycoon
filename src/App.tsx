@@ -50,6 +50,8 @@ import { RelationsNetwork } from './components/RelationsNetwork';
 import { SaveManager } from './components/SaveManager';
 import { TutorialGuide } from './components/TutorialGuide';
 import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
+import { MobileBottomSheet } from './components/MobileBottomSheet';
+import { MobileDecisionSummary } from './components/MobileDecisionSummary';
 
 import './App.css';
 
@@ -57,8 +59,8 @@ const MAIN_SECTIONS: Array<{ id: MainSectionId; label: string }> = [
   { id: 'team', label: '团队' },
   { id: 'project', label: '项目' },
   { id: 'strategy', label: '策略' },
-  { id: 'result', label: '结果' },
-  { id: 'history', label: '记录' },
+  { id: 'achievement', label: '成就' },
+  { id: 'history', label: '历史' },
 ];
 
 export default function App() {
@@ -77,7 +79,7 @@ export default function App() {
   const [lastResult, setLastResult] = useState<SprintResult | null>(null);
   const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(true);
-  const [activeMainSection, setActiveMainSection] = useState<MainSectionId>('team');
+  const [activeMobilePanel, setActiveMobilePanel] = useState<MainSectionId | null>(null);
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -142,8 +144,14 @@ export default function App() {
   const handleSelectProject = useCallback((id: string) => {
     if (!gameState.completedProjectIds.includes(id)) {
       setSelectedProjectId(id);
+      setActiveMobilePanel(null);
     }
   }, [gameState.completedProjectIds]);
+
+  const handleSelectStrategy = useCallback((id: string) => {
+    setSelectedStrategyId(id);
+    setActiveMobilePanel(null);
+  }, []);
 
   function handleRunSprint() {
     if (selectedAgentIds.size === 0 || !selectedProjectId || !selectedStrategyId) return;
@@ -300,6 +308,7 @@ export default function App() {
     setSelectedProjectId(null);
     setSelectedStrategyId(null);
     setLastResult(null);
+    setActiveMobilePanel(null);
   }, []);
 
   const handleNewGame = useCallback((slotId: string) => {
@@ -314,6 +323,7 @@ export default function App() {
     setSelectedProjectId(null);
     setSelectedStrategyId(null);
     setLastResult(null);
+    setActiveMobilePanel(null);
   }, []);
 
   const handleUpdateAutosaveConfig = useCallback((newConfig: AutosaveConfig) => {
@@ -338,6 +348,7 @@ export default function App() {
     setProjectCompleted(false);
     setProjectBonus(0);
     setPendingEvent(null);
+    setActiveMobilePanel(null);
   }, [currentSlotId]);
 
   const handleUnlockSkill = useCallback((agentId: string, skillId: string) => {
@@ -366,6 +377,10 @@ export default function App() {
   }, []);
 
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
+  const selectedProject = gameState.projects.find(p => p.id === selectedProjectId) ?? null;
+  const selectedStrategy = strategies.find(s => s.id === selectedStrategyId) ?? null;
+  const selectedAgents = gameState.agents.filter(a => selectedAgentIds.has(a.id));
+  const activeMobilePanelLabel = MAIN_SECTIONS.find(section => section.id === activeMobilePanel)?.label ?? '';
 
   const showTutorialHighlight = gameState.sprintCount < 3 && isTutorialOpen;
   const highlightTeam = showTutorialHighlight && selectedAgentIds.size === 0;
@@ -423,15 +438,31 @@ export default function App() {
           onClose={() => setIsTutorialOpen(false)}
         />
 
+        <MobileDecisionSummary
+          selectedProject={selectedProject}
+          selectedStrategy={selectedStrategy}
+          selectedAgents={selectedAgents}
+        />
+
+        <div className="action-bar mobile-primary-action">
+          <button
+            className={`btn-run ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
+            disabled={!canRun}
+            onClick={handleRunSprint}
+          >
+            执行 Sprint
+          </button>
+        </div>
+
         <MobileSectionNav
           sections={MAIN_SECTIONS}
-          activeSection={activeMainSection}
-          onSelect={setActiveMainSection}
+          activeSection={activeMobilePanel}
+          onSelect={setActiveMobilePanel}
         />
 
         <section
           id="main-section-team"
-          className={`panel team-panel ${highlightTeam ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'team' ? 'mobile-hidden' : ''}`}
+          className={`panel team-panel desktop-section ${highlightTeam ? 'tutorial-highlight-panel' : ''}`}
         >
           <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
           <div className="card-grid">
@@ -450,7 +481,7 @@ export default function App() {
 
         <section
           id="main-section-project"
-          className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'project' ? 'mobile-hidden' : ''}`}
+          className={`panel project-panel desktop-section ${highlightProject ? 'tutorial-highlight-panel' : ''}`}
         >
           <h2>项目</h2>
           <div className="card-grid">
@@ -469,17 +500,17 @@ export default function App() {
 
         <section
           id="main-section-strategy"
-          className={`panel strategy-panel ${highlightStrategy ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}
+          className={`panel strategy-panel desktop-section ${highlightStrategy ? 'tutorial-highlight-panel' : ''}`}
         >
           <h2>策略</h2>
           <StrategySelector
             strategies={strategies}
             selectedId={selectedStrategyId}
-            onSelect={setSelectedStrategyId}
+            onSelect={handleSelectStrategy}
           />
         </section>
 
-        <div className={`action-bar ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}>
+        <div className="action-bar desktop-section">
           <button
             className={`btn-run ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
             disabled={!canRun}
@@ -491,7 +522,7 @@ export default function App() {
 
         <section
           id="main-section-result"
-          className={`panel result-panel ${!lastResult ? 'result-panel-empty' : ''} ${activeMainSection !== 'result' ? 'mobile-hidden' : ''}`}
+          className={`panel result-panel desktop-section ${!lastResult ? 'result-panel-empty' : ''}`}
         >
           {lastResult ? (
             <ResultReport
@@ -505,16 +536,74 @@ export default function App() {
           )}
         </section>
 
-        <section
-          id="main-section-history"
-          className={`panel history-panel-wrapper ${activeMainSection !== 'history' ? 'mobile-hidden' : ''}`}
-        >
+        <section id="main-section-history" className="panel history-panel-wrapper desktop-section">
           <HistoryPanel history={gameState.history} />
         </section>
 
-        <div className={activeMainSection !== 'history' ? 'mobile-hidden' : ''}>
+        <div className="desktop-section">
           <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
         </div>
+
+        <MobileBottomSheet
+          title={activeMobilePanelLabel}
+          isOpen={activeMobilePanel !== null}
+          onClose={() => setActiveMobilePanel(null)}
+        >
+          {activeMobilePanel === 'team' && (
+            <section className={`panel team-panel ${highlightTeam ? 'tutorial-highlight-panel' : ''}`}>
+              <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
+              <div className="card-grid">
+                {gameState.agents.map(a => (
+                  <AgentCard
+                    key={a.id}
+                    agent={a}
+                    selected={selectedAgentIds.has(a.id)}
+                    onToggle={toggleAgent}
+                    onOpenSkillTree={setActiveSkillTreeAgentId}
+                  />
+                ))}
+              </div>
+              <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
+            </section>
+          )}
+
+          {activeMobilePanel === 'project' && (
+            <section className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''}`}>
+              <h2>项目</h2>
+              <div className="card-grid">
+                {gameState.projects.map(p => (
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    selected={selectedProjectId === p.id}
+                    onSelect={handleSelectProject}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeMobilePanel === 'strategy' && (
+            <section className={`panel strategy-panel ${highlightStrategy ? 'tutorial-highlight-panel' : ''}`}>
+              <h2>策略</h2>
+              <StrategySelector
+                strategies={strategies}
+                selectedId={selectedStrategyId}
+                onSelect={handleSelectStrategy}
+              />
+            </section>
+          )}
+
+          {activeMobilePanel === 'achievement' && (
+            <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+          )}
+
+          {activeMobilePanel === 'history' && (
+            <section className="panel history-panel-wrapper">
+              <HistoryPanel history={gameState.history} />
+            </section>
+          )}
+        </MobileBottomSheet>
       </main>
 
       <SaveManager
