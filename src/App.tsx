@@ -48,8 +48,17 @@ import { AchievementToast } from './components/AchievementToast';
 import { AchievementPanel } from './components/AchievementPanel';
 import { RelationsNetwork } from './components/RelationsNetwork';
 import { SaveManager } from './components/SaveManager';
+import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
 
 import './App.css';
+
+const MAIN_SECTIONS: Array<{ id: MainSectionId; label: string }> = [
+  { id: 'team', label: '团队' },
+  { id: 'project', label: '项目' },
+  { id: 'strategy', label: '策略' },
+  { id: 'result', label: '结果' },
+  { id: 'history', label: '记录' },
+];
 
 export default function App() {
   const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
@@ -66,6 +75,7 @@ export default function App() {
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SprintResult | null>(null);
   const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
+  const [activeMainSection, setActiveMainSection] = useState<MainSectionId>('team');
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -396,7 +406,16 @@ export default function App() {
           <button className="btn-reset" onClick={handleReset}>重置游戏</button>
         </div>
 
-        <section className="panel team-panel">
+        <MobileSectionNav
+          sections={MAIN_SECTIONS}
+          activeSection={activeMainSection}
+          onSelect={setActiveMainSection}
+        />
+
+        <section
+          id="main-section-team"
+          className={`panel team-panel ${activeMainSection !== 'team' ? 'mobile-hidden' : ''}`}
+        >
           <h2>团队 <span className="count">(已选 {selectedAgentIds.size})</span></h2>
           <div className="card-grid">
             {gameState.agents.map(a => (
@@ -412,7 +431,10 @@ export default function App() {
           <RelationsNetwork agents={gameState.agents} relations={gameState.relations || []} />
         </section>
 
-        <section className="panel project-panel">
+        <section
+          id="main-section-project"
+          className={`panel project-panel ${activeMainSection !== 'project' ? 'mobile-hidden' : ''}`}
+        >
           <h2>项目</h2>
           <div className="card-grid">
             {gameState.projects.map(p => {
@@ -428,7 +450,10 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel strategy-panel">
+        <section
+          id="main-section-strategy"
+          className={`panel strategy-panel ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}
+        >
           <h2>策略</h2>
           <StrategySelector
             strategies={strategies}
@@ -437,7 +462,7 @@ export default function App() {
           />
         </section>
 
-        <div className="action-bar">
+        <div className={`action-bar ${activeMainSection !== 'strategy' ? 'mobile-hidden' : ''}`}>
           <button
             className="btn-run"
             disabled={!canRun}
@@ -447,23 +472,32 @@ export default function App() {
           </button>
         </div>
 
-        {lastResult && (
-          <section className="panel result-panel">
+        <section
+          id="main-section-result"
+          className={`panel result-panel ${!lastResult ? 'result-panel-empty' : ''} ${activeMainSection !== 'result' ? 'mobile-hidden' : ''}`}
+        >
+          {lastResult ? (
             <ResultReport
               result={lastResult}
               projectCompleted={projectCompleted}
               projectBonus={projectBonus}
               newlyUnlockedAgents={newlyUnlockedAgents}
             />
-          </section>
-        )}
+          ) : (
+            <div className="mobile-result-empty">执行 Sprint 后，这里会显示本轮结果。</div>
+          )}
+        </section>
 
-        <section className="panel history-panel-wrapper">
+        <section
+          id="main-section-history"
+          className={`panel history-panel-wrapper ${activeMainSection !== 'history' ? 'mobile-hidden' : ''}`}
+        >
           <HistoryPanel history={gameState.history} />
         </section>
 
-        {/* 5. Achievement Panel */}
-        <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+        <div className={activeMainSection !== 'history' ? 'mobile-hidden' : ''}>
+          <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+        </div>
       </main>
 
       <SaveManager

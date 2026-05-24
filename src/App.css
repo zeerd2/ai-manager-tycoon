@@ -16,6 +16,15 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
@@ -24,6 +33,7 @@ body {
 }
 
 .app {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -2251,4 +2261,171 @@ body {
 .btn-skill-tree-trigger:hover {
   background: rgba(0, 240, 255, 0.1);
   box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+}
+
+.mobile-section-nav {
+  display: none;
+}
+
+.result-panel-empty {
+  display: none;
+}
+
+.mobile-result-empty {
+  background: rgba(18, 22, 43, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-dim);
+  padding: 18px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .app {
+    max-width: 100%;
+    padding: 12px;
+    overflow-x: hidden;
+  }
+
+  .app-header {
+    padding: 16px 0;
+    margin-bottom: 16px;
+  }
+
+  .app-header h1 {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+  }
+
+  .subtitle {
+    font-size: 0.88rem;
+  }
+
+  .header-actions {
+    justify-content: stretch !important;
+    flex-direction: column;
+    gap: 8px !important;
+  }
+
+  .btn-saves-trigger,
+  .btn-reset,
+  .btn-run {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .company-dashboard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .dashboard-item,
+  .funds-container,
+  .funds-bar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-section-nav {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-bottom: 16px;
+    padding: 8px 0;
+    background: linear-gradient(180deg, var(--bg) 70%, rgba(10, 14, 26, 0));
+  }
+
+  .mobile-section-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mobile-section-tab {
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(18, 22, 43, 0.92);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .mobile-section-tab.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-selected);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.22);
+  }
+
+  .mobile-hidden {
+    display: none;
+  }
+
+  .result-panel-empty {
+    display: block;
+  }
+
+  .panel {
+    margin-bottom: 16px;
+    min-width: 0;
+  }
+
+  .card-grid,
+  .strategy-selector,
+  .skill-tree-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-card,
+  .project-card,
+  .strategy-card,
+  .result-report,
+  .history-item,
+  .relations-network {
+    min-width: 0;
+  }
+
+  .agent-header,
+  .project-header,
+  .history-header,
+  .result-title-row,
+  .relation-item {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .agent-stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .agent-meta,
+  .project-stats,
+  .project-health,
+  .strategy-mods,
+  .history-stats,
+  .result-stats-row {
+    gap: 8px;
+  }
+
+  .relation-agent:last-child,
+  .relation-score {
+    text-align: left;
+  }
+
+  .action-bar {
+    padding: 12px 0 0;
+  }
+
+  .save-manager-overlay {
+    align-items: stretch;
+    padding: 12px;
+  }
 }
