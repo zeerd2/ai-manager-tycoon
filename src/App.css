@@ -2101,3 +2101,131 @@ body {
   border-color: var(--accent);
   box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }
+
+/* Skill Tree Styles */
+.skill-tree-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.skill-card {
+  background: rgba(18, 22, 43, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s;
+  min-height: 180px;
+}
+
+.skill-card.unlocked {
+  border-color: var(--positive);
+  background: rgba(0, 255, 136, 0.04);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.05);
+}
+
+.skill-card.can-unlock {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.05);
+}
+
+.skill-card.locked {
+  opacity: 0.7;
+}
+
+.skill-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.skill-name {
+  font-size: 1.05rem;
+  color: var(--text-h);
+  font-weight: 700;
+}
+
+.skill-status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.skill-status.unlocked {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--positive);
+}
+
+.skill-status.cost {
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent);
+}
+
+.skill-description {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.skill-requirements {
+  font-size: 0.75rem;
+  margin-bottom: 12px;
+  color: var(--text-dim);
+}
+
+.skill-requirements .met {
+  color: var(--positive);
+}
+
+.skill-requirements .unmet {
+  color: var(--negative);
+}
+
+.skill-unlock-btn {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.skill-unlock-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #000;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+.skill-unlock-btn:disabled {
+  border-color: var(--border);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+/* Agent Card Skill tree button */
+.btn-skill-tree-trigger {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  font-family: monospace;
+}
+
+.btn-skill-tree-trigger:hover {
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+}

@@ -5,9 +5,10 @@ interface Props {
   agent: Agent;
   selected: boolean;
   onToggle: (id: string) => void;
+  onOpenSkillTree?: (agentId: string) => void;
 }
 
-export function AgentCard({ agent, selected, onToggle }: Props) {
+export function AgentCard({ agent, selected, onToggle, onOpenSkillTree }: Props) {
   const eff = agentEffectiveness(agent).toFixed(1);
 
   if (agent.locked) {
@@ -88,6 +89,19 @@ export function AgentCard({ agent, selected, onToggle }: Props) {
         <span>Sprints: {agent.totalSprintsWorked}</span>
         <span>${agent.salary}/sprint</span>
       </div>
+      {onOpenSkillTree && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px', marginBottom: '6px' }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenSkillTree(agent.id);
+            }}
+            className="btn-skill-tree-trigger"
+          >
+            Skill Tree ({agent.unlockedSkills?.length || 0})
+          </button>
+        </div>
+      )}
       <p className="quirk">"{agent.quirk}"</p>
     </div>
   );

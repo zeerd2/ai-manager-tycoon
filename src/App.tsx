@@ -11,6 +11,7 @@ import {
   processPostSprint,
   checkUnlocks
 } from './domain/gameEngine';
+import { unlockSkill } from './domain/skillTreeLogic';
 import { checkAchievement } from './domain/achievement';
 import {
   saveToSlot,
@@ -35,6 +36,7 @@ import { TeamEventDialog } from './components/TeamEventDialog';
 
 // Components
 import { AgentCard } from './components/AgentCard';
+import { SkillTreeModal } from './components/SkillTreeModal';
 import { ProjectCard } from './components/ProjectCard';
 import { StrategySelector } from './components/StrategySelector';
 import { ResultReport } from './components/ResultReport';
@@ -62,6 +64,7 @@ export default function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SprintResult | null>(null);
+  const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -318,6 +321,31 @@ export default function App() {
     setPendingEvent(null);
   }
 
+  const handleUnlockSkill = (agentId: string, skillId: string) => {
+    setGameState(prev => {
+      const agentToUpgrade = prev.agents.find(a => a.id === agentId);
+      if (!agentToUpgrade) return prev;
+
+      const clonedAgent = {
+        ...agentToUpgrade,
+        skills: { ...agentToUpgrade.skills },
+        unlockedSkills: [...(agentToUpgrade.unlockedSkills || [])]
+      };
+
+      const result = unlockSkill(clonedAgent, skillId, prev.funds);
+      if (!result.success) {
+        alert(result.message || "解锁失败");
+        return prev;
+      }
+
+      return {
+        ...prev,
+        funds: prev.funds - result.cost,
+        agents: prev.agents.map(a => a.id === agentId ? clonedAgent : a)
+      };
+    });
+  };
+
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
   return (
@@ -370,6 +398,7 @@ export default function App() {
                 agent={a}
                 selected={selectedAgentIds.has(a.id)}
                 onToggle={toggleAgent}
+                onOpenSkillTree={(agentId) => setActiveSkillTreeAgentId(agentId)}
               />
             ))}
           </div>
@@ -441,6 +470,15 @@ export default function App() {
         autosaveConfig={autosaveConfig}
         onUpdateAutosaveConfig={handleUpdateAutosaveConfig}
       />
+
+      {activeSkillTreeAgentId && (
+        <SkillTreeModal
+          agent={gameState.agents.find(a => a.id === activeSkillTreeAgentId)!}
+          companyMoney={gameState.funds}
+          onClose={() => setActiveSkillTreeAgentId(null)}
+          onUnlock={handleUnlockSkill}
+        />
+      )}
     </div>
   );
 }
