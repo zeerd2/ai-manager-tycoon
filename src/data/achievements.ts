@@ -35,7 +35,7 @@ export const achievements: Achievement[] = [
     description: '所有员工同时 morale 为 0',
     conditionType: 'all_agents_zero_morale',
     category: 'employee',
-    rarity: 'rare',
+    rarity: 'legendary',
   },
   {
     id: '10x-company',
@@ -53,7 +53,7 @@ export const achievements: Achievement[] = [
     description: '5 轮内完成一个项目',
     conditionType: 'project_in_5_sprints',
     category: 'project',
-    rarity: 'epic',
+    rarity: 'rare',
   },
   {
     id: 'iron-man',
@@ -126,7 +126,7 @@ export const achievements: Achievement[] = [
     description: '单局累计花费超过 10000 资金',
     conditionType: 'spend_10000_funds',
     category: 'economic',
-    rarity: 'rare',
+    rarity: 'common',
   },
   {
     id: 'survivor',
@@ -144,6 +144,6 @@ export const achievements: Achievement[] = [
     description: '单局游戏内经历并产生过 50 个以上的 bug',
     conditionType: 'fifty_bugs_total',
     category: 'incident',
-    rarity: 'epic',
+    rarity: 'common',
   },
 ];

@@ -1092,6 +1092,16 @@ body {
   font-size: 0.8rem;
 }
 
+.toast-rarity {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
 /* Achievement Panel */
 .achievement-panel-container {
   margin-top: 24px;
