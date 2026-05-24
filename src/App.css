@@ -1085,11 +1085,13 @@ body {
   color: var(--positive);
   font-weight: 700;
   font-size: 0.9rem;
+  margin-bottom: 4px;
 }
 
 .toast-desc {
   color: var(--text-h);
   font-size: 0.8rem;
+  margin-top: 4px;
 }
 
 .toast-rarity {

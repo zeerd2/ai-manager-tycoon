@@ -53,8 +53,8 @@ export function checkAchievement(
     case 'first_project_completed':
       return context.completedProjectIds.length > 0;
 
-    case 'single_sprint_20_bugs':
-      return context.currentSprintBugs !== undefined && context.currentSprintBugs >= 20;
+    case 'single_sprint_15_bugs':
+      return context.currentSprintBugs !== undefined && context.currentSprintBugs >= 15;
 
     case 'complete_project_80_percent_funds': {
       const totalFunds = context.fundsRemaining + context.totalFundsSpent;
@@ -160,12 +160,12 @@ export function getAchievementProgress(
         display: `${completedCount > 0 ? 1 : 0} / 1`,
       };
 
-    case 'single_sprint_20_bugs': {
+    case 'single_sprint_15_bugs': {
       const maxBugs = gameState.history.reduce((max, h) => Math.max(max, h.bugsDelta), 0);
       return {
-        current: Math.min(maxBugs, 20),
-        target: 20,
-        display: `${maxBugs} / 20`,
+        current: Math.min(maxBugs, 15),
+        target: 15,
+        display: `${maxBugs} / 15`,
       };
     }
 
@@ -184,6 +184,13 @@ export function getAchievementProgress(
         current: Math.min(completedCount, 3),
         target: 3,
         display: `${completedCount} / 3`,
+      };
+
+    case 'project_in_5_sprints':
+      return {
+        current: Math.min(gameState.sprintCount, 5),
+        target: 5,
+        display: `${gameState.sprintCount} / 5`,
       };
 
     case 'agent_6_consecutive': {
@@ -265,6 +272,15 @@ export function getAchievementProgress(
         target: 10000,
         display: `${totalSpent} / 10000`,
       };
+
+    case 'recover_from_bugs': {
+      const maxBugsInSprint = gameState.history.reduce((max, h) => Math.max(max, h.bugsDelta), 0);
+      return {
+        current: Math.min(maxBugsInSprint, 15),
+        target: 15,
+        display: `${maxBugsInSprint} / 15`,
+      };
+    }
 
     case 'fifty_bugs_total': {
       const totalBugs = gameState.history.reduce((sum, h) => sum + h.bugsDelta, 0);

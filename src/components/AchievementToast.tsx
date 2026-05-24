@@ -42,11 +42,11 @@ export function AchievementToast({ achievement, onClose }: Props) {
     <div className={`achievement-toast ${visible ? 'show' : ''}`}>
       <span className="toast-emoji">{achievement.emoji}</span>
       <div className="toast-content">
-        <div className="toast-title">🎯 成就解锁: {achievement.name}</div>
-        <div className="toast-desc">{achievement.description}</div>
-        <span className={`toast-rarity rarity-${achievement.rarity}`}>
+        <div className="toast-title">成就解锁: {achievement.name}</div>
+        <span className={`rarity-badge rarity-${achievement.rarity}`}>
           {getRarityLabel(achievement.rarity)}
         </span>
+        <div className="toast-desc">{achievement.description}</div>
       </div>
     </div>
   );

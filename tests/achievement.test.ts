@@ -40,16 +40,16 @@ describe('checkAchievement', () => {
   describe('bug-factory', () => {
     const ach = getAchievement('bug-factory');
 
-    it('returns true if current sprint bugs is 20 or more', () => {
-      const ctx1 = makeContext({ currentSprintBugs: 20 });
+    it('returns true if current sprint bugs is 15 or more', () => {
+      const ctx1 = makeContext({ currentSprintBugs: 15 });
       expect(checkAchievement(ach, ctx1)).toBe(true);
 
-      const ctx2 = makeContext({ currentSprintBugs: 25 });
+      const ctx2 = makeContext({ currentSprintBugs: 20 });
       expect(checkAchievement(ach, ctx2)).toBe(true);
     });
 
-    it('returns false if current sprint bugs is less than 20 or undefined', () => {
-      const ctx1 = makeContext({ currentSprintBugs: 19 });
+    it('returns false if current sprint bugs is less than 15 or undefined', () => {
+      const ctx1 = makeContext({ currentSprintBugs: 14 });
       expect(checkAchievement(ach, ctx1)).toBe(false);
 
       const ctx2 = makeContext({ currentSprintBugs: undefined });
@@ -466,7 +466,7 @@ describe('getAchievementProgress', () => {
         },
       ],
     });
-    expect(getAchievementProgress(ach, state1)).toEqual({ current: 12, target: 20, display: '12 / 20' });
+    expect(getAchievementProgress(ach, state1)).toEqual({ current: 12, target: 15, display: '12 / 15' });
   });
 
   it('tracks progress for big-team', () => {
@@ -503,10 +503,10 @@ describe('getAchievementProgress', () => {
     expect(getAchievementProgress(ach, state)).toEqual({ current: 2, target: 3, display: '2 / 3' });
   });
 
-  it('returns null progress for speed-run (not yet tracked in getAchievementProgress)', () => {
+  it('tracks progress for speed-run', () => {
     const ach = getAchievement('speed-run');
     const state = makeGameState({ completedProjectIds: ['p1'], sprintCount: 3 });
-    expect(getAchievementProgress(ach, state)).toBeNull();
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 3, target: 5, display: '3 / 5' });
   });
 
   it('tracks progress for iron-man', () => {
@@ -539,10 +539,10 @@ describe('getAchievementProgress', () => {
     expect(getAchievementProgress(ach, state)).toEqual({ current: 2, target: 5, display: '2 / 5' });
   });
 
-  it('returns null progress for survivor (not yet tracked in getAchievementProgress)', () => {
+  it('tracks progress for survivor', () => {
     const ach = getAchievement('survivor');
-    const state = makeGameState({ completedProjectIds: ['p1'] });
-    expect(getAchievementProgress(ach, state)).toBeNull();
+    const state = makeGameState({ completedProjectIds: ['p1'], history: [{ bugsDelta: 10, progressDelta: 0 } as unknown as SprintResult] });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 10, target: 15, display: '10 / 15' });
   });
 
   it('tracks progress for murphy-law', () => {
