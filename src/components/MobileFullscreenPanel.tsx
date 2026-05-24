@@ -11,15 +11,13 @@ export function MobileFullscreenPanel({ title, isOpen, onClose, children }: Prop
   if (!isOpen) return null;
 
   return (
-    <div className="mobile-fullscreen-panel-overlay" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="mobile-fullscreen-panel">
-        <div className="mobile-panel-header">
-          <h2>{title}</h2>
-          <button className="mobile-panel-close-btn" onClick={onClose}>✕</button>
-        </div>
-        <div className="mobile-panel-body">
-          {children}
-        </div>
+    <div className="mobile-fullscreen-overlay" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="mobile-fullscreen-header">
+        <h2>{title}</h2>
+        <button className="mobile-fullscreen-close" onClick={onClose}>✕</button>
+      </div>
+      <div className="mobile-fullscreen-body">
+        {children}
       </div>
     </div>
   );

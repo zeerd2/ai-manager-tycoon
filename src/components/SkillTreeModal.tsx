@@ -38,16 +38,13 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({ agent, companyMo
         <div className="save-manager-header">
           <div>
             <h2>{agent.name} 的技能树</h2>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-              角色: <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{agent.role}</span>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+              <span>角色: <strong style={{ color: 'var(--accent)' }}>{agent.role}</strong></span>
+              <span style={{ color: 'var(--border)' }}>|</span>
+              <span style={{ color: 'var(--positive)', fontWeight: 'bold' }}>资金: ${companyMoney}</span>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--positive)' }}>
-              资金: ${companyMoney}
-            </div>
-            <button onClick={onClose} className="close-btn">✕</button>
-          </div>
+          <button onClick={onClose} className="close-btn">✕</button>
         </div>
 
         <div className="save-manager-body" style={{ padding: '24px', overflowY: 'auto' }}>
