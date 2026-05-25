@@ -6,7 +6,8 @@ import {
   saveToSlot,
   loadFromSlot,
   deleteSlot,
-  checkAndMigrateOldSave
+  checkAndMigrateOldSave,
+  isFallbackStorageActive
 } from '../domain/saveSystem';
 import type { SaveMetadata, AutosaveConfig } from '../domain/saveSystem';
 import type { GameState } from '../domain/gameState';
@@ -40,6 +41,20 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
   } | null>(null);
   const [saveNameInputs, setSaveNameInputs] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'load' | 'save' | 'settings'>(isStartup ? 'load' : 'save');
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | 'warning';
+    message: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (notification && notification.type === 'success') {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const refreshSlots = () => {
     setSlots(getSaveSlotsMetadata());
@@ -93,16 +108,27 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
   };
 
   const executeLoad = (slotId: string) => {
-    try {
-      const saveData = loadFromSlot(slotId);
-      if (saveData) {
-        onLoadGame(saveData.gameState, slotId);
-        setConfirmAction(null);
-        onClose();
+    setIsLoading(true);
+    setNotification(null);
+    setTimeout(() => {
+      try {
+        const saveData = loadFromSlot(slotId);
+        if (saveData) {
+          onLoadGame(saveData.gameState, slotId);
+          setConfirmAction(null);
+          onClose();
+        } else {
+          setNotification({ type: 'error', message: '存档数据为空' });
+        }
+      } catch (e) {
+        setNotification({
+          type: 'error',
+          message: `无法加载存档: ${e instanceof Error ? e.message : String(e)}`
+        });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      alert(`无法加载存档: ${e instanceof Error ? e.message : String(e)}`);
-    }
+    }, 300);
   };
 
   const handleSaveSlot = (slotId: string) => {
@@ -121,15 +147,31 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
   };
 
   const executeSave = (slotId: string, name: string) => {
-    try {
-      saveToSlot(slotId, name, gameState);
-      refreshSlots();
-      setSaveNameInputs(prev => ({ ...prev, [slotId]: '' }));
-      setConfirmAction(null);
-      alert('保存成功！');
-    } catch (e) {
-      alert(`保存失败: ${e instanceof Error ? e.message : String(e)}`);
-    }
+    setIsLoading(true);
+    setNotification(null);
+    setTimeout(() => {
+      try {
+        saveToSlot(slotId, name, gameState);
+        refreshSlots();
+        setSaveNameInputs(prev => ({ ...prev, [slotId]: '' }));
+        setConfirmAction(null);
+        if (isFallbackStorageActive()) {
+          setNotification({
+            type: 'warning',
+            message: '保存成功到临时内存！(注意：本地浏览器存储不可用，刷新后将丢失)'
+          });
+        } else {
+          setNotification({ type: 'success', message: '保存成功！' });
+        }
+      } catch (e) {
+        setNotification({
+          type: 'error',
+          message: `保存失败: ${e instanceof Error ? e.message : String(e)}`
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300);
   };
 
   const handleDeleteSlot = (slotId: string) => {
@@ -183,6 +225,27 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
   return (
     <div className={`save-manager-overlay ${isStartup ? 'startup' : ''}`}>
       <div className="save-manager-modal">
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 100,
+            backdropFilter: 'blur(2px)'
+          }}>
+            <div className="panel-loading" style={{ fontSize: '1.2rem', color: 'var(--accent)', textShadow: '0 0 8px rgba(0, 240, 255, 0.5)' }}>
+              🔄 处理中，请稍候...
+            </div>
+          </div>
+        )}
+
         <div className="save-manager-header">
           <h2>{isStartup ? '🚀 载入游戏 / 新建存档' : '💾 存档管理'}</h2>
           {!isStartup && (
@@ -191,6 +254,47 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
             </button>
           )}
         </div>
+
+        {isFallbackStorageActive() && (
+          <div style={{
+            backgroundColor: 'rgba(255, 165, 0, 0.15)',
+            borderLeft: '4px solid orange',
+            padding: '12px 20px',
+            margin: '12px 24px 0',
+            fontSize: '0.9rem',
+            color: 'orange',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            borderRadius: '4px'
+          }}>
+            <span>⚠️</span>
+            <span>本地浏览器存储不可用或已满。游戏将使用临时内存存储，关闭或刷新页面后将丢失进度！</span>
+          </div>
+        )}
+
+        {notification && (
+          <div style={{
+            backgroundColor: notification.type === 'success' ? 'rgba(0, 255, 0, 0.1)' : notification.type === 'warning' ? 'rgba(255, 165, 0, 0.15)' : 'rgba(255, 0, 0, 0.1)',
+            borderLeft: `4px solid ${notification.type === 'success' ? 'var(--accent)' : notification.type === 'warning' ? 'orange' : 'var(--accent-red)'}`,
+            padding: '12px 20px',
+            margin: '12px 24px 0',
+            fontSize: '0.9rem',
+            color: notification.type === 'success' ? '#a3e635' : notification.type === 'warning' ? 'orange' : '#f87171',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderRadius: '4px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>{notification.type === 'success' ? '✅' : notification.type === 'warning' ? '⚠️' : '❌'}</span>
+              <span>{notification.message}</span>
+            </div>
+            <button style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }} onClick={() => setNotification(null)}>
+              &times;
+            </button>
+          </div>
+        )}
 
         {!isStartup && (
           <div className="save-manager-tabs">

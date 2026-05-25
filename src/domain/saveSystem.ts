@@ -41,25 +41,82 @@ export function getSlotKey(slotId: string): string {
   return `${SLOT_KEY_PREFIX}${slotId}`;
 }
 
+function checkLocalStorageAvailability(): boolean {
+  try {
+    const testKey = '__storage_test__';
+    localStorage.setItem(testKey, testKey);
+    const value = localStorage.getItem(testKey);
+    localStorage.removeItem(testKey);
+    return value === testKey;
+  } catch {
+    return false;
+  }
+}
+
 const storageCache = new Map<string, string | null>();
+let hasCheckedLocalStorage = false;
+let isUsingFallbackStorage = false;
+
+function ensureStorageChecked(): void {
+  if (!hasCheckedLocalStorage) {
+    isUsingFallbackStorage = !checkLocalStorageAvailability();
+    hasCheckedLocalStorage = true;
+  }
+}
+
+export function resetStorageCheck(): void {
+  hasCheckedLocalStorage = false;
+  isUsingFallbackStorage = false;
+  storageCache.clear();
+}
+
+export function isFallbackStorageActive(): boolean {
+  ensureStorageChecked();
+  return isUsingFallbackStorage;
+}
 
 function cachedGetItem(key: string): string | null {
+  ensureStorageChecked();
   if (storageCache.has(key)) {
     return storageCache.get(key) ?? null;
   }
-  const val = localStorage.getItem(key);
-  storageCache.set(key, val);
-  return val;
+  if (!isUsingFallbackStorage) {
+    try {
+      const val = localStorage.getItem(key);
+      storageCache.set(key, val);
+      return val;
+    } catch (e) {
+      console.warn('localStorage getItem failed, falling back to memory storage', e);
+      isUsingFallbackStorage = true;
+    }
+  }
+  return null;
 }
 
 function cachedSetItem(key: string, value: string): void {
+  ensureStorageChecked();
   storageCache.set(key, value);
-  localStorage.setItem(key, value);
+  if (!isUsingFallbackStorage) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.error('localStorage setItem failed, falling back to memory storage', e);
+      isUsingFallbackStorage = true;
+    }
+  }
 }
 
 function cachedRemoveItem(key: string): void {
+  ensureStorageChecked();
   storageCache.delete(key);
-  localStorage.removeItem(key);
+  if (!isUsingFallbackStorage) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn('localStorage removeItem failed, falling back to memory storage', e);
+      isUsingFallbackStorage = true;
+    }
+  }
 }
 
 /** 读取自动存档配置，默认启用且间隔 5 分钟 */

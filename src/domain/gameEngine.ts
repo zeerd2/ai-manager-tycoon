@@ -118,25 +118,60 @@ export function checkUnlocks(state: GameState): string[] {
 
 const SAVE_KEY = 'ai_manager_tycoon_save_v2';
 
+function checkLocalStorageAvailability(): boolean {
+  try {
+    const testKey = '__storage_test__';
+    localStorage.setItem(testKey, testKey);
+    const value = localStorage.getItem(testKey);
+    localStorage.removeItem(testKey);
+    return value === testKey;
+  } catch {
+    return false;
+  }
+}
+
 const storageCache = new Map<string, string | null>();
+let isUsingFallbackStorage = !checkLocalStorageAvailability();
 
 function cachedGetItem(key: string): string | null {
   if (storageCache.has(key)) {
     return storageCache.get(key) ?? null;
   }
-  const val = localStorage.getItem(key);
-  storageCache.set(key, val);
-  return val;
+  if (!isUsingFallbackStorage) {
+    try {
+      const val = localStorage.getItem(key);
+      storageCache.set(key, val);
+      return val;
+    } catch (e) {
+      console.warn('localStorage getItem failed, falling back to memory storage', e);
+      isUsingFallbackStorage = true;
+    }
+  }
+  return null;
 }
 
 function cachedSetItem(key: string, value: string): void {
   storageCache.set(key, value);
-  localStorage.setItem(key, value);
+  if (!isUsingFallbackStorage) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.error('localStorage setItem failed, falling back to memory storage', e);
+      isUsingFallbackStorage = true;
+    }
+  }
 }
 
 function cachedRemoveItem(key: string): void {
   storageCache.delete(key);
-  localStorage.removeItem(key);
+  if (!isUsingFallbackStorage) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn('localStorage removeItem failed, falling back to memory storage', e);
+      isUsingFallbackStorage = true;
+    }
+  }
 }
 
 /** 保存游戏状态到 localStorage（旧版单槽位，向后兼容） */

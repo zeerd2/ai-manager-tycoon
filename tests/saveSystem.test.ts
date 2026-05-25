@@ -7,7 +7,9 @@ import {
   getAutosaveConfig,
   setAutosaveConfig,
   checkAndMigrateOldSave,
-  SAVE_VERSION
+  SAVE_VERSION,
+  resetStorageCheck,
+  isFallbackStorageActive
 } from '../src/domain/saveSystem';
 import type { GameState } from '../src/domain/gameState';
 
@@ -34,6 +36,8 @@ describe('Save System', () => {
       setItem: vi.fn((key, value) => { store[key] = value.toString() }),
       removeItem: vi.fn((key) => { delete store[key] }),
     });
+
+    resetStorageCheck();
   });
 
   describe('Autosave Configuration', () => {
@@ -224,6 +228,35 @@ describe('Save System', () => {
       expect(loaded!.version).toBe(SAVE_VERSION);
       expect(loaded!.skillTrees).toBeDefined();
       expect(loaded!.relationships).toBeDefined();
+    });
+  });
+
+  describe('LocalStorage Fallback and Unavailable', () => {
+    it('should seamlessly fallback to memory cache if localStorage is disabled or throws', () => {
+      // Simulate localStorage throwing error (e.g. disabled or full)
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn(() => { throw new Error('SecurityError: The operation is insecure.') }),
+        setItem: vi.fn(() => { throw new Error('QuotaExceededError') }),
+        removeItem: vi.fn(() => { throw new Error('SecurityError') }),
+      });
+      resetStorageCheck();
+
+      expect(isFallbackStorageActive()).toBe(true);
+
+      // Now call saveToSlot. It should not throw since it falls back to memory!
+      saveToSlot('1', '内存存档', mockState);
+
+      // We should be able to load it back from slot!
+      const loaded = loadFromSlot('1');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.name).toBe('内存存档');
+      expect(loaded!.gameState.funds).toBe(5000);
+
+      // Check that metadata still returns the slot info
+      const metadata = getSaveSlotsMetadata();
+      const slot1Meta = metadata.find(m => m.id === '1')!;
+      expect(slot1Meta).toBeDefined();
+      expect(slot1Meta.name).toBe('内存存档');
     });
   });
 });

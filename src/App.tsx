@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { sampleAgents } from './data/sampleAgents';
 import { sampleProjects } from './data/sampleProjects';
 import { incidentTemplates } from './data/incidentTemplates';
@@ -42,15 +42,17 @@ import { CompanyDashboard } from './components/CompanyDashboard';
 import { AchievementToast } from './components/AchievementToast';
 import { RelationsNetwork } from './components/RelationsNetwork';
 import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-const TeamEventDialog = lazy(() => import('./components/TeamEventDialog').then(m => ({ default: m.TeamEventDialog })));
-const SkillTreeModal = lazy(() => import('./components/SkillTreeModal').then(m => ({ default: m.SkillTreeModal })));
-const ResultReport = lazy(() => import('./components/ResultReport').then(m => ({ default: m.ResultReport })));
-const HistoryPanel = lazy(() => import('./components/HistoryPanel').then(m => ({ default: m.HistoryPanel })));
-const GameOverScreen = lazy(() => import('./components/GameOverScreen').then(m => ({ default: m.GameOverScreen })));
-const AchievementPanel = lazy(() => import('./components/AchievementPanel').then(m => ({ default: m.AchievementPanel })));
-const SaveManager = lazy(() => import('./components/SaveManager').then(m => ({ default: m.SaveManager })));
-const TutorialGuide = lazy(() => import('./components/TutorialGuide').then(m => ({ default: m.TutorialGuide })));
+const TeamEventDialog = lazyWithRetry(() => import('./components/TeamEventDialog').then(m => ({ default: m.TeamEventDialog })));
+const SkillTreeModal = lazyWithRetry(() => import('./components/SkillTreeModal').then(m => ({ default: m.SkillTreeModal })));
+const ResultReport = lazyWithRetry(() => import('./components/ResultReport').then(m => ({ default: m.ResultReport })));
+const HistoryPanel = lazyWithRetry(() => import('./components/HistoryPanel').then(m => ({ default: m.HistoryPanel })));
+const GameOverScreen = lazyWithRetry(() => import('./components/GameOverScreen').then(m => ({ default: m.GameOverScreen })));
+const AchievementPanel = lazyWithRetry(() => import('./components/AchievementPanel').then(m => ({ default: m.AchievementPanel })));
+const SaveManager = lazyWithRetry(() => import('./components/SaveManager').then(m => ({ default: m.SaveManager })));
+const TutorialGuide = lazyWithRetry(() => import('./components/TutorialGuide').then(m => ({ default: m.TutorialGuide })));
 
 import './App.css';
 
@@ -90,6 +92,20 @@ export default function App() {
   const [isTutorialOpen, setIsTutorialOpen] = useState(true);
   const [activeMainSection, setActiveMainSection] = useState<MainSectionId>('team');
   const [activeMobileOverlay, setActiveMobileOverlay] = useState<MobileOverlayId | null>(null);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // States for notifications and celebration
   const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
@@ -438,15 +454,19 @@ export default function App() {
         );
       case 'achievements':
         return (
-          <Suspense fallback={<div className="panel-loading">加载成就...</div>}>
-            <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
-          </Suspense>
+          <ErrorBoundary local>
+            <Suspense fallback={<div className="panel-loading">加载成就...</div>}>
+              <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+            </Suspense>
+          </ErrorBoundary>
         );
       case 'history':
         return (
-          <Suspense fallback={<div className="panel-loading">加载历史记录...</div>}>
-            <HistoryPanel history={gameState.history} />
-          </Suspense>
+          <ErrorBoundary local>
+            <Suspense fallback={<div className="panel-loading">加载历史记录...</div>}>
+              <HistoryPanel history={gameState.history} />
+            </Suspense>
+          </ErrorBoundary>
         );
       default:
         return null;
@@ -455,15 +475,39 @@ export default function App() {
 
   return (
     <div className="app">
+      {!isOnline && (
+        <div className="offline-banner" style={{
+          backgroundColor: 'var(--accent-red, #ef4444)',
+          color: 'white',
+          textAlign: 'center',
+          padding: '10px 20px',
+          fontSize: '0.95rem',
+          fontWeight: 'bold',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1100,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>📶</span>
+          <span>您的网络连接已断开，正处于离线模式。在此状态下，某些组件和数据可能会加载失败，建议恢复连接后继续。</span>
+        </div>
+      )}
+
       {pendingEvent && (
-        <Suspense fallback={null}>
-          <TeamEventDialog
-            event={pendingEvent}
-            agents={gameState.agents}
-            relationsManager={new RelationsManager(gameState.relations || [])}
-            onResolve={handleEventResolve}
-          />
-        </Suspense>
+        <ErrorBoundary local>
+          <Suspense fallback={null}>
+            <TeamEventDialog
+              event={pendingEvent}
+              agents={gameState.agents}
+              relationsManager={new RelationsManager(gameState.relations || [])}
+              onResolve={handleEventResolve}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       <header className="app-header">
@@ -485,9 +529,11 @@ export default function App() {
 
       {/* 3. Game Over Screen Overlay */}
       {gameState.gameOver && (
-        <Suspense fallback={null}>
-          <GameOverScreen gameState={gameState} onReset={handleReset} />
-        </Suspense>
+        <ErrorBoundary local>
+          <Suspense fallback={null}>
+            <GameOverScreen gameState={gameState} onReset={handleReset} />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       <main className="app-main">
@@ -549,16 +595,18 @@ export default function App() {
             <button className="btn-reset" onClick={handleReset}>重置游戏</button>
           </div>
 
-          <Suspense fallback={null}>
-            <TutorialGuide
-              sprintCount={gameState.sprintCount}
-              selectedAgentCount={selectedAgentIds.size}
-              selectedProjectId={selectedProjectId}
-              selectedStrategyId={selectedStrategyId}
-              isOpen={isTutorialOpen}
-              onClose={() => setIsTutorialOpen(false)}
-            />
-          </Suspense>
+          <ErrorBoundary local>
+            <Suspense fallback={null}>
+              <TutorialGuide
+                sprintCount={gameState.sprintCount}
+                selectedAgentCount={selectedAgentIds.size}
+                selectedProjectId={selectedProjectId}
+                selectedStrategyId={selectedStrategyId}
+                isOpen={isTutorialOpen}
+                onClose={() => setIsTutorialOpen(false)}
+              />
+            </Suspense>
+          </ErrorBoundary>
 
           <MobileSectionNav
             sections={MAIN_SECTIONS}
@@ -631,14 +679,16 @@ export default function App() {
             className={`panel result-panel ${!lastResult ? 'result-panel-empty' : ''} ${activeMainSection !== 'result' ? 'mobile-hidden' : ''}`}
           >
             {lastResult ? (
-              <Suspense fallback={<div className="panel-loading">生成报告中...</div>}>
-                <ResultReport
-                  result={lastResult}
-                  projectCompleted={projectCompleted}
-                  projectBonus={projectBonus}
-                  newlyUnlockedAgents={newlyUnlockedAgents}
-                />
-              </Suspense>
+              <ErrorBoundary local>
+                <Suspense fallback={<div className="panel-loading">生成报告中...</div>}>
+                  <ResultReport
+                    result={lastResult}
+                    projectCompleted={projectCompleted}
+                    projectBonus={projectBonus}
+                    newlyUnlockedAgents={newlyUnlockedAgents}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             ) : (
               <div className="mobile-result-empty">执行 Sprint 后，这里会显示本轮结果。</div>
             )}
@@ -648,15 +698,19 @@ export default function App() {
             id="main-section-history"
             className={`panel history-panel-wrapper ${activeMainSection !== 'history' ? 'mobile-hidden' : ''}`}
           >
-            <Suspense fallback={<div className="panel-loading">加载历史记录...</div>}>
-              <HistoryPanel history={gameState.history} />
-            </Suspense>
+            <ErrorBoundary local>
+              <Suspense fallback={<div className="panel-loading">加载历史记录...</div>}>
+                <HistoryPanel history={gameState.history} />
+              </Suspense>
+            </ErrorBoundary>
           </section>
 
           <div className={activeMainSection !== 'history' ? 'mobile-hidden' : ''}>
-            <Suspense fallback={<div className="panel-loading">加载成就...</div>}>
-              <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
-            </Suspense>
+            <ErrorBoundary local>
+              <Suspense fallback={<div className="panel-loading">加载成就...</div>}>
+                <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </main>
@@ -685,28 +739,32 @@ export default function App() {
         </div>
       )}
 
-      <Suspense fallback={null}>
-        <SaveManager
-          gameState={gameState}
-          onLoadGame={handleLoadGame}
-          onNewGame={handleNewGame}
-          isOpen={isSaveManagerOpen}
-          onClose={() => setIsSaveManagerOpen(false)}
-          isStartup={isStartup}
-          autosaveConfig={autosaveConfig}
-          onUpdateAutosaveConfig={handleUpdateAutosaveConfig}
-        />
-      </Suspense>
-
-      {activeSkillTreeAgentId && (
+      <ErrorBoundary local>
         <Suspense fallback={null}>
-          <SkillTreeModal
-            agent={gameState.agents.find(a => a.id === activeSkillTreeAgentId)!}
-            companyMoney={gameState.funds}
-            onClose={() => setActiveSkillTreeAgentId(null)}
-            onUnlock={handleUnlockSkill}
+          <SaveManager
+            gameState={gameState}
+            onLoadGame={handleLoadGame}
+            onNewGame={handleNewGame}
+            isOpen={isSaveManagerOpen}
+            onClose={() => setIsSaveManagerOpen(false)}
+            isStartup={isStartup}
+            autosaveConfig={autosaveConfig}
+            onUpdateAutosaveConfig={handleUpdateAutosaveConfig}
           />
         </Suspense>
+      </ErrorBoundary>
+
+      {activeSkillTreeAgentId && (
+        <ErrorBoundary local>
+          <Suspense fallback={null}>
+            <SkillTreeModal
+              agent={gameState.agents.find(a => a.id === activeSkillTreeAgentId)!}
+              companyMoney={gameState.funds}
+              onClose={() => setActiveSkillTreeAgentId(null)}
+              onUnlock={handleUnlockSkill}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
     </div>
   );

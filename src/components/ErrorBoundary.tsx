@@ -2,6 +2,8 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
+  local?: boolean;
+  onReset?: () => void;
 }
 
 interface State {
@@ -25,11 +27,32 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleReset = () => {
     this.setState({ hasError: false, error: null });
-    window.location.reload();
+    if (this.props.local) {
+      if (this.props.onReset) {
+        this.props.onReset();
+      }
+    } else {
+      window.location.reload();
+    }
   };
 
   public render() {
     if (this.state.hasError) {
+      if (this.props.local) {
+        return (
+          <div className="panel error-boundary-local" style={{ padding: '20px', border: '1px solid var(--accent-red)', borderRadius: '6px', margin: '16px 0', textAlign: 'center', backgroundColor: 'var(--bg-dark)' }}>
+            <span style={{ fontSize: '24px' }}>⚠️</span>
+            <h4 style={{ color: 'var(--accent-red)', margin: '8px 0 4px', fontSize: '16px' }}>组件加载失败</h4>
+            <p className="subtitle" style={{ fontSize: '12px', margin: '0 0 12px', opacity: 0.8 }}>
+              {this.state.error?.message || '资源加载出错或网络连接断开'}
+            </p>
+            <button className="btn-reset" onClick={this.handleReset} style={{ padding: '6px 16px', fontSize: '13px' }}>
+              🔄 重试
+            </button>
+          </div>
+        );
+      }
+
       return (
         <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
           <div className="panel" style={{ maxWidth: '600px', width: '100%', textAlign: 'center', padding: '40px', border: '2px solid var(--accent-red)' }}>
