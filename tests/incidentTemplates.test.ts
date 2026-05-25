@@ -7,10 +7,10 @@ const newFunnyIncidentTitles = [
   '{actor} 训练出阴阳怪气 AI 客服',
   '{actor} 发现 GPU 服务器在挖矿',
   '{actor} 写出只有 AI 看得懂的代码',
-  '{actor} 把团建办成吐槽大会',
-  '{actor} 让实习生碰了生产库',
-  '{actor} 发现竞争对手的橘猫间谍',
-  '{actor} 把离职感言发到公司群',
+  '{actor} 组织跨模型复盘变成吐槽大会',
+  '{actor} 给测试 Agent 授予了生产写权限',
+  '{actor} 在日志中发现竞品投毒',
+  '{actor} 被替换前输出了 2000 token 临终遗言',
   '{actor} 围观 AI 伦理官和模型吵架',
 ];
 

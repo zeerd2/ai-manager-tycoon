@@ -170,7 +170,7 @@ describe('Game Engine', () => {
       state.funds = 0;
       const result = checkGameOver(state);
       expect(result.gameOver).toBe(true);
-      expect(result.reason).toContain('公司破产了');
+      expect(result.reason).toContain('Token 预算烧光了');
     });
 
     it('should return game over when all unlocked agents have morale <= 0', () => {
@@ -180,7 +180,7 @@ describe('Game Engine', () => {
       // agent 3 is locked, so it shouldn't matter
       const result = checkGameOver(state);
       expect(result.gameOver).toBe(true);
-      expect(result.reason).toContain('所有员工集体罢工');
+      expect(result.reason).toContain('context window 同时溢出');
     });
 
     it('should not return game over otherwise', () => {

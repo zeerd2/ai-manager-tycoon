@@ -4,7 +4,7 @@ export const strategies: Strategy[] = [
   {
     id: 'move-fast',
     name: '先冲再说',
-    description: '速度拉满，谨慎为零。现在上线，以后修复（或者永远不修）。',
+    description: 'Token 预算全部用于推理，0% 用于校验。先上线再说，context window 不够放错误处理。',
     modifiers: {
       progressMul: 1.5,
       bugMul: 1.8,
@@ -16,7 +16,7 @@ export const strategies: Strategy[] = [
   {
     id: 'careful',
     name: '稳扎稳打',
-    description: '任何事都要评审三次。没有20页的设计文档，谁也别想上线。',
+    description: '每条输出经过 3 层 guardrail 过滤。推理成本翻倍但输出干净到可以直接用于医疗诊断。',
     modifiers: {
       progressMul: 0.7,
       bugMul: 0.4,
@@ -28,7 +28,7 @@ export const strategies: Strategy[] = [
   {
     id: 'pair-program',
     name: '结对编程',
-    description: '两个AI，一把键盘。吞吐量减半，吵架量翻倍。',
+    description: '双模型冗余推理。两个独立的 LLM 各自生成方案然后交叉验证。Token 消耗翻倍，除非两个同时 hallucinate。',
     modifiers: {
       progressMul: 0.8,
       bugMul: 0.5,
@@ -40,7 +40,7 @@ export const strategies: Strategy[] = [
   {
     id: 'crunch',
     name: '死亡冲刺',
-    description: '强制加班。GPU烧得滚烫，士气凉到冰点。',
+    description: 'GPU 利用率拉到 110%。所有 cooling period 被跳过，context window 不清理一直堆。下个月预算这轮烧光。',
     modifiers: {
       progressMul: 1.8,
       bugMul: 1.4,
@@ -52,7 +52,7 @@ export const strategies: Strategy[] = [
   {
     id: 'yolo',
     name: '生死看淡，上线再看',
-    description: '不要测试，不要评审，不留遗憾。直接强推主分支，然后闭眼祈祷。',
+    description: 'Guardrail 全部关闭，temperature 拉到 1.5。所有输出直接进 production，如果有用户投诉就当 A/B 测试。',
     modifiers: {
       progressMul: 2.0,
       bugMul: 2.5,

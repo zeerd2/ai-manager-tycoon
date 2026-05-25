@@ -31,7 +31,7 @@ export function GameOverScreen({ gameState, onReset }: Props) {
   return (
     <div className="game-over-screen">
       <div className="game-over-content">
-        <h1 className="game-over-title">游戏结束</h1>
+        <h1 className="game-over-title">公司倒闭 / 训练中断 / 推理预算归零</h1>
 
         <p className="game-over-reason">{gameOverReason}</p>
 
@@ -68,7 +68,7 @@ export function GameOverScreen({ gameState, onReset }: Props) {
         </div>
 
         <button className="btn-restart" onClick={onReset}>
-          再来一局
+          重新部署 / 再投一轮
         </button>
       </div>
     </div>

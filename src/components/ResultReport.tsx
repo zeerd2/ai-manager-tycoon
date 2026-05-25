@@ -75,18 +75,18 @@ function getSummaryAndTone(
   moraleDelta: number
 ) {
   if (progressDelta >= 20 && bugsDelta <= 1) {
-    return "难得地，团队今天没搞砸。记住这个日子。也许是太阳打西边出来了，或者大家都喝了双倍浓缩咖啡。我很欣慰，希望下个 Sprint 你们还能保持这种清醒状态。";
+    return "罕见的高缓存命中率。所有 Agent 都没 hallucinate，tool call 也没有死循环。建议把这个 checkpoint 冻结起来供后续版本参考——这种稳定状态可能再也不会出现了。";
   }
   if (bugsDelta >= 4 && techDebtDelta >= 8) {
-    return "本轮 Sprint 的唯一成就是证明了墨菲定律的正确性。如果写 Bug 也能算进绩效，我们现在已经可以敲钟上市了。代码库现在看起来像一栋用胶带和祈祷支撑起来的危楼。";
+    return "这轮 token 利用率创下新低。模型把 60% 的推理预算花在了自我怀疑和来回修改上。技术债已经多到连 garbage collector 都放弃了。代码库的 entropy 已经超过了可维护阈值。";
   }
   if (moraleDelta <= -10) {
-    return "团队士气已跌至'考虑转行'级别。每个人看前台仙人掌的眼神都比看代码深情。再这样下去只能去开咖啡馆了。整个办公室弥漫着一股想去送外卖或者回家继承家产的消极气息。";
+    return "模型退化率已经到危险线了。连续的高温推理让所有 Agent 的准确率下降了 30%。它们的 embedding 开始在向量空间里画骷髅头了。再这样下去只能回滚到上一个 checkpoint。";
   }
   if (progressDelta <= 5) {
-    return "今天的进度慢得像在用 2G 网络下载 4K 电影。我怀疑大家一整天都在讨论中午吃什么，顺便写了半行代码。这进度，连蜗牛看了都想给你们加油打气。";
+    return "这轮的推理吞吐量还不如一个 7B 模型。花了 80% 的 budget 在 prompt 解析和意图理解上，真正干了活的只有最后 20%。建议检查是不是 system prompt 太长了。";
   }
-  return "又一天，又一个 Sprint，又一堆技术债。继续。一切都在预料之中，没有惊喜，当然，也没少写 Bug。团队继续用他们独特的方式磨洋工，好消息是至少项目还没彻底垮掉。";
+  return "中规中矩的产出，不高不低的 token 消耗，不痛不痒的 bug 数。就像用默认参数跑了一个 baseline 模型——不出彩也不会爆炸。一切都在预料之中，没有惊喜，也没少烧 GPU。";
 }
 
 function getBossCommentAndColor(
@@ -100,24 +100,24 @@ function getBossCommentAndColor(
 
   if (isAllGood) {
     return {
-      comment: "……等等，今天没人搞砸？我需要确认一下服务器是不是挂了。",
+      comment: "……所有 Agent 都在 budget 内完成了任务？这不可能。让我查一下是不是缓存命中率异常导致的假阳性。",
       colorClass: "all-good",
     };
   }
   if (category === 'disaster') {
     return {
-      comment: "我花钱雇的是工程师还是bug制造机？",
+      comment: "我花钱买 API 不是为了让你们无限 tool call 刷账单的！这轮 token 消耗够训练一个 LLaMA 了！",
       colorClass: "disaster",
     };
   }
   if (category === 'fail') {
     return {
-      comment: "你们写代码的速度要是能赶上写 Bug 的一半，我们早就是行业独角兽了。",
+      comment: "你们这轮消耗的 token 够付我一台 H100 的分期了——产出的只有 bug。我喂这么多数据就为了看你们产生幻觉？",
       colorClass: "fail",
     };
   }
   return {
-    comment: "又一天，又一个Sprint，又一堆技术债。继续。",
+    comment: "又一个 Sprint，又烧了一堆推理配额，又堆了一堆技术债。GPU 集群还在冒烟，继续压榨。",
     colorClass: "normal",
   };
 }

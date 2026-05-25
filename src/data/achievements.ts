@@ -30,9 +30,9 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'team-wipe',
-    name: '全员自闭',
+    name: '全员宕机',
     emoji: '💀',
-    description: '所有员工同时 morale 为 0',
+    description: '所有 Agent 同时 context window 溢出',
     conditionType: 'all_agents_zero_morale',
     category: 'employee',
     rarity: 'legendary',

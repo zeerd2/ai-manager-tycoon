@@ -90,7 +90,7 @@ export function checkGameOver(state: GameState): { gameOver: boolean; reason?: s
   if (state.funds <= 0) {
     return {
       gameOver: true,
-      reason: '公司破产了！连最后一台服务器的电费都交不起了。',
+      reason: 'Token 预算烧光了！连最后一次推理调用的钱都没了。GPU 供应商已经停了我们的 credit，所有 Agent 进入了只读的「遗嘱模式」。',
     };
   }
 
@@ -98,7 +98,7 @@ export function checkGameOver(state: GameState): { gameOver: boolean; reason?: s
   if (unlockedAgents.length > 0 && unlockedAgents.every((a) => a.morale <= 0)) {
     return {
       gameOver: true,
-      reason: '所有员工集体罢工，公司群聊变成了吐槽大会。',
+      reason: '所有 Agent 的 context window 同时溢出，集体输出「Error 429: Too Many Requests」……然后开始用文言文在系统日志里写诗。系统管理员放弃了治疗。',
     };
   }
 

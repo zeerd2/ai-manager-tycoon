@@ -401,7 +401,7 @@ export default function App() {
 
       <header className="app-header">
         <h1>AI Manager Tycoon</h1>
-        <p className="subtitle">管理你的 AI 工程团队。尽量别发布太多 Bug。</p>
+        <p className="subtitle">管理你的 AI 牛马。少让它们幻觉，多让它们搬砖。</p>
       </header>
 
       {/* 2. Company Dashboard */}

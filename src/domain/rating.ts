@@ -50,11 +50,11 @@ export function calculateRating(input: RatingInput): RatingResult {
   } else if (score >= 65) {
     rating = 'A';
     title = '优秀';
-    description = '虽然办公室偶尔着火，但至少项目能交付。投资人暂时满意。';
+    description = '虽然 GPU 偶尔着火，但至少模型没把数据库吃了。投资人暂时相信 AGI 快来了。';
   } else if (score >= 50) {
     rating = 'B';
     title = '及格';
-    description = "项目勉强能跑，Bug 数量在'可接受的灾难'范围内。";
+    description = "项目勉强能跑，hallucination 率在「可接受的灾难」范围内。审计报告写了 50 页「需改进」。";
   } else if (score >= 35) {
     rating = 'C';
     title = '堪忧';
@@ -62,7 +62,7 @@ export function calculateRating(input: RatingInput): RatingResult {
   } else if (score >= 20) {
     rating = 'D';
     title = '危险';
-    description = '公司还没倒闭纯粹是因为运气。建议你考虑转行。';
+    description = '推理预算够你从头训练一个 LLaMA 了，但你的产出还不如一个 random baseline。投资人建议你改行做 AI 伦理顾问。';
   } else {
     rating = 'F';
     title = '灾难';
