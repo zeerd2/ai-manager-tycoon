@@ -11,8 +11,7 @@ interface Props {
 const DIFFICULTY_COLORS: Record<DifficultyLevel, string> = {
   intern: '#4ade80',
   normal: '#60a5fa',
-  challenge: '#f97316',
-  hell: '#ef4444',
+  hard: '#f97316',
   legend: '#a855f7',
 };
 

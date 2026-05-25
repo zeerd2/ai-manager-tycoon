@@ -35,7 +35,9 @@ export function calculateSprintScores(
       - avgEff * 0.1 * (agents.reduce((s, a) => s + a.skills.architecture, 0) / Math.max(teamSize, 1) / 100)
   );
 
-  const totalCost = agents.reduce((s, a) => s + a.salary, 0);
+  const salaryCost = agents.reduce((s, a) => s + a.salary, 0);
+  const operatingCost = Math.round(project.difficulty * 2 + project.urgency * 1.2 + project.risk * 1.5);
+  const totalCost = agents.length > 0 ? salaryCost + operatingCost : 0;
 
   return { rawProgress, rawBugs, rawTechDebt: Math.max(0, rawTechDebt), totalCost };
 }

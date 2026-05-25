@@ -72,11 +72,11 @@ describe('calculateSprintScores', () => {
     expect(fast.rawProgress).toBeGreaterThan(normal.rawProgress);
   });
 
-  it('calculates total cost from salaries', () => {
+  it('calculates total cost from salaries and project operating cost', () => {
     const agents = [makeAgent({ salary: 200 }), makeAgent({ id: '2', salary: 300 })];
     const project = makeProject();
     const scores = calculateSprintScores(agents, project, neutralStrategy);
-    expect(scores.totalCost).toBe(500);
+    expect(scores.totalCost).toBe(735);
   });
 
   it('returns zero progress for empty team', () => {

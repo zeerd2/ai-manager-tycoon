@@ -93,10 +93,10 @@ describe('runSprint', () => {
     expect(result1.incidents.length).toBe(result2.incidents.length);
   });
 
-  it('calculates cost from agent salaries', () => {
+  it('calculates cost from agent salaries and project operating cost', () => {
     const rng = createRNG(42);
     const agents = [makeAgent({ id: '1', salary: 200 }), makeAgent({ id: '2', salary: 300 })];
     const result = runSprint(1, agents, makeProject(), neutralStrategy, incidentTemplates, rng);
-    expect(result.cost).toBe(500);
+    expect(result.cost).toBe(735);
   });
 });

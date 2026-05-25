@@ -159,7 +159,7 @@ describe('Game Engine', () => {
       mockResult.project.progress = 100; // max is 100
       const state = createInitialGameState(mockAgents, mockProjects);
       const newState = processPostSprint(state, mockResult, ['1']);
-      expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost + (10 * 20)); // difficulty * 20
+      expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost + (10 * 20 * 1.4));
       expect(newState.completedProjectIds).toContain('p1');
     });
   });

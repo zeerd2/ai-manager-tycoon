@@ -1,4 +1,4 @@
-export type DifficultyLevel = 'intern' | 'normal' | 'challenge' | 'hell' | 'legend';
+export type DifficultyLevel = 'intern' | 'normal' | 'hard' | 'legend';
 
 export interface DifficultyConfig {
   label: string;
@@ -13,42 +13,34 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   intern: {
     label: '实习项目',
     emoji: '🌱',
-    rewardMultiplier: 1.0,
-    riskModifier: 0.7,
-    bugChanceModifier: 0.5,
+    rewardMultiplier: 1.4,
+    riskModifier: 0.55,
+    bugChanceModifier: 0.45,
     requiredCompletedProjects: 0,
   },
   normal: {
     label: '普通项目',
     emoji: '💼',
-    rewardMultiplier: 1.5,
-    riskModifier: 1.0,
-    bugChanceModifier: 1.0,
+    rewardMultiplier: 1.6,
+    riskModifier: 0.9,
+    bugChanceModifier: 0.9,
     requiredCompletedProjects: 2,
   },
-  challenge: {
-    label: '挑战项目',
+  hard: {
+    label: '困难项目',
     emoji: '🔥',
-    rewardMultiplier: 2.5,
-    riskModifier: 1.3,
-    bugChanceModifier: 1.5,
+    rewardMultiplier: 2.0,
+    riskModifier: 1.25,
+    bugChanceModifier: 1.35,
     requiredCompletedProjects: 5,
-  },
-  hell: {
-    label: '地狱项目',
-    emoji: '💀',
-    rewardMultiplier: 4.0,
-    riskModifier: 1.8,
-    bugChanceModifier: 2.0,
-    requiredCompletedProjects: 10,
   },
   legend: {
     label: '传说项目',
     emoji: '🏆',
-    rewardMultiplier: 7.0,
-    riskModifier: 2.5,
-    bugChanceModifier: 3.0,
-    requiredCompletedProjects: 15,
+    rewardMultiplier: 2.4,
+    riskModifier: 1.55,
+    bugChanceModifier: 1.75,
+    requiredCompletedProjects: 10,
   },
 };
 
