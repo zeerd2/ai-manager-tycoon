@@ -66,7 +66,7 @@ export function isProjectComplete(project: Project): boolean {
 
 /** 根据项目难度等级计算完成奖励金额 */
 export function getDifficultyReward(project: Project): number {
-  const config = DIFFICULTY_CONFIGS[project.difficultyLevel ?? 'normal'];
+  const config = DIFFICULTY_CONFIGS[project.difficultyLevel] || DIFFICULTY_CONFIGS['normal'];
   return Math.round(project.difficulty * 20 * config.rewardMultiplier);
 }
 
