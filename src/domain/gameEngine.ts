@@ -18,6 +18,8 @@ export function createInitialGameState(agents: Agent[], projects: Project[]): Ga
     gameOver: false,
     history: [],
     relations: [],
+    reputation: 50,
+    confidence: 50,
   };
 }
 
@@ -59,14 +61,113 @@ export function processPostSprint(
   });
 
   const completedProjectIds = [...state.completedProjectIds];
+  let newReputation = state.reputation ?? 50;
+  let newConfidence = state.confidence ?? 50;
 
+  let repDelta = 0;
+  let confDelta = 0;
 
-  if (result.project.progress >= result.project.maxProgress && !completedProjectIds.includes(result.project.id)) {
+  const isProjCompletedNow = result.project.progress >= result.project.maxProgress &&
+    !completedProjectIds.includes(result.project.id);
+
+  if (isProjCompletedNow) {
     completedProjectIds.push(result.project.id);
-    newFunds += getDifficultyReward(result.project);
+    const isOverdue = result.sprintNumber > (result.project.deadline ?? 999);
+    if (isOverdue) {
+      newFunds += Math.round(getDifficultyReward(result.project) * 0.5);
+      repDelta -= 10;
+      confDelta -= 10;
+      result.summary += ` | 合同已逾期！完成奖励减半且扣除 10 点声望和 10 点信心。`;
+    } else {
+      newFunds += getDifficultyReward(result.project);
 
+      let repGain = 10;
+      let confGain = 10;
+      if (result.project.difficultyLevel === 'intern') {
+        repGain = 5;
+        confGain = 8;
+      } else if (result.project.difficultyLevel === 'normal') {
+        repGain = 10;
+        confGain = 12;
+      } else if (result.project.difficultyLevel === 'hard') {
+        repGain = 18;
+        confGain = 18;
+      } else if (result.project.difficultyLevel === 'legend') {
+        repGain = 28;
+        confGain = 25;
+      }
+      repDelta += repGain;
+      confDelta += confGain;
+      result.summary += ` | 项目按时完成！获得丰厚资金、声望及信心奖励。`;
+    }
   }
-  
+
+  // Update reputation and confidence from regular turn events
+  if (result.bugsDelta > 0) {
+    repDelta -= Math.floor(result.bugsDelta / 2);
+  } else if (result.bugsDelta === 0 && result.progressDelta > 0) {
+    repDelta += 1;
+  }
+
+  if (result.moraleDelta !== 0) {
+    confDelta += Math.round(result.moraleDelta * 0.5);
+  }
+
+  // Evaluate Quarterly KPI targets
+  const nextSprintNumber = state.sprintCount + 1;
+  if (nextSprintNumber % 4 === 0) {
+    const endingQuarter = nextSprintNumber / 4;
+    let kpiPassed = false;
+    let kpiDesc = '';
+
+    const completedCount = completedProjectIds.length;
+
+    if (endingQuarter === 1) {
+      kpiPassed = completedCount >= 1 && newFunds >= 4000;
+      kpiDesc = '完成至少 1 个项目且资金不少于 $4000';
+    } else if (endingQuarter === 2) {
+      kpiPassed = completedCount >= 3 && newReputation + repDelta >= 60 && newConfidence + confDelta >= 60;
+      kpiDesc = '累计完成至少 3 个项目且声望和信心均不低于 60';
+    } else if (endingQuarter === 3) {
+      kpiPassed = completedCount >= 5 && newReputation + repDelta >= 70 && newConfidence + confDelta >= 70;
+      kpiDesc = '累计完成至少 5 个项目且声望和信心均不低于 70';
+    } else if (endingQuarter === 4) {
+      kpiPassed = completedCount >= 8 && newReputation + repDelta >= 80 && newConfidence + confDelta >= 80;
+      kpiDesc = '累计完成至少 8 个项目且声望和信心均不低于 80';
+    } else {
+      kpiPassed = completedCount >= 12 && newReputation + repDelta >= 90 && newConfidence + confDelta >= 90;
+      kpiDesc = '累计完成至少 12 个项目且声望和信心均不低于 90';
+    }
+
+    if (kpiPassed) {
+      repDelta += 10;
+      confDelta += 10;
+      result.summary += ` | 🎉 季度 KPI 达标！声望+10，信心+10。`;
+      result.quarterKpiResult = {
+        quarter: endingQuarter,
+        passed: true,
+        desc: kpiDesc
+      };
+    } else {
+      repDelta -= 15;
+      confDelta -= 15;
+      result.summary += ` | ⚠️ 季度 KPI 未达标！声望-15，信心-15。`;
+      result.quarterKpiResult = {
+        quarter: endingQuarter,
+        passed: false,
+        desc: kpiDesc
+      };
+    }
+  }
+
+  // Calculate new absolute values with clamp
+  newReputation = Math.max(0, Math.min(100, newReputation + repDelta));
+  newConfidence = Math.max(0, Math.min(100, newConfidence + confDelta));
+
+  // Save actual deltas based on clamped values
+  result.reputationDelta = newReputation - (state.reputation ?? 50);
+  result.confidenceDelta = newConfidence - (state.confidence ?? 50);
+
   const newState: GameState = {
     ...state,
     funds: newFunds,
@@ -74,6 +175,8 @@ export function processPostSprint(
     agents: newAgents,
     completedProjectIds,
     history: [...state.history, result],
+    reputation: newReputation,
+    confidence: newConfidence,
   };
 
   const { gameOver, reason } = checkGameOver(newState);

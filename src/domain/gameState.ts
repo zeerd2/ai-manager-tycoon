@@ -15,4 +15,6 @@ export interface GameState {
   gameOverReason?: string;
   history: SprintResult[];
   relations: AgentRelation[];
+  reputation: number;
+  confidence: number;
 }

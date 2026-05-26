@@ -56,6 +56,7 @@ export interface Project {
   techDebt: number;
   maxProgress: number;
   difficultyLevel: DifficultyLevel;
+  deadline?: number;
 }
 
 /** 判断项目进度是否已达到完成条件 */

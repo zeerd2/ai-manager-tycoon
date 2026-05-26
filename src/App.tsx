@@ -516,7 +516,7 @@ export default function App() {
       </header>
 
       {/* 2. Company Dashboard */}
-      <CompanyDashboard gameState={gameState} />
+      <CompanyDashboard gameState={gameState} selectedProjectId={selectedProjectId} />
 
       {/* 4. Achievement Toast System */}
       {toastQueue.length > 0 && (

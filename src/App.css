@@ -766,6 +766,10 @@ body {
    ========================================== */
 
 /* Company Dashboard */
+.company-dashboard-wrapper {
+  margin-bottom: 24px;
+}
+
 .company-dashboard {
   display: flex;
   justify-content: space-between;
@@ -776,8 +780,158 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 20px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.05);
+}
+
+/* Quarterly Target Panel */
+.quarterly-target-panel {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 2fr;
+  gap: 16px;
+  background: rgba(10, 15, 30, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.06);
+}
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.panel-section:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.quarter-info h3 {
+  font-size: 1.25rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.quarter-info .subtext {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.kpi-info h4,
+.contract-info h4 {
+  font-size: 0.88rem;
+  color: var(--text-h);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.kpi-targets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.kpi-target-item {
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-label {
+  color: var(--text-dim);
+}
+
+.kpi-value.passed {
+  color: var(--positive);
+  font-weight: 700;
+}
+
+.kpi-value.pending {
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.kpi-desc {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.contract-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contract-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contract-deadline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  gap: 8px;
+}
+
+.remaining-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.remaining-badge.positive {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--positive);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+}
+
+.remaining-badge.negative {
+  background: rgba(255, 51, 102, 0.12);
+  color: var(--negative);
+  border: 1px solid rgba(255, 51, 102, 0.25);
+}
+
+.contract-empty {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Quarter KPI Notification in Result Report */
+.quarter-kpi-notification {
+  position: relative;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: center;
+  overflow: hidden;
+  border: 2px solid transparent;
+  z-index: 1;
+}
+
+.quarter-kpi-notification.passed {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 240, 255, 0.05));
+  border-color: var(--positive);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+}
+
+.quarter-kpi-notification.failed {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(10, 15, 30, 0.5));
+  border-color: var(--negative);
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.15);
 }
 
 .dashboard-item {
@@ -2414,6 +2568,23 @@ body {
 }
 
 @media (max-width: 768px) {
+  .quarterly-target-panel {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .panel-section {
+    padding: 4px 0;
+  }
+
+  .panel-section:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+  }
+
   .app {
     max-width: 100%;
     padding: 12px;
@@ -3351,13 +3522,45 @@ body {
   }
 
   .company-dashboard {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 4px !important;
     padding: 6px !important;
   }
 
   .dashboard-item {
     font-size: 0.62rem !important;
+  }
+
+  .quarterly-target-panel {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .quarter-info h3 {
+    font-size: 1.05rem !important;
+  }
+
+  .quarter-info .subtext,
+  .kpi-info h4,
+  .contract-info h4 {
+    font-size: 0.78rem !important;
+  }
+
+  .kpi-target-item {
+    font-size: 0.72rem !important;
+    gap: 3px !important;
+  }
+
+  .kpi-desc,
+  .contract-name,
+  .contract-deadline-row,
+  .contract-empty {
+    font-size: 0.72rem !important;
+  }
+
+  .remaining-badge {
+    padding: 1px 4px !important;
+    font-size: 0.65rem !important;
   }
 
   .dashboard-item .label {

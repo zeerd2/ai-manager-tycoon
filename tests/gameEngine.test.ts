@@ -162,6 +162,54 @@ describe('Game Engine', () => {
       expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost + (10 * 20 * 1.4));
       expect(newState.completedProjectIds).toContain('p1');
     });
+
+    it('should initialize reputation and confidence to 50', () => {
+      const state = createInitialGameState(mockAgents, mockProjects);
+      expect(state.reputation).toBe(50);
+      expect(state.confidence).toBe(50);
+    });
+
+    it('should gain reputation and confidence when project is completed on time', () => {
+      mockResult.project.progress = 100;
+      mockResult.project.deadline = 2; // sprintNumber is 1, so on time
+      const state = createInitialGameState(mockAgents, mockProjects);
+      const newState = processPostSprint(state, mockResult, ['1']);
+      expect(newState.reputation).toBeGreaterThan(50);
+      expect(newState.confidence).toBeGreaterThan(50);
+    });
+
+    it('should penalize reputation and confidence and halve reward when project is completed overdue', () => {
+      mockResult.project.progress = 100;
+      mockResult.project.deadline = 0; // sprintNumber is 1, so overdue
+      const state = createInitialGameState(mockAgents, mockProjects);
+      const newState = processPostSprint(state, mockResult, ['1']);
+      expect(newState.reputation).toBe(41); // 50 - 10 + 1 (from progress)
+      expect(newState.confidence).toBe(40); // 50 - 10
+      // Half of getDifficultyReward(mockProjects[0]) which is (10 * 20 * 1.4) = 280. Half is 140.
+      expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost + 140);
+    });
+
+    it('should evaluate quarterly KPIs and reward/penalize accordingly', () => {
+      // Sprint 4 evaluation (multiple of 4)
+      mockResult.sprintNumber = 4;
+
+      // Let's test KPI Pass: completed projects >= 1 and funds >= 4000
+      const statePass = createInitialGameState(mockAgents, mockProjects);
+      statePass.sprintCount = 3; // next sprint is 4
+      statePass.completedProjectIds = ['p1'];
+      statePass.funds = 4500;
+      const newStatePass = processPostSprint(statePass, mockResult, ['1']);
+      expect(newStatePass.reputation).toBe(61); // 50 + 10 (pass) + 1 (from progress)
+      expect(newStatePass.confidence).toBe(60); // 50 + 10 (pass)
+
+      // Let's test KPI Fail: completed projects < 1
+      const stateFail = createInitialGameState(mockAgents, mockProjects);
+      stateFail.sprintCount = 3; // next sprint is 4
+      stateFail.completedProjectIds = [];
+      const newStateFail = processPostSprint(stateFail, mockResult, ['1']);
+      expect(newStateFail.reputation).toBe(36); // 50 - 15 (fail) + 1 (from progress)
+      expect(newStateFail.confidence).toBe(35); // 50 - 15 (fail)
+    });
   });
 
   describe('checkGameOver', () => {

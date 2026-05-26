@@ -177,6 +177,20 @@ export const ResultReport = memo(function ResultReport({ result, projectComplete
         </div>
       )}
 
+      {/* Quarterly KPI Result Notification */}
+      {result.quarterKpiResult && (
+        <div className={`quarter-kpi-notification ${result.quarterKpiResult.passed ? 'passed' : 'failed'}`}>
+          <div className="bg-glow"></div>
+          <span className="celebration-title">
+            {result.quarterKpiResult.passed ? '🏆 季度 KPI 达标!' : '⚠️ 季度 KPI 未达标!'}
+          </span>
+          <p>第 <strong>{result.quarterKpiResult.quarter}</strong> 季度考核目标: {result.quarterKpiResult.desc}</p>
+          <span className="bonus-amount">
+            {result.quarterKpiResult.passed ? '📈 季度奖励: 声望 +10, 信心 +10' : '📉 季度惩罚: 声望 -15, 信心 -15'}
+          </span>
+        </div>
+      )}
+
       {/* Newly Unlocked Agents */}
       {newlyUnlockedAgents && newlyUnlockedAgents.length > 0 && (
         <div className="agent-unlocked-notification">
@@ -219,6 +233,18 @@ export const ResultReport = memo(function ResultReport({ result, projectComplete
            <span className="result-stat-label">💰 花费</span>
           <span className={`result-stat-value ${pulseClass}`}>
             ${result.cost}
+          </span>
+        </div>
+        <div className="result-stat-card">
+           <span className="result-stat-label">👑 声望</span>
+          <span className={`result-stat-value ${(result.reputationDelta ?? 0) >= 0 ? 'positive' : 'negative'} ${pulseClass}`}>
+            {(result.reputationDelta ?? 0) >= 0 ? '+' : ''}{result.reputationDelta ?? 0}
+          </span>
+        </div>
+        <div className="result-stat-card">
+           <span className="result-stat-label">🧠 信心</span>
+          <span className={`result-stat-value ${(result.confidenceDelta ?? 0) >= 0 ? 'positive' : 'negative'} ${pulseClass}`}>
+            {(result.confidenceDelta ?? 0) >= 0 ? '+' : ''}{result.confidenceDelta ?? 0}
           </span>
         </div>
         <div className="result-stat-card">

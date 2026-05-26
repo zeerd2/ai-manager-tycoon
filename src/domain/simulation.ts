@@ -21,6 +21,9 @@ export interface SprintResult {
   cost: number;
   incidents: Incident[];
   summary: string;
+  reputationDelta?: number;
+  confidenceDelta?: number;
+  quarterKpiResult?: { quarter: number; passed: boolean; desc: string };
 }
 
 /** 执行一轮 Sprint：计算评分、触发事件（普通/组合/稀有）、汇总结果并生成摘要 */

@@ -14,6 +14,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 50,
     difficultyLevel: 'intern',
+    deadline: 4,
   },
   {
     id: 'chatbot',
@@ -27,6 +28,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 68,
     difficultyLevel: 'intern',
+    deadline: 5,
   },
   {
     id: 'dashboard',
@@ -40,6 +42,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 60,
     difficultyLevel: 'intern',
+    deadline: 5,
   },
 
   // === 普通项目 (normal) ===
@@ -55,6 +58,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 105,
     difficultyLevel: 'normal',
+    deadline: 8,
   },
   {
     id: 'recommender',
@@ -68,6 +72,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 120,
     difficultyLevel: 'normal',
+    deadline: 8,
   },
   {
     id: 'nlp-pipeline',
@@ -81,6 +86,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 95,
     difficultyLevel: 'normal',
+    deadline: 7,
   },
   {
     id: 'cv-detector',
@@ -94,6 +100,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 130,
     difficultyLevel: 'normal',
+    deadline: 9,
   },
 
   // === 困难项目 (hard) ===
@@ -109,6 +116,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 185,
     difficultyLevel: 'hard',
+    deadline: 14,
   },
   {
     id: 'ai-painter',
@@ -122,6 +130,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 170,
     difficultyLevel: 'hard',
+    deadline: 14,
   },
   {
     id: 'hr-chatbot',
@@ -135,6 +144,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 205,
     difficultyLevel: 'hard',
+    deadline: 14,
   },
   {
     id: 'doom-scroll',
@@ -148,6 +158,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 235,
     difficultyLevel: 'hard',
+    deadline: 14,
   },
   {
     id: 'waifu-gen',
@@ -161,6 +172,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 225,
     difficultyLevel: 'hard',
+    deadline: 14,
   },
   {
     id: 'code-review-ai',
@@ -174,6 +186,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 245,
     difficultyLevel: 'hard',
+    deadline: 14,
   },
 
   // === 传说项目 (legend) ===
@@ -189,6 +202,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 720,
     difficultyLevel: 'legend',
+    deadline: 24,
   },
   {
     id: 'time-machine',
@@ -202,6 +216,7 @@ export const sampleProjects: Project[] = [
     techDebt: 0,
     maxProgress: 640,
     difficultyLevel: 'legend',
+    deadline: 24,
   },
 ];
 
