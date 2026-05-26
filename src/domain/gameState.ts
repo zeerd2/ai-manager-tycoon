@@ -20,4 +20,5 @@ export interface GameState {
   reputationScore?: number;
   quarterlyEvaluations?: any[];
   triggeredCheckpoints?: string[];
+  evaluatedQuarters?: number[];
 }

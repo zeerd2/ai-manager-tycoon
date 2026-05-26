@@ -198,6 +198,20 @@ describe('Game Engine', () => {
       statePass.sprintCount = 3; // next sprint is 4
       statePass.completedProjectIds = ['p1'];
       statePass.funds = 4500;
+      // History entry showing project completed in sprint 1 (Q1)
+      statePass.history = [{
+        sprintNumber: 1,
+        project: { ...mockProjects[0], progress: 100, maxProgress: 100 },
+        agents: [mockAgents[0]],
+        strategy: mockResult.strategy,
+        progressDelta: 100,
+        bugsDelta: 0,
+        techDebtDelta: 0,
+        moraleDelta: 0,
+        cost: 100,
+        incidents: [],
+        summary: 'Project completed',
+      }];
       const newStatePass = processPostSprint(statePass, mockResult, ['1']);
       expect(newStatePass.reputation).toBe(61); // 50 + 10 (pass) + 1 (from progress)
       expect(newStatePass.confidence).toBe(60); // 50 + 10 (pass)
@@ -271,6 +285,118 @@ describe('Game Engine', () => {
       clearSave();
       const loaded = loadGame();
       expect(loaded).toBeNull();
+    });
+  });
+
+  describe('quarterly target integration', () => {
+    it('should use generateQuarterTarget for KPI evaluation instead of hardcoded logic', () => {
+      // Q1 target is complete_projects with threshold 1
+      mockResult.sprintNumber = 4;
+      const state = createInitialGameState(mockAgents, mockProjects);
+      state.sprintCount = 3;
+      state.funds = 5000;
+      // Complete a project in Q1 history
+      state.completedProjectIds = ['p1'];
+      state.history = [{
+        sprintNumber: 1,
+        project: { ...mockProjects[0], progress: 100, maxProgress: 100 },
+        agents: [mockAgents[0]],
+        strategy: mockResult.strategy,
+        progressDelta: 100,
+        bugsDelta: 0,
+        techDebtDelta: 0,
+        moraleDelta: 0,
+        cost: 100,
+        incidents: [],
+        summary: 'Done',
+      }];
+
+      const newState = processPostSprint(state, mockResult, ['1']);
+      expect(newState.reputation).toBeGreaterThan(50);
+      expect(newState.confidence).toBeGreaterThan(50);
+      expect(mockResult.quarterKpiResult).toBeDefined();
+      expect(mockResult.quarterKpiResult!.passed).toBe(true);
+      expect(mockResult.quarterKpiResult!.quarter).toBe(1);
+    });
+
+    it('should track evaluatedQuarters to prevent duplicate evaluation', () => {
+      mockResult.sprintNumber = 4;
+      const state = createInitialGameState(mockAgents, mockProjects);
+      state.sprintCount = 3;
+      state.completedProjectIds = ['p1'];
+      state.history = [{
+        sprintNumber: 1,
+        project: { ...mockProjects[0], progress: 100, maxProgress: 100 },
+        agents: [mockAgents[0]],
+        strategy: mockResult.strategy,
+        progressDelta: 100,
+        bugsDelta: 0,
+        techDebtDelta: 0,
+        moraleDelta: 0,
+        cost: 100,
+        incidents: [],
+        summary: 'Done',
+      }];
+      // Mark Q1 as already evaluated (simulating save/load)
+      state.evaluatedQuarters = [1];
+
+      const newState = processPostSprint(state, mockResult, ['1']);
+      // Should NOT have quarterKpiResult since Q1 was already evaluated
+      expect(mockResult.quarterKpiResult).toBeUndefined();
+      // evaluatedQuarters should still contain only [1]
+      expect(newState.evaluatedQuarters).toEqual([1]);
+    });
+  });
+
+  describe('financing checkpoint integration', () => {
+    it('should evaluate financing checkpoints at even quarter ends', () => {
+      // Q2 end = sprint 8
+      mockResult.sprintNumber = 8;
+      const state = createInitialGameState(mockAgents, mockProjects);
+      state.sprintCount = 7;
+      state.funds = 3000;
+      state.completedProjectIds = ['p1', 'p2', 'p3'];
+      // Add history for Q1 and Q2
+      state.history = [
+        { sprintNumber: 1, project: { ...mockProjects[0], progress: 100, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 100, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Done' },
+        { sprintNumber: 2, project: { ...mockProjects[0], id: 'p2', progress: 100, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 100, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Done' },
+        { sprintNumber: 3, project: { ...mockProjects[0], id: 'p3', progress: 100, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 100, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Done' },
+        { sprintNumber: 4, project: { ...mockProjects[0], id: 'p4', progress: 50, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 50, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Progress' },
+        { sprintNumber: 5, project: { ...mockProjects[0], id: 'p5', progress: 50, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 50, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Progress' },
+        { sprintNumber: 6, project: { ...mockProjects[0], id: 'p6', progress: 50, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 50, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Progress' },
+        { sprintNumber: 7, project: { ...mockProjects[0], id: 'p7', progress: 50, maxProgress: 100 }, agents: [mockAgents[0]], strategy: mockResult.strategy, progressDelta: 50, bugsDelta: 0, techDebtDelta: 0, moraleDelta: 0, cost: 100, incidents: [], summary: 'Progress' },
+      ];
+
+      const newState = processPostSprint(state, mockResult, ['1']);
+      // Q2 has angel-a checkpoint (min_funds >= 2000), funds were 3000, so triggered
+      // After cost deduction (100), funds become 2900, still >= 2000
+      expect(newState.funds).toBeGreaterThan(2900); // got financing reward on top
+      expect(mockResult.summary).toContain('融资成功');
+    });
+
+    it('should not trigger financing checkpoints at odd quarter ends', () => {
+      // Q1 end = sprint 4 (odd quarter)
+      mockResult.sprintNumber = 4;
+      const state = createInitialGameState(mockAgents, mockProjects);
+      state.sprintCount = 3;
+      state.completedProjectIds = ['p1'];
+      state.history = [{
+        sprintNumber: 1,
+        project: { ...mockProjects[0], progress: 100, maxProgress: 100 },
+        agents: [mockAgents[0]],
+        strategy: mockResult.strategy,
+        progressDelta: 100,
+        bugsDelta: 0,
+        techDebtDelta: 0,
+        moraleDelta: 0,
+        cost: 100,
+        incidents: [],
+        summary: 'Done',
+      }];
+
+      const newState = processPostSprint(state, mockResult, ['1']);
+      // Q1 (odd) should not trigger any financing checkpoint
+      expect(mockResult.summary).not.toContain('融资成功');
     });
   });
 });

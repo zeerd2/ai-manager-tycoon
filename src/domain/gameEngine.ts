@@ -3,6 +3,8 @@ import type { Project } from './project';
 import { getDifficultyReward } from './project';
 import type { SprintResult } from './simulation';
 import type { GameState } from './gameState';
+import { generateQuarterTarget, evaluateQuarterTarget, isQuarterEnd, getQuarterNumber } from './quarterlyTarget';
+import { getDefaultCheckpoints, evaluateQuarterCheckpoints } from './financing';
 
 export const INITIAL_FUNDS = 5000;
 
@@ -23,6 +25,7 @@ export function createInitialGameState(agents: Agent[], projects: Project[]): Ga
     reputationScore: 0,
     quarterlyEvaluations: [],
     triggeredCheckpoints: [],
+    evaluatedQuarters: [],
   };
 }
 
@@ -116,52 +119,64 @@ export function processPostSprint(
     confDelta += Math.round(result.moraleDelta * 0.5);
   }
 
-  // Evaluate Quarterly KPI targets
+  // Evaluate Quarterly KPI targets using quarterlyTarget module
   const nextSprintNumber = state.sprintCount + 1;
-  if (nextSprintNumber % 4 === 0) {
-    const endingQuarter = nextSprintNumber / 4;
-    let kpiPassed = false;
-    let kpiDesc = '';
+  const evaluatedQuarters = [...(state.evaluatedQuarters ?? [])];
+  let financingReward = 0;
 
-    const completedCount = completedProjectIds.length;
+  if (isQuarterEnd(nextSprintNumber)) {
+    const endingQuarter = getQuarterNumber(nextSprintNumber);
 
-    if (endingQuarter === 1) {
-      kpiPassed = completedCount >= 1 && newFunds >= 4000;
-      kpiDesc = '完成至少 1 个项目且资金不少于 $4000';
-    } else if (endingQuarter === 2) {
-      kpiPassed = completedCount >= 3 && newReputation + repDelta >= 60 && newConfidence + confDelta >= 60;
-      kpiDesc = '累计完成至少 3 个项目且声望和信心均不低于 60';
-    } else if (endingQuarter === 3) {
-      kpiPassed = completedCount >= 5 && newReputation + repDelta >= 70 && newConfidence + confDelta >= 70;
-      kpiDesc = '累计完成至少 5 个项目且声望和信心均不低于 70';
-    } else if (endingQuarter === 4) {
-      kpiPassed = completedCount >= 8 && newReputation + repDelta >= 80 && newConfidence + confDelta >= 80;
-      kpiDesc = '累计完成至少 8 个项目且声望和信心均不低于 80';
-    } else {
-      kpiPassed = completedCount >= 12 && newReputation + repDelta >= 90 && newConfidence + confDelta >= 90;
-      kpiDesc = '累计完成至少 12 个项目且声望和信心均不低于 90';
-    }
+    if (!evaluatedQuarters.includes(endingQuarter)) {
+      evaluatedQuarters.push(endingQuarter);
 
-    if (kpiPassed) {
-      repDelta += 10;
-      confDelta += 10;
-      result.summary += ` | 🎉 季度 KPI 达标！声望+10，信心+10。`;
+      const target = generateQuarterTarget(endingQuarter);
+      const tempState: GameState = {
+        ...state,
+        funds: newFunds,
+        sprintCount: nextSprintNumber,
+        completedProjectIds,
+        reputation: newReputation + repDelta,
+        confidence: newConfidence + confDelta,
+        history: [...state.history, result],
+      };
+      const evaluation = evaluateQuarterTarget(target, tempState);
+
+      if (evaluation.achieved) {
+        repDelta += 10;
+        confDelta += 10;
+        result.summary += ` | 🎉 季度 KPI 达标！（${target.description}）声望+10，信心+10。`;
+      } else {
+        repDelta -= 15;
+        confDelta -= 15;
+        result.summary += ` | ⚠️ 季度 KPI 未达标！（${target.description}）声望-15，信心-15。`;
+      }
+
       result.quarterKpiResult = {
         quarter: endingQuarter,
-        passed: true,
-        desc: kpiDesc
+        passed: evaluation.achieved,
+        desc: `${target.description}（目标: ${target.threshold}，实际: ${evaluation.actualValue}）`,
       };
-    } else {
-      repDelta -= 15;
-      confDelta -= 15;
-      result.summary += ` | ⚠️ 季度 KPI 未达标！声望-15，信心-15。`;
-      result.quarterKpiResult = {
-        quarter: endingQuarter,
-        passed: false,
-        desc: kpiDesc
-      };
+
+      // Financing checkpoints: every 2 quarters
+      if (endingQuarter % 2 === 0) {
+        const allCheckpoints = getDefaultCheckpoints();
+        const quarterCheckpoints = allCheckpoints.filter(c => c.quarterNumber === endingQuarter);
+        if (quarterCheckpoints.length > 0) {
+          const repScore = newReputation + repDelta;
+          const finResults = evaluateQuarterCheckpoints(quarterCheckpoints, tempState, repScore);
+          for (const fr of finResults) {
+            if (fr.triggered) {
+              financingReward += fr.reward;
+              result.summary += ` | 💰 融资成功：${fr.checkpoint.description}，获得 $${fr.reward}！`;
+            }
+          }
+        }
+      }
     }
   }
+
+  newFunds += financingReward;
 
   // Calculate new absolute values with clamp
   newReputation = Math.max(0, Math.min(100, newReputation + repDelta));
@@ -180,6 +195,7 @@ export function processPostSprint(
     history: [...state.history, result],
     reputation: newReputation,
     confidence: newConfidence,
+    evaluatedQuarters,
   };
 
   const { gameOver, reason } = checkGameOver(newState);
