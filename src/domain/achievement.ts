@@ -41,6 +41,10 @@ export interface AchievementContext {
     cost?: number;
   }>;
   cheapestAgentOnly?: boolean;
+  // V8 季度目标相关
+  quarterEvaluations?: Array<{ achieved: boolean }>;
+  reputationScore?: number;
+  triggeredCheckpoints?: string[];
 }
 
 // 根据 conditionType 检查是否达成
@@ -137,6 +141,66 @@ export function checkAchievement(
 
     case 'fifty_bugs_total':
       return context.history.reduce((sum, h) => sum + h.bugsDelta, 0) >= 50;
+
+    // V8 季度目标相关成就
+    case 'quarter_streak_4': {
+      const evals = context.quarterEvaluations ?? [];
+      if (evals.length < 4) return false;
+      const last4 = evals.slice(-4);
+      return last4.every(e => e.achieved);
+    }
+
+    case 'quarter_perfect_year': {
+      const evals = context.quarterEvaluations ?? [];
+      if (evals.length < 4) return false;
+      const first4 = evals.slice(0, 4);
+      return first4.every(e => e.achieved);
+    }
+
+    case 'quarter_master_10': {
+      const evals = context.quarterEvaluations ?? [];
+      return evals.filter(e => e.achieved).length >= 10;
+    }
+
+    case 'quarter_comeback': {
+      const evals = context.quarterEvaluations ?? [];
+      if (evals.length < 2) return false;
+      for (let i = 1; i < evals.length; i++) {
+        if (!evals[i - 1].achieved && evals[i].achieved) return true;
+      }
+      return false;
+    }
+
+    case 'reputation_reach_60':
+      return (context.reputationScore ?? 0) >= 60;
+
+    case 'reputation_reach_100':
+      return (context.reputationScore ?? 0) >= 100;
+
+    case 'financing_angel':
+      return (context.triggeredCheckpoints ?? []).includes('angel-a') ||
+        (context.triggeredCheckpoints ?? []).includes('angel-b');
+
+    case 'financing_series_a':
+      return (context.triggeredCheckpoints ?? []).includes('series-a');
+
+    case 'financing_series_c':
+      return (context.triggeredCheckpoints ?? []).includes('series-c');
+
+    case 'financing_streak_3': {
+      const cps = context.triggeredCheckpoints ?? [];
+      const allIds = ['seed', 'angel-a', 'angel-b', 'series-a', 'series-b', 'series-c'];
+      let streak = 0;
+      for (const id of allIds) {
+        if (cps.includes(id)) {
+          streak++;
+          if (streak >= 3) return true;
+        } else {
+          streak = 0;
+        }
+      }
+      return false;
+    }
 
     default:
       return false;
@@ -288,6 +352,125 @@ export function getAchievementProgress(
         current: Math.min(totalBugs, 50),
         target: 50,
         display: `${totalBugs} / 50`,
+      };
+    }
+
+    // V8 季度目标相关
+    case 'quarter_streak_4': {
+      const evals = gameState.quarterlyEvaluations ?? [];
+      let streak = 0;
+      for (let i = evals.length - 1; i >= 0; i--) {
+        if ((evals[i] as any).achieved) streak++;
+        else break;
+      }
+      return {
+        current: Math.min(streak, 4),
+        target: 4,
+        display: `${streak} / 4`,
+      };
+    }
+
+    case 'quarter_perfect_year': {
+      const evals = gameState.quarterlyEvaluations ?? [];
+      const achieved = evals.slice(0, 4).filter((e: any) => e.achieved).length;
+      return {
+        current: Math.min(achieved, 4),
+        target: 4,
+        display: `${achieved} / 4`,
+      };
+    }
+
+    case 'quarter_master_10': {
+      const evals = gameState.quarterlyEvaluations ?? [];
+      const achieved = evals.filter((e: any) => e.achieved).length;
+      return {
+        current: Math.min(achieved, 10),
+        target: 10,
+        display: `${achieved} / 10`,
+      };
+    }
+
+    case 'quarter_comeback': {
+      const evals = gameState.quarterlyEvaluations ?? [];
+      let hasComeback = false;
+      for (let i = 1; i < evals.length; i++) {
+        if (!(evals[i - 1] as any).achieved && (evals[i] as any).achieved) {
+          hasComeback = true;
+          break;
+        }
+      }
+      return {
+        current: hasComeback ? 1 : 0,
+        target: 1,
+        display: hasComeback ? '1 / 1' : '0 / 1',
+      };
+    }
+
+    case 'reputation_reach_60': {
+      const rep = gameState.reputationScore ?? gameState.reputation ?? 0;
+      return {
+        current: Math.min(rep, 60),
+        target: 60,
+        display: `${rep} / 60`,
+      };
+    }
+
+    case 'reputation_reach_100': {
+      const rep = gameState.reputationScore ?? gameState.reputation ?? 0;
+      return {
+        current: Math.min(rep, 100),
+        target: 100,
+        display: `${rep} / 100`,
+      };
+    }
+
+    case 'financing_angel': {
+      const cps = gameState.triggeredCheckpoints ?? [];
+      const done = cps.includes('angel-a') || cps.includes('angel-b') ? 1 : 0;
+      return {
+        current: done,
+        target: 1,
+        display: `${done} / 1`,
+      };
+    }
+
+    case 'financing_series_a': {
+      const cps = gameState.triggeredCheckpoints ?? [];
+      const done = cps.includes('series-a') ? 1 : 0;
+      return {
+        current: done,
+        target: 1,
+        display: `${done} / 1`,
+      };
+    }
+
+    case 'financing_series_c': {
+      const cps = gameState.triggeredCheckpoints ?? [];
+      const done = cps.includes('series-c') ? 1 : 0;
+      return {
+        current: done,
+        target: 1,
+        display: `${done} / 1`,
+      };
+    }
+
+    case 'financing_streak_3': {
+      const cps = gameState.triggeredCheckpoints ?? [];
+      const allIds = ['seed', 'angel-a', 'angel-b', 'series-a', 'series-b', 'series-c'];
+      let streak = 0;
+      let maxStreak = 0;
+      for (const id of allIds) {
+        if (cps.includes(id)) {
+          streak++;
+          maxStreak = Math.max(maxStreak, streak);
+        } else {
+          streak = 0;
+        }
+      }
+      return {
+        current: Math.min(maxStreak, 3),
+        target: 3,
+        display: `${maxStreak} / 3`,
       };
     }
 

@@ -228,5 +228,112 @@ export const teamEvents: TeamEventTemplate[] = [
         }
       }
     ]
+  },
+  // V8 季度目标相关团队事件
+  {
+    id: "quarter_celebration",
+    title: "季度目标达成庆功宴",
+    description: "这个季度的目标超额完成了！团队提议举办一场庆功宴来犒劳大家。",
+    options: [
+      {
+        id: "grand_party",
+        label: "包下整个餐厅庆祝！",
+        effects: {
+          moraleDelta: 30,
+          fundsDelta: -1500,
+          relationshipDeltas: { delta: 25, all: true },
+          progressDelta: 10
+        }
+      },
+      {
+        id: "modest_celebration",
+        label: "办公室订个蛋糕意思一下",
+        effects: {
+          moraleDelta: 10,
+          fundsDelta: -200,
+          relationshipDeltas: { delta: 5, all: true }
+        }
+      },
+      {
+        id: "no_celebration",
+        label: "别松懈，下季度目标更难",
+        effects: {
+          moraleDelta: -15,
+          fundsDelta: 0,
+          relationshipDeltas: { delta: -5, all: true },
+          progressDelta: 5
+        }
+      }
+    ]
+  },
+  {
+    id: "quarter_failure_recovery",
+    title: "季度目标失败复盘会",
+    description: "这个季度的目标没能完成，团队士气低迷。需要决定如何面对这次失败。",
+    options: [
+      {
+        id: "blame_session",
+        label: "逐个复盘，找到责任人",
+        effects: {
+          moraleDelta: -25,
+          fundsDelta: 0,
+          relationshipDeltas: { delta: -20, all: true },
+          progressDelta: 5
+        }
+      },
+      {
+        id: "forward_looking",
+        label: "不追究过去，专注下季度改进计划",
+        effects: {
+          moraleDelta: 10,
+          fundsDelta: 0,
+          relationshipDeltas: { delta: 10, all: true },
+          progressDelta: -5
+        }
+      },
+      {
+        id: "team_building",
+        label: "组织一次团建，重振士气",
+        effects: {
+          moraleDelta: 20,
+          fundsDelta: -800,
+          relationshipDeltas: { delta: 15, all: true }
+        }
+      }
+    ]
+  },
+  {
+    id: "investor_visit",
+    title: "投资人突然到访",
+    description: "投资人临时通知要来公司看看，团队需要决定如何展示。",
+    options: [
+      {
+        id: "full_polish",
+        label: "紧急美化办公室和 demo",
+        effects: {
+          moraleDelta: -10,
+          fundsDelta: -500,
+          progressDelta: -10
+        }
+      },
+      {
+        id: "authentic_show",
+        label: "展示真实的工作状态",
+        effects: {
+          moraleDelta: 5,
+          fundsDelta: 0,
+          relationshipDeltas: { delta: 5, all: true }
+        }
+      },
+      {
+        id: "reschedule",
+        label: "以『团队在冲刺』为由改期",
+        effects: {
+          moraleDelta: 10,
+          fundsDelta: 0,
+          progressDelta: 10
+        }
+      }
+    ]
   }
 ];

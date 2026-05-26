@@ -334,7 +334,186 @@ export const incidentTemplates: IncidentTemplate[] = [
     severity: 'medium',
     titleTemplate: '{actor} 围观 AI 伦理官和模型吵架',
     descriptionTemplate: (name) =>
-      `${name} 旁听 AI 伦理官和模型争论“加班是否符合人类福祉”。争论没有结果，但团队顺手补上了三条安全规则。`,
+      `${name} 旁听 AI 伦理官和模型争论”加班是否符合人类福祉”。争论没有结果，但团队顺手补上了三条安全规则。`,
     effects: { progress: 3, bugs: -2, techDebt: -3, morale: 1 },
+  },
+  // V8 季度复盘相关事件
+  {
+    type: 'breakthrough',
+    severity: 'low',
+    titleTemplate: '{actor} 收到投资人的季度好评',
+    descriptionTemplate: (name) =>
+      `${name} 在季度复盘会上收到投资人罕见的正面反馈：”你们比上个季度烧钱慢了 12%，这在硅谷算奇迹了。”团队士气大振。`,
+    effects: { progress: 5, bugs: 0, techDebt: 0, morale: 8 },
+  },
+  {
+    type: 'drama',
+    severity: 'medium',
+    titleTemplate: '{actor} 季度总结会被投资人全程静音',
+    descriptionTemplate: (name) =>
+      `${name} 精心准备了 40 页 PPT，投资人全程关闭摄像头。会后只收到一条消息：”下季度再看不到盈利路径就撤资。”`,
+    effects: { progress: -2, bugs: 0, techDebt: 0, morale: -8 },
+  },
+  {
+    type: 'burnout',
+    severity: 'medium',
+    titleTemplate: '{actor} 在季度复盘会上当场打瞌睡',
+    descriptionTemplate: (name) =>
+      `${name} 连续加班赶季度报告，在复盘会上对着自己的幻灯片呼呼大睡。投资人拍照发了朋友圈，配文”这就是创业精神”。`,
+    effects: { progress: -1, bugs: 0, techDebt: 0, morale: -5 },
+  },
+  {
+    type: 'bug',
+    severity: 'high',
+    titleTemplate: '{actor} 季度报告数据造假被发现',
+    descriptionTemplate: (name) =>
+      `${name} 为了让季度数据好看，把”用户点击量”的统计口径改成了”服务器收到的请求总数”。投资人发现后差点启动审计。`,
+    effects: { progress: -5, bugs: 2, techDebt: 3, morale: -10 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'medium',
+    titleTemplate: '{actor} 季度复盘发现隐藏的增长引擎',
+    descriptionTemplate: (name) =>
+      `${name} 在整理季度数据时意外发现，某个被忽略的小功能带来了 30% 的用户增长。投资人当场决定追加投资。`,
+    effects: { progress: 10, bugs: 0, techDebt: -2, morale: 10, funds: 500 },
+  },
+  {
+    type: 'drama',
+    severity: 'low',
+    titleTemplate: '{actor} 季度总结会变成甩锅大会',
+    descriptionTemplate: (name) =>
+      `${name} 的季度复盘会从”回顾与展望”迅速演变为”谁的代码导致了上个月的宕机”。最终没有结论，但多了三个新 Slack 频道。`,
+    effects: { progress: -2, bugs: 0, techDebt: 0, morale: -6 },
+  },
+  {
+    type: 'overengineering',
+    severity: 'medium',
+    titleTemplate: '{actor} 为季度报告写了个自动化系统',
+    descriptionTemplate: (name) =>
+      `${name} 花了两周写了个自动生成季度报告的 AI 系统。报告质量很高，但系统本身消耗的 GPU 费用比省下的人力成本还贵。`,
+    effects: { progress: 2, bugs: 1, techDebt: 6, morale: -2 },
+  },
+  {
+    type: 'hallucination',
+    severity: 'low',
+    titleTemplate: '{actor} 在季度报告里引用了虚构指标',
+    descriptionTemplate: (name) =>
+      `${name} 在季度报告中加入了一个叫”量子用户留存率”的指标。投资人居然没问，还说”这个指标很有前瞻性”。`,
+    effects: { progress: 1, bugs: 0, techDebt: 1, morale: 2 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'high',
+    titleTemplate: '{actor} 季度目标超额完成 200%',
+    descriptionTemplate: (name) =>
+      `${name} 带领团队在季度截止前两周就完成了全部目标，还顺手把下季度的 backlog 清了一半。投资人发了一条”🚀”的推特。`,
+    effects: { progress: 15, bugs: -3, techDebt: -5, morale: 15, funds: 1000 },
+  },
+  {
+    type: 'drama',
+    severity: 'high',
+    titleTemplate: '{actor} 季度复盘后核心员工提离职',
+    descriptionTemplate: (name) =>
+      `${name} 的季度复盘会后，技术负责人当场递交辞呈：”我已经拿到了三倍薪资的 offer。”整个 Q2 路线图需要重写。`,
+    effects: { progress: -8, bugs: 0, techDebt: 0, morale: -15 },
+  },
+  // V8 声望相关事件
+  {
+    type: 'breakthrough',
+    severity: 'medium',
+    titleTemplate: '{actor} 被科技媒体专访',
+    descriptionTemplate: (name) =>
+      `${name} 接受了一家顶级科技媒体的专访，文章标题是《这家 AI 公司如何用 5 人团队撬动百万用户》。阅读量 10w+，声望暴涨。`,
+    effects: { progress: 3, bugs: 0, techDebt: 0, morale: 10, funds: 300 },
+  },
+  {
+    type: 'drama',
+    severity: 'medium',
+    titleTemplate: '{actor} 被列入”最差 AI 产品”榜单',
+    descriptionTemplate: (name) =>
+      `${name} 的产品被某科技博主列入年度”最差 AI 体验”榜单，理由是”它成功让我的工作效率降低了 200%”。公关部紧急加班。`,
+    effects: { progress: -3, bugs: 0, techDebt: 0, morale: -10 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'high',
+    titleTemplate: '{actor} 获得行业创新大奖',
+    descriptionTemplate: (name) =>
+      `${name} 的产品在行业峰会上获得”年度最具创新力 AI 工具”奖项。颁奖词是”它让开发者终于可以准时下班了”。`,
+    effects: { progress: 5, bugs: 0, techDebt: 0, morale: 15, funds: 800 },
+  },
+  {
+    type: 'hallucination',
+    severity: 'low',
+    titleTemplate: '{actor} 的产品被误认为竞品',
+    descriptionTemplate: (name) =>
+      `${name} 发现竞品的差评被算到了自己头上。虽然评分掉了，但下载量反而涨了——毕竟”黑红也是红”。`,
+    effects: { progress: 2, bugs: 0, techDebt: 0, morale: -2 },
+  },
+  {
+    type: 'burnout',
+    severity: 'medium',
+    titleTemplate: '{actor} 在行业大会上被公开质疑',
+    descriptionTemplate: (name) =>
+      `${name} 在行业大会上做产品演示时，被台下观众连续追问了 15 个技术细节。${name} 汗流浃背，只答对了 3 个。`,
+    effects: { progress: -2, bugs: 0, techDebt: 0, morale: -8 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'low',
+    titleTemplate: '{actor} 的开源项目登上 Trending',
+    descriptionTemplate: (name) =>
+      `${name} 随手开源的一个小工具意外登上 GitHub Trending，Star 数一天破千。投资人发来消息：”看到你们的开源项目了，聊聊？”`,
+    effects: { progress: 5, bugs: 0, techDebt: -2, morale: 8, funds: 200 },
+  },
+  // V8 融资相关事件
+  {
+    type: 'drama',
+    severity: 'high',
+    titleTemplate: '{actor} 路演时投影仪突然蓝屏',
+    descriptionTemplate: (name) =>
+      `${name} 在投资人路演的关键时刻，投影仪蓝屏了。${name} 凭记忆背完了整份 BP，投资人说”这记忆力值 500 万”。`,
+    effects: { progress: -3, bugs: 0, techDebt: 0, morale: -5 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'critical',
+    titleTemplate: '{actor} 拿到 TS（投资意向书）',
+    descriptionTemplate: (name) =>
+      `${name} 收到了一封来自顶级 VC 的 TS，估值比预期高了 50%。团队开了一瓶 1982 年的可乐庆祝。`,
+    effects: { progress: 10, bugs: 0, techDebt: 0, morale: 15, funds: 2000 },
+  },
+  {
+    type: 'burnout',
+    severity: 'high',
+    titleTemplate: '{actor} 连续见了 30 个投资人',
+    descriptionTemplate: (name) =>
+      `${name} 一个月内见了 30 个投资人，每个都问”你们和 ChatGPT 有什么区别”。${name} 的回答从 20 分钟精简到了 15 秒，灵魂却空了。`,
+    effects: { progress: -2, bugs: 0, techDebt: 0, morale: -12 },
+  },
+  {
+    type: 'drama',
+    severity: 'medium',
+    titleTemplate: '{actor} 投资人要求看源代码',
+    descriptionTemplate: (name) =>
+      `${name} 的投资人在尽调时要求看核心源代码。代码里有 200 处”TODO: 重构”和 3 个名为”temp_final_REAL_v2.ts”的文件。`,
+    effects: { progress: -2, bugs: 0, techDebt: 5, morale: -6 },
+  },
+  {
+    type: 'breakthrough',
+    severity: 'medium',
+    titleTemplate: '{actor} 用 demo 搞定了投资人',
+    descriptionTemplate: (name) =>
+      `${name} 在投资人面前做了一个实时 demo，AI 居然一次就生成了完美的代码。投资人不知道的是，这个 demo 排练了 47 次。`,
+    effects: { progress: 8, bugs: 0, techDebt: 0, morale: 10, funds: 1500 },
+  },
+  {
+    type: 'hallucination',
+    severity: 'medium',
+    titleTemplate: '{actor} 在 BP 里写了”年营收 10 亿”',
+    descriptionTemplate: (name) =>
+      `${name} 在商业计划书里不小心把”月营收 10 万”写成了”年营收 10 亿”。投资人居然信了，还说”这个赛道天花板很高”。`,
+    effects: { progress: 2, bugs: 0, techDebt: 0, morale: 3, funds: 800 },
   },
 ];
