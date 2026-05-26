@@ -1,12 +1,29 @@
 import { useState, useEffect, memo } from 'react';
 import type { SprintResult } from '../domain/simulation';
 import type { Incident } from '../domain/incident';
+import type { GameState } from '../domain/gameState';
+import {
+  generateQuarterTarget,
+  evaluateQuarterTarget,
+} from '../domain/quarterlyTarget';
+import {
+  getReputationLabel,
+  calculateReputationDelta,
+} from '../domain/reputation';
+import {
+  getDefaultCheckpoints,
+  getCheckpointsForQuarter,
+  evaluateQuarterCheckpoints,
+} from '../domain/financing';
+import { calculateRating } from '../domain/rating';
 
 interface Props {
   result: SprintResult;
   projectCompleted?: boolean;
   projectBonus?: number;
   newlyUnlockedAgents?: Array<{ name: string; avatar: string }>;
+  gameState?: GameState;
+  reputationScore?: number;
 }
 
 const severityColor: Record<string, string> = {
@@ -142,7 +159,14 @@ function formatEffects(effects: Incident['effects']): string {
   return parts.join(' | ') || '无明显影响';
 }
 
-export const ResultReport = memo(function ResultReport({ result, projectCompleted, projectBonus, newlyUnlockedAgents }: Props) {
+export const ResultReport = memo(function ResultReport({
+  result,
+  projectCompleted,
+  projectBonus,
+  newlyUnlockedAgents,
+  gameState,
+  reputationScore = 0,
+}: Props) {
   const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
@@ -162,6 +186,40 @@ export const ResultReport = memo(function ResultReport({ result, projectComplete
   const boss = getBossCommentAndColor(category, progressDelta, bugsDelta, techDebtDelta, moraleDelta);
 
   const pulseClass = pulse ? 'result-pulse-active' : '';
+
+  const isQuarter = result.sprintNumber > 0 && result.sprintNumber % 4 === 0;
+  const quarterNumber = Math.ceil(result.sprintNumber / 4);
+
+  let target = null;
+  let targetEval = null;
+  let repDelta = 0;
+  let repLabel = '';
+  let investorConfidence = 50;
+  let checkpoints: any[] = [];
+  let evaluatedCheckpoints: any[] = [];
+
+  if (isQuarter) {
+    repDelta = calculateReputationDelta(result, projectCompleted ?? false);
+    repLabel = getReputationLabel(reputationScore);
+    investorConfidence = Math.max(0, Math.min(100, 50 + reputationScore));
+
+    if (gameState) {
+      target = generateQuarterTarget(quarterNumber);
+      targetEval = evaluateQuarterTarget(target, gameState);
+
+      const ratingInput = {
+        completedProjects: gameState.completedProjectIds.length,
+        totalBugs: gameState.projects.reduce((sum, p) => sum + p.bugs, 0),
+        totalTechDebt: gameState.projects.reduce((sum, p) => sum + p.techDebt, 0),
+        totalSprintsCost: gameState.history.reduce((sum, h) => sum + h.cost, 0),
+        fundsRemaining: gameState.funds,
+        sprintCount: gameState.sprintCount,
+      };
+      const companyRating = calculateRating(ratingInput).rating;
+      checkpoints = getCheckpointsForQuarter(getDefaultCheckpoints(), quarterNumber);
+      evaluatedCheckpoints = evaluateQuarterCheckpoints(checkpoints, gameState, reputationScore, companyRating);
+    }
+  }
 
   return (
     <div className="result-report">
@@ -301,6 +359,168 @@ export const ResultReport = memo(function ResultReport({ result, projectComplete
               </div>
             );
           })}
+        </div>
+      )}
+
+      {isQuarter && (
+        <div className="quarter-review-section" style={{
+          marginTop: '24px',
+          marginBottom: '24px',
+          padding: '20px',
+          background: 'rgba(26, 31, 58, 0.4)',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          boxShadow: '0 0 15px rgba(0, 240, 255, 0.1)',
+        }}>
+          <h3 style={{
+            fontSize: '1.25rem',
+            color: 'var(--accent)',
+            marginBottom: '16px',
+            borderBottom: '1px dashed var(--border)',
+            paddingBottom: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            📊 第 {quarterNumber} 季度复盘报告
+          </h3>
+
+          {/* Target status */}
+          {target && targetEval && (
+            <div style={{ marginBottom: '16px' }}>
+              <h4 style={{ fontSize: '1rem', color: 'var(--text-h)', marginBottom: '8px' }}>
+                🎯 季度目标：{target.description}
+              </h4>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px',
+                background: 'rgba(10, 14, 26, 0.6)',
+                borderRadius: '6px',
+                borderLeft: `4px solid ${targetEval.achieved ? 'var(--positive)' : 'var(--negative)'}`
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+                    要求: {target.type === 'control_bugs' ? '≤' : '≥'} {target.threshold}
+                    {target.type === 'complete_projects' && ' 个项目'}
+                    {target.type === 'earn_funds' && ' 资金'}
+                    {target.type === 'control_bugs' && ' 个 Bug'}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                    实际: {targetEval.actualValue}
+                  </div>
+                </div>
+                <div>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    background: targetEval.achieved ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 51, 102, 0.15)',
+                    color: targetEval.achieved ? 'var(--positive)' : 'var(--negative)',
+                    border: `1px solid ${targetEval.achieved ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 51, 102, 0.3)'}`
+                  }}>
+                    {targetEval.achieved ? '已达成' : '未达成'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reputation / Investor confidence */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              padding: '12px',
+              background: 'rgba(10, 14, 26, 0.6)',
+              borderRadius: '6px',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '4px' }}>🤝 声望等级</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-h)' }}>
+                  {repLabel} ({reputationScore})
+                </span>
+                <span style={{
+                  fontSize: '0.85rem',
+                  color: repDelta >= 0 ? 'var(--positive)' : 'var(--negative)'
+                }}>
+                  {repDelta >= 0 ? `+${repDelta}` : repDelta}
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              padding: '12px',
+              background: 'rgba(10, 14, 26, 0.6)',
+              borderRadius: '6px',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '4px' }}>📈 投资人信心</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-h)' }}>
+                  {investorConfidence}%
+                </span>
+                <span style={{
+                  fontSize: '0.85rem',
+                  color: repDelta >= 0 ? 'var(--positive)' : 'var(--negative)'
+                }}>
+                  {repDelta >= 0 ? `+${repDelta}` : repDelta}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Financing Checkpoints */}
+          {checkpoints.length > 0 && (
+            <div>
+              <h4 style={{ fontSize: '1rem', color: 'var(--text-h)', marginBottom: '8px' }}>
+                💰 季度融资评估
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {evaluatedCheckpoints.map((ec, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 12px',
+                    background: 'rgba(10, 14, 26, 0.6)',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    borderLeft: `4px solid ${ec.triggered ? 'var(--warning)' : 'var(--text-dim)'}`
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-h)', fontWeight: 'bold' }}>
+                        {ec.checkpoint.description}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                        条件: {ec.checkpoint.condition.type === 'min_reputation' ? `声望 ≥ ${ec.checkpoint.condition.threshold}` :
+                               ec.checkpoint.condition.type === 'min_completed_projects' ? `累计完成项目 ≥ ${ec.checkpoint.condition.threshold}` :
+                               ec.checkpoint.condition.type === 'min_funds' ? `剩余资金 ≥ ${ec.checkpoint.condition.threshold}` :
+                               ec.checkpoint.condition.type === 'min_rating' ? `评级分数 ≥ ${ec.checkpoint.condition.threshold}` : ''}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      {ec.triggered ? (
+                        <span style={{ fontSize: '0.9rem', color: 'var(--warning)', fontWeight: 'bold' }}>
+                          融资成功 +${ec.reward}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>
+                          未达标
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

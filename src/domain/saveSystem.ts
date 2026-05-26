@@ -1,6 +1,6 @@
 import type { GameState } from './gameState';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export interface SaveMetadata {
   id: string; // '1', '2', '3', 'auto'
@@ -22,6 +22,10 @@ export interface SaveData {
   relationships?: Record<string, unknown>;
   achievements?: string[];
   projectHistory?: unknown[];
+  // v5 quarterly / reputation / financing fields
+  quarterlyEvaluations?: unknown[];
+  reputationScore?: number;
+  triggeredCheckpoints?: string[];
 }
 
 export interface AutosaveConfig {
@@ -146,7 +150,7 @@ export function saveToSlot(
   slotId: string,
   name: string,
   state: GameState,
-  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory'>>
+  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory' | 'quarterlyEvaluations' | 'reputationScore' | 'triggeredCheckpoints'>>
 ): void {
   try {
     const saveData: SaveData = {
@@ -157,7 +161,10 @@ export function saveToSlot(
       skillTrees: extra?.skillTrees || {},
       relationships: extra?.relationships || {},
       achievements: extra?.achievements || state.unlockedAchievementIds || [],
-      projectHistory: extra?.projectHistory || state.history || []
+      projectHistory: extra?.projectHistory || state.history || [],
+      quarterlyEvaluations: extra?.quarterlyEvaluations || [],
+      reputationScore: extra?.reputationScore ?? 0,
+      triggeredCheckpoints: extra?.triggeredCheckpoints || [],
     };
 
     cachedSetItem(getSlotKey(slotId), JSON.stringify(saveData));
@@ -272,7 +279,7 @@ export function checkAndMigrateOldSave(): boolean {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migrateSaveData(oldData: any): SaveData {
-  // Simple migration strategy: upgrade version and ensure all v4 keys exist
+  // Migration strategy: upgrade version and ensure all v5 keys exist
   const migrated: SaveData = {
     version: SAVE_VERSION,
     gameState: oldData.gameState || oldData, // Handle if v2 structure was raw GameState
@@ -280,7 +287,10 @@ function migrateSaveData(oldData: any): SaveData {
     skillTrees: oldData.skillTrees || {},
     relationships: oldData.relationships || {},
     achievements: oldData.achievements || oldData.gameState?.unlockedAchievementIds || [],
-    projectHistory: oldData.projectHistory || oldData.gameState?.history || []
+    projectHistory: oldData.projectHistory || oldData.gameState?.history || [],
+    quarterlyEvaluations: oldData.quarterlyEvaluations || [],
+    reputationScore: oldData.reputationScore ?? 0,
+    triggeredCheckpoints: oldData.triggeredCheckpoints || [],
   };
 
   return migrated;

@@ -114,7 +114,13 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
       try {
         const saveData = loadFromSlot(slotId);
         if (saveData) {
-          onLoadGame(saveData.gameState, slotId);
+          const loadedState: GameState = {
+            ...saveData.gameState,
+            reputationScore: saveData.reputationScore ?? 0,
+            quarterlyEvaluations: saveData.quarterlyEvaluations || [],
+            triggeredCheckpoints: saveData.triggeredCheckpoints || [],
+          };
+          onLoadGame(loadedState, slotId);
           setConfirmAction(null);
           onClose();
         } else {

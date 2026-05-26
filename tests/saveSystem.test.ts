@@ -259,4 +259,95 @@ describe('Save System', () => {
       expect(slot1Meta.name).toBe('内存存档');
     });
   });
+
+  describe('v8 Save Compatibility', () => {
+    it('should have SAVE_VERSION = 5 for v8', () => {
+      expect(SAVE_VERSION).toBe(5);
+    });
+
+    it('should save and load v8 fields (quarterlyEvaluations, reputationScore, triggeredCheckpoints)', () => {
+      const v8Extra = {
+        quarterlyEvaluations: [{ quarterNumber: 1, achieved: true }],
+        reputationScore: 42,
+        triggeredCheckpoints: ['seed', 'angel-a'],
+      };
+
+      saveToSlot('2', 'v8存档', mockState, v8Extra);
+      const loaded = loadFromSlot('2');
+
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.quarterlyEvaluations).toEqual(v8Extra.quarterlyEvaluations);
+      expect(loaded!.reputationScore).toBe(42);
+      expect(loaded!.triggeredCheckpoints).toEqual(v8Extra.triggeredCheckpoints);
+    });
+
+    it('should default reputationScore to 0 when not provided', () => {
+      saveToSlot('3', '无额外字段', mockState);
+      const loaded = loadFromSlot('3');
+      expect(loaded!.reputationScore).toBe(0);
+      expect(loaded!.quarterlyEvaluations).toEqual([]);
+      expect(loaded!.triggeredCheckpoints).toEqual([]);
+    });
+
+    it('should migrate old v4 save to v5 with default v8 fields', () => {
+      const oldV4Save = {
+        version: 4,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        skillTrees: {},
+        relationships: {},
+        achievements: ['a1'],
+        projectHistory: [],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', JSON.stringify(oldV4Save));
+
+      const loaded = loadFromSlot('1');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.quarterlyEvaluations).toEqual([]);
+      expect(loaded!.reputationScore).toBe(0);
+      expect(loaded!.triggeredCheckpoints).toEqual([]);
+    });
+
+    it('should migrate old v2 structure to v5 with default v8 fields', () => {
+      const oldV2Save = {
+        version: 2,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_2', JSON.stringify(oldV2Save));
+
+      const loaded = loadFromSlot('2');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.quarterlyEvaluations).toEqual([]);
+      expect(loaded!.reputationScore).toBe(0);
+      expect(loaded!.triggeredCheckpoints).toEqual([]);
+      expect(loaded!.skillTrees).toBeDefined();
+      expect(loaded!.relationships).toBeDefined();
+    });
+
+    it('should preserve existing v4 fields after v5 migration', () => {
+      const oldV4Save = {
+        version: 4,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        skillTrees: { tree1: { unlocked: true } },
+        relationships: { agent1: { trust: 80 } },
+        achievements: ['first-blood', 'bug-factory'],
+        projectHistory: [{ projectId: 'p1', completedAt: '2025-01-01' }],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_3', JSON.stringify(oldV4Save));
+
+      const loaded = loadFromSlot('3');
+      expect(loaded!.skillTrees).toEqual(oldV4Save.skillTrees);
+      expect(loaded!.relationships).toEqual(oldV4Save.relationships);
+      expect(loaded!.achievements).toEqual(oldV4Save.achievements);
+      expect(loaded!.projectHistory).toEqual(oldV4Save.projectHistory);
+    });
+  });
 });

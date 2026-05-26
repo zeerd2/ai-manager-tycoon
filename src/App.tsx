@@ -20,6 +20,19 @@ import {
   getSaveSlotsMetadata,
   setAutosaveConfig
 } from './domain/saveSystem';
+import {
+  generateQuarterTarget,
+  evaluateQuarterTarget,
+  getQuarterNumber,
+  isQuarterEnd
+} from './domain/quarterlyTarget';
+import { calculateNewReputation } from './domain/reputation';
+import {
+  getDefaultCheckpoints,
+  getCheckpointsForQuarter,
+  evaluateQuarterCheckpoints
+} from './domain/financing';
+import { calculateRating } from './domain/rating';
 import type { AutosaveConfig } from './domain/saveSystem';
 import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
@@ -130,7 +143,11 @@ export default function App() {
         const savedSlots = getSaveSlotsMetadata();
         const activeSlot = savedSlots.find(s => s.id === currentSlotId);
         const name = activeSlot?.name || (currentSlotId === 'auto' ? '自动存档' : `存档位 ${currentSlotId}`);
-        saveToSlot(currentSlotId, name, gameState);
+        saveToSlot(currentSlotId, name, gameState, {
+          reputationScore: gameState.reputationScore,
+          quarterlyEvaluations: gameState.quarterlyEvaluations,
+          triggeredCheckpoints: gameState.triggeredCheckpoints,
+        });
       } catch (e) {
         console.error('Failed to auto-save to current slot', e);
       }
@@ -146,7 +163,11 @@ export default function App() {
     const intervalMs = autosaveConfig.interval * 60 * 1000;
     const timer = setInterval(() => {
       try {
-        saveToSlot('auto', '自动存档', gameState);
+        saveToSlot('auto', '自动存档', gameState, {
+          reputationScore: gameState.reputationScore,
+          quarterlyEvaluations: gameState.quarterlyEvaluations,
+          triggeredCheckpoints: gameState.triggeredCheckpoints,
+        });
       } catch (e) {
         console.error('Autosave failed', e);
       }
@@ -253,6 +274,56 @@ export default function App() {
        newState.relations = relationsManager.getRelations();
     }
 
+    // Calculate new reputation score
+    const currentReputation = gameState.reputationScore ?? 0;
+    const newRep = calculateNewReputation(currentReputation, result, isProjCompletedNow);
+    newState.reputationScore = newRep;
+    newState.quarterlyEvaluations = gameState.quarterlyEvaluations || [];
+    newState.triggeredCheckpoints = gameState.triggeredCheckpoints || [];
+
+    // Trigger quarterly review
+    if (isQuarterEnd(newState.sprintCount)) {
+      const qNum = getQuarterNumber(newState.sprintCount);
+      const target = generateQuarterTarget(qNum);
+      const evalResult = evaluateQuarterTarget(target, newState);
+      newState.quarterlyEvaluations = [
+        ...newState.quarterlyEvaluations,
+        {
+          quarterNumber: qNum,
+          target,
+          achieved: evalResult.achieved,
+          actualValue: evalResult.actualValue
+        }
+      ];
+
+      // Evaluate financing checkpoints
+      const ratingInput = {
+        completedProjects: newState.completedProjectIds.length,
+        totalBugs: newState.projects.reduce((sum, p) => sum + p.bugs, 0),
+        totalTechDebt: newState.projects.reduce((sum, p) => sum + p.techDebt, 0),
+        totalSprintsCost: newState.history.reduce((sum, h) => sum + h.cost, 0),
+        fundsRemaining: newState.funds,
+        sprintCount: newState.sprintCount,
+      };
+      const companyRating = calculateRating(ratingInput).rating;
+
+      const checkpoints = getCheckpointsForQuarter(getDefaultCheckpoints(), qNum);
+      const finResults = evaluateQuarterCheckpoints(checkpoints, newState, newRep, companyRating);
+
+      const triggeredIds = [...newState.triggeredCheckpoints];
+      let totalReward = 0;
+      for (const fr of finResults) {
+        if (fr.triggered) {
+          totalReward += fr.reward;
+          triggeredIds.push(fr.checkpoint.id);
+        }
+      }
+      if (totalReward > 0) {
+        newState.funds += totalReward;
+      }
+      newState.triggeredCheckpoints = triggeredIds;
+    }
+
     // 4. Check for newly unlocked agents
     const newlyUnlockedIds = checkUnlocks(newState);
     const unlockedAgentDetails: Array<{ name: string; avatar: string }> = [];
@@ -332,7 +403,14 @@ export default function App() {
 
   const handleNewGame = useCallback((slotId: string) => {
     const initialState = createInitialGameState(sampleAgents, sampleProjects);
-    saveToSlot(slotId, `存档位 ${slotId}`, initialState);
+    initialState.reputationScore = 0;
+    initialState.quarterlyEvaluations = [];
+    initialState.triggeredCheckpoints = [];
+    saveToSlot(slotId, `存档位 ${slotId}`, initialState, {
+      reputationScore: 0,
+      quarterlyEvaluations: [],
+      triggeredCheckpoints: []
+    });
     setGameState(initialState);
     setCurrentSlotId(slotId);
     setIsStartup(false);
@@ -686,6 +764,8 @@ export default function App() {
                     projectCompleted={projectCompleted}
                     projectBonus={projectBonus}
                     newlyUnlockedAgents={newlyUnlockedAgents}
+                    gameState={gameState}
+                    reputationScore={gameState.reputationScore ?? 0}
                   />
                 </Suspense>
               </ErrorBoundary>

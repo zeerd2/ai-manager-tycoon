@@ -17,4 +17,7 @@ export interface GameState {
   relations: AgentRelation[];
   reputation: number;
   confidence: number;
+  reputationScore?: number;
+  quarterlyEvaluations?: any[];
+  triggeredCheckpoints?: string[];
 }

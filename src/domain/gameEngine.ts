@@ -20,6 +20,9 @@ export function createInitialGameState(agents: Agent[], projects: Project[]): Ga
     relations: [],
     reputation: 50,
     confidence: 50,
+    reputationScore: 0,
+    quarterlyEvaluations: [],
+    triggeredCheckpoints: [],
   };
 }
 
