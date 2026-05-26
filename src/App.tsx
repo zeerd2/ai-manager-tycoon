@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { sampleAgents } from './data/sampleAgents';
 import { sampleProjects } from './data/sampleProjects';
 import { incidentTemplates } from './data/incidentTemplates';
@@ -55,6 +55,9 @@ import { CompanyDashboard } from './components/CompanyDashboard';
 import { AchievementToast } from './components/AchievementToast';
 import { RelationsNetwork } from './components/RelationsNetwork';
 import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
+import { MobileDrawer } from './components/MobileDrawer';
+import { SwipeToConfirm } from './components/SwipeToConfirm';
+import { useIntersectionObserver } from './hooks/useIntersectionObserver';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { lazyWithRetry } from './utils/lazyWithRetry';
 
@@ -473,6 +476,9 @@ export default function App() {
 
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
+  // IntersectionObserver: 项目区域滚动可见时自动展开
+  const { ref: projectSectionRef, isIntersecting: projectSectionVisible } = useIntersectionObserver<HTMLElement>({ threshold: 0.2, triggerOnce: true });
+
   const showTutorialHighlight = gameState.sprintCount < 3 && isTutorialOpen;
   const highlightTeam = showTutorialHighlight && selectedAgentIds.size === 0;
   const highlightProject = showTutorialHighlight && selectedAgentIds.size > 0 && !selectedProjectId;
@@ -482,6 +488,60 @@ export default function App() {
   const selectedProject = gameState.projects.find(project => project.id === selectedProjectId);
   const selectedStrategy = strategies.find(strategy => strategy.id === selectedStrategyId);
   const activeMobileTab = activeMobileOverlay ? MOBILE_TABS.find(tab => tab.id === activeMobileOverlay) : null;
+
+  // 触控手势: 底部导航栏滑动切换 + 覆盖层下滑关闭
+  const overlayTouchRef = useRef<{ startY: number; startX: number; currentY: number; currentX: number }>({ startY: 0, startX: 0, currentY: 0, currentX: 0 });
+  const tabbarTouchRef = useRef<{ startX: number }>({ startX: 0 });
+  const [overlayDragY, setOverlayDragY] = useState(0);
+
+  const handleOverlayTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    overlayTouchRef.current = { startY: touch.clientY, startX: touch.clientX, currentY: touch.clientY, currentX: touch.clientX };
+    setOverlayDragY(0);
+  }, []);
+
+  const handleOverlayTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - overlayTouchRef.current.startY;
+    const deltaX = touch.clientX - overlayTouchRef.current.startX;
+    overlayTouchRef.current.currentY = touch.clientY;
+    overlayTouchRef.current.currentX = touch.clientX;
+    // 仅在下滑且垂直位移大于水平位移时显示拖拽效果
+    if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      setOverlayDragY(deltaY);
+    }
+  }, []);
+
+  const handleOverlayTouchEnd = useCallback(() => {
+    const deltaY = overlayTouchRef.current.currentY - overlayTouchRef.current.startY;
+    const deltaX = overlayTouchRef.current.currentX - overlayTouchRef.current.startX;
+    if (deltaY > 100 && Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
+      setActiveMobileOverlay(null);
+    }
+    setOverlayDragY(0);
+  }, []);
+
+  const handleTabbarTouchStart = useCallback((e: React.TouchEvent) => {
+    tabbarTouchRef.current.startX = e.touches[0].clientX;
+  }, []);
+
+  const handleTabbarTouchEnd = useCallback((e: React.TouchEvent) => {
+    const endX = e.changedTouches[0].clientX;
+    const delta = endX - tabbarTouchRef.current.startX;
+    if (Math.abs(delta) > 60) {
+      const tabIds = MOBILE_TABS.map(t => t.id);
+      const currentIdx = activeMobileOverlay ? tabIds.indexOf(activeMobileOverlay) : -1;
+      if (delta > 0) {
+        // 右滑: 上一个tab
+        const prevIdx = currentIdx <= 0 ? tabIds.length - 1 : currentIdx - 1;
+        setActiveMobileOverlay(tabIds[prevIdx]);
+      } else {
+        // 左滑: 下一个tab
+        const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % tabIds.length;
+        setActiveMobileOverlay(tabIds[nextIdx]);
+      }
+    }
+  }, [activeMobileOverlay]);
 
   function renderMobileOverlayContent() {
     switch (activeMobileOverlay) {
@@ -617,6 +677,13 @@ export default function App() {
       <main className="app-main">
         <section className="mobile-command-center" aria-label="移动端主控台">
           <div className="mobile-command-header">
+            <MobileDrawer
+              items={MOBILE_TABS.map(t => ({ id: t.id, label: t.label, icon: t.id === 'team' ? '👥' : t.id === 'project' ? '📁' : t.id === 'strategy' ? '🎯' : t.id === 'achievements' ? '🏆' : '📋' }))}
+              activeId={activeMobileOverlay}
+              onSelect={(id) => setActiveMobileOverlay(id as MobileOverlayId)}
+              onReset={handleReset}
+              isOnline={isOnline}
+            />
             <span>移动端主控台</span>
             <button className="btn-reset" onClick={handleReset}>重置</button>
           </div>
@@ -649,14 +716,23 @@ export default function App() {
           >
             开始 Sprint
           </button>
+          <SwipeToConfirm
+            label="→ 滑动开始 Sprint"
+            disabled={!canRun}
+            onConfirm={handleRunSprint}
+            className={highlightRun ? 'tutorial-highlight-btn' : ''}
+          />
         </section>
 
-        <nav className="mobile-bottom-tabbar" aria-label="移动端底部功能导航">
+        <nav className="mobile-bottom-tabbar" aria-label="移动端底部功能导航"
+          onTouchStart={handleTabbarTouchStart}
+          onTouchEnd={handleTabbarTouchEnd}
+        >
           {MOBILE_TABS.map(tab => (
             <button
               key={tab.id}
               type="button"
-              className="mobile-bottom-tab"
+              className={`mobile-bottom-tab ${activeMobileOverlay === tab.id ? 'active' : ''}`}
               aria-controls={`mobile-overlay-${tab.id}`}
               onClick={() => setActiveMobileOverlay(tab.id)}
             >
@@ -713,7 +789,8 @@ export default function App() {
 
           <section
             id="main-section-project"
-            className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'project' ? 'mobile-hidden' : ''}`}
+            ref={projectSectionRef}
+            className={`panel project-panel ${highlightProject ? 'tutorial-highlight-panel' : ''} ${activeMainSection !== 'project' ? 'mobile-hidden' : ''} ${projectSectionVisible ? 'auto-expanded' : ''}`}
           >
             <h2>项目</h2>
             <div className="card-grid">
@@ -802,6 +879,10 @@ export default function App() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="mobile-overlay-title"
+          onTouchStart={handleOverlayTouchStart}
+          onTouchMove={handleOverlayTouchMove}
+          onTouchEnd={handleOverlayTouchEnd}
+          style={overlayDragY > 0 ? { transform: `translateY(${overlayDragY * 0.4}px)`, transition: 'none' } : undefined}
         >
           <div className="mobile-overlay-header">
             <h2 id="mobile-overlay-title">{activeMobileTab.label}</h2>
@@ -813,6 +894,9 @@ export default function App() {
               关闭
             </button>
           </div>
+          {overlayDragY > 50 && (
+            <div className="mobile-overlay-dismiss-hint">↓ 松手关闭</div>
+          )}
           <div className="mobile-overlay-body">
             {renderMobileOverlayContent()}
           </div>
