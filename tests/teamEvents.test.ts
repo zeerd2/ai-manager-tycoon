@@ -199,6 +199,18 @@ describe('applyTeamEventEffect', () => {
     expect(rm.getRelation('bob', 'charlie')).toBe(0);
   });
 
+  it('uses explicit relationship target ids when an effect defines them', () => {
+    const rm = new RelationsManager();
+    applyTeamEventEffect(
+      { moraleDelta: 0, fundsDelta: 0, relationshipDeltas: { agentIdA: 'mentor', agentIdB: 'newbie', delta: 30, all: false } },
+      [],
+      ['mentor', 'newbie', 'observer'],
+      rm
+    );
+    expect(rm.getRelation('mentor', 'newbie')).toBe(30);
+    expect(rm.getRelation('mentor', 'observer')).toBe(0);
+  });
+
   it('handles missing relationshipDeltas gracefully', () => {
     const rm = new RelationsManager();
     const result = applyTeamEventEffect(

@@ -122,6 +122,16 @@ describe('checkAchievement', () => {
       });
       expect(checkAchievement(ach, ctx2)).toBe(false);
     });
+
+    it('ignores locked agents when checking whether all available agents have zero morale', () => {
+      const ctx = makeContext({
+        agents: [
+          { morale: 0, locked: false },
+          { morale: 75, locked: true },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
   });
 
   describe('10x-company', () => {

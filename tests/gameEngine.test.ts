@@ -162,6 +162,21 @@ describe('Game Engine', () => {
       expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost + (10 * 20)); // difficulty * 20
       expect(newState.completedProjectIds).toContain('p1');
     });
+
+    it('should persist sprint project progress, bugs, and tech debt into game state', () => {
+      mockResult.project = {
+        ...mockProjects[0],
+        progress: 35,
+        bugs: 4,
+        techDebt: 7,
+      };
+      const state = createInitialGameState(mockAgents, mockProjects);
+      const newState = processPostSprint(state, mockResult, ['1']);
+      const project = newState.projects.find(p => p.id === 'p1')!;
+      expect(project.progress).toBe(35);
+      expect(project.bugs).toBe(4);
+      expect(project.techDebt).toBe(7);
+    });
   });
 
   describe('checkGameOver', () => {

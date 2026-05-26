@@ -59,7 +59,9 @@ export function processPostSprint(
   });
 
   const completedProjectIds = [...state.completedProjectIds];
-
+  const newProjects = state.projects.map(project =>
+    project.id === result.project.id ? result.project : project
+  );
 
   if (result.project.progress >= result.project.maxProgress && !completedProjectIds.includes(result.project.id)) {
     completedProjectIds.push(result.project.id);
@@ -72,6 +74,7 @@ export function processPostSprint(
     funds: newFunds,
     sprintCount: state.sprintCount + 1,
     agents: newAgents,
+    projects: newProjects,
     completedProjectIds,
     history: [...state.history, result],
   };

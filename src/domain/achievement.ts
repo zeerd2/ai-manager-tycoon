@@ -65,8 +65,10 @@ export function checkAchievement(
       );
     }
 
-    case 'all_agents_zero_morale':
-      return context.agents.length > 0 && context.agents.every(a => a.morale <= 0);
+    case 'all_agents_zero_morale': {
+      const activeAgents = context.agents.filter(a => !a.locked);
+      return activeAgents.length > 0 && activeAgents.every(a => a.morale <= 0);
+    }
 
     case 'three_projects_one_game':
       return context.projectsInOneGame >= 3;

@@ -57,9 +57,10 @@ export function applyTeamEventEffect(
         }
       }
     } else {
-      // Apply to the two specifically involved agents
-      if (involvedAgentIds.length >= 2) {
-        relationsManager.updateRelation(involvedAgentIds[0], involvedAgentIds[1], effect.relationshipDeltas.delta);
+      const agentIdA = effect.relationshipDeltas.agentIdA ?? involvedAgentIds[0];
+      const agentIdB = effect.relationshipDeltas.agentIdB ?? involvedAgentIds[1];
+      if (agentIdA && agentIdB) {
+        relationsManager.updateRelation(agentIdA, agentIdB, effect.relationshipDeltas.delta);
       }
     }
   }
