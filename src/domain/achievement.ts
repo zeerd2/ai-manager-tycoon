@@ -11,6 +11,8 @@ export interface Achievement {
   conditionType: string;
   category: AchievementCategory;
   rarity: AchievementRarity;
+  unlockStory: string;
+  toastMessage: string;
 }
 
 export interface AchievementContext {

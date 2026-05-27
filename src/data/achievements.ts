@@ -9,6 +9,8 @@ export const achievements: Achievement[] = [
     conditionType: 'first_project_completed',
     category: 'project',
     rarity: 'common',
+    unlockStory: '霓虹灯下，你的第一个项目交付成功。屏幕上跳动的代码如同新生儿的心跳，宣告着一个帝国的诞生。',
+    toastMessage: '首个项目完成！欢迎来到赛博朋克的商业世界。',
   },
   {
     id: 'bug-factory',
@@ -18,6 +20,8 @@ export const achievements: Achievement[] = [
     conditionType: 'single_sprint_15_bugs',
     category: 'incident',
     rarity: 'common',
+    unlockStory: '你的代码像病毒一样扩散，每一个 bug 都是数字世界的蝴蝶效应。质量监控 AI 已经开始怀疑人生。',
+    toastMessage: '15+ bugs 同时爆发！你的代码正在自我复制。',
   },
   {
     id: 'under-budget',
@@ -27,6 +31,8 @@ export const achievements: Achievement[] = [
     conditionType: 'complete_project_80_percent_funds',
     category: 'project',
     rarity: 'rare',
+    unlockStory: '在资本的赛博丛林中，你是唯一一个懂得省钱的 CEO。银行 AI 向你发送了"省钱大师"认证。',
+    toastMessage: '资金剩余超过 80%！你是赛博朋克世界的巴菲特。',
   },
   {
     id: 'team-wipe',
@@ -36,6 +42,8 @@ export const achievements: Achievement[] = [
     conditionType: 'all_agents_zero_morale',
     category: 'employee',
     rarity: 'legendary',
+    unlockStory: '办公室里只剩下机械键盘的敲击声和咖啡机的嗡鸣。你的团队已经进入了数字禅定状态——一种介于 burnout 和 enlightenment 之间的赛博状态。',
+    toastMessage: '传说成就！全员 morale 归零，你的管理风格载入史册。',
   },
   {
     id: '10x-company',
@@ -45,6 +53,8 @@ export const achievements: Achievement[] = [
     conditionType: 'three_projects_one_game',
     category: 'project',
     rarity: 'epic',
+    unlockStory: '三个项目，三个奇迹。你的公司名字已经出现在硅谷的传说中，成为每个创业者茶余饭后的谈资。',
+    toastMessage: '史诗成就！一局三个项目，你是真正的 10x 工程师。',
   },
   {
     id: 'speed-run',
@@ -54,6 +64,8 @@ export const achievements: Achievement[] = [
     conditionType: 'project_in_5_sprints',
     category: 'project',
     rarity: 'rare',
+    unlockStory: '时间在你手中扭曲，五轮之内完成不可能的任务。其他 CEO 还在开会讨论需求，你已经交付了。',
+    toastMessage: '5 轮速通！你的效率让时间线都为你弯曲。',
   },
   {
     id: 'iron-man',
@@ -63,6 +75,8 @@ export const achievements: Achievement[] = [
     conditionType: 'agent_6_consecutive',
     category: 'employee',
     rarity: 'rare',
+    unlockStory: '六轮不休，你的员工已经和椅子融为一体。HR 系统检测到他的生物节律已经和服务器同步。',
+    toastMessage: '连续 6 轮工作！你的员工正在超越人类极限。',
   },
   {
     id: 'penny-pincher',
@@ -72,6 +86,8 @@ export const achievements: Achievement[] = [
     conditionType: 'cheapest_agent_only',
     category: 'economic',
     rarity: 'epic',
+    unlockStory: '你用最低的成本完成了最高难度的任务。财务 AI 向你致敬，并请求学习你的省钱算法。',
+    toastMessage: '史诗成就！用最便宜的员工完成项目，你是成本控制大师。',
   },
   // 8 个新增成就
   {
@@ -82,6 +98,8 @@ export const achievements: Achievement[] = [
     conditionType: 'agent_max_skills',
     category: 'employee',
     rarity: 'legendary',
+    unlockStory: '五项技能全部达到 100，你的员工已经不再是人类，而是行走的超级计算机。硅谷的猎头们正在排队等候。',
+    toastMessage: '传说成就！技能全满的超级员工诞生了！',
   },
   {
     id: 'big-team',
@@ -91,6 +109,8 @@ export const achievements: Achievement[] = [
     conditionType: 'six_agents_unlocked',
     category: 'employee',
     rarity: 'rare',
+    unlockStory: '六名精英齐聚一堂，你的办公室变成了数字时代的武林大会。每个工位都散发着赛博朋克的光芒。',
+    toastMessage: '6 名员工同时解锁！你的团队阵容堪比复仇者联盟。',
   },
   {
     id: 'talent-scout',
@@ -100,6 +120,8 @@ export const achievements: Achievement[] = [
     conditionType: 'five_star_agent',
     category: 'employee',
     rarity: 'epic',
+    unlockStory: '450 点技能，你的员工已经成为行业传说。其他公司的人力资源 AI 每天都在分析他的成长轨迹。',
+    toastMessage: '史诗成就！培养出总技能 450 的明星员工！',
   },
   {
     id: 'legendary-project',
@@ -109,6 +131,8 @@ export const achievements: Achievement[] = [
     conditionType: 'complete_legendary_project',
     category: 'project',
     rarity: 'legendary',
+    unlockStory: '地狱级难度的项目在你手中化为灰烬。整个赛博空间都在传颂你的名字，代码之神降临人间。',
+    toastMessage: '传说成就！地狱难度项目被你征服了！',
   },
   {
     id: 'financial-freedom',
@@ -118,6 +142,8 @@ export const achievements: Achievement[] = [
     conditionType: 'funds_reach_8000',
     category: 'economic',
     rarity: 'common',
+    unlockStory: '8000 资金在手，天下我有。你的银行账户数字已经可以买下半个赛博朋克城市。',
+    toastMessage: '资金突破 8000！你已经实现赛博财务自由。',
   },
   {
     id: 'big-spender',
@@ -127,6 +153,8 @@ export const achievements: Achievement[] = [
     conditionType: 'spend_10000_funds',
     category: 'economic',
     rarity: 'common',
+    unlockStory: '一万资金如流水般花出，你的消费记录让银行 AI 都为之惊叹。花钱也是一种艺术。',
+    toastMessage: '累计花费超过 10000！你是赛博朋克世界的散财童子。',
   },
   {
     id: 'survivor',
@@ -136,6 +164,8 @@ export const achievements: Achievement[] = [
     conditionType: 'recover_from_bugs',
     category: 'incident',
     rarity: 'rare',
+    unlockStory: '15 个 bug 的狂风暴雨后，你依然稳如泰山。项目完成的那一刻，bug 们集体沉默，向你致敬。',
+    toastMessage: '从 15+ bugs 中存活！你是真正的代码幸存者。',
   },
   {
     id: 'murphy-law',
@@ -145,5 +175,7 @@ export const achievements: Achievement[] = [
     conditionType: 'fifty_bugs_total',
     category: 'incident',
     rarity: 'common',
+    unlockStory: '五十个 bug，五十个故事。你的代码已经成为 bug 博物馆的镇馆之宝，每个 bug 都是一段传奇。',
+    toastMessage: '累计 50+ bugs！Murphy 定律在你身上完美体现。',
   },
 ];

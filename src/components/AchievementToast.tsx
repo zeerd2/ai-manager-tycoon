@@ -46,7 +46,7 @@ export function AchievementToast({ achievement, onClose }: Props) {
         <span className={`rarity-badge rarity-${achievement.rarity}`}>
           {getRarityLabel(achievement.rarity)}
         </span>
-        <div className="toast-desc">{achievement.description}</div>
+        <div className="toast-desc">{achievement.toastMessage}</div>
       </div>
     </div>
   );

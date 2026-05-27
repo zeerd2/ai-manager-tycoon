@@ -84,6 +84,11 @@ export const AchievementPanel = memo(function AchievementPanel({ unlockedAchieve
                 <div className="achievement-description">
                   {isUnlocked ? achievement.description : '???'}
                 </div>
+                {isUnlocked && achievement.unlockStory && (
+                  <div className="achievement-unlock-story">
+                    {achievement.unlockStory}
+                  </div>
+                )}
 
                 {/* Progress bar rendering */}
                 {progressInfo && (
