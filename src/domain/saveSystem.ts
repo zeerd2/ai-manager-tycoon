@@ -1,6 +1,6 @@
 import type { GameState } from './gameState';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export interface SaveMetadata {
   id: string; // '1', '2', '3', 'auto'
@@ -40,6 +40,10 @@ export interface SaveData {
     totalBugsFixed: number;
   };
   strategyPreferences?: Record<string, number>;
+  // v7 incremental save support
+  checksum?: string;
+  baseVersion?: number;
+  delta?: Partial<SaveData>;
 }
 
 /** 存档验证结果 */
@@ -54,16 +58,49 @@ export interface AutosaveConfig {
   interval: number; // in minutes
 }
 
+/** 成就索引结构 */
+export interface AchievementIndex {
+  unlockedIds: Set<string>;
+  unlockedAt: Map<string, string>;
+  count: number;
+}
+
+/** 统计索引结构 */
+export interface StatisticsIndex {
+  totalProjects: number;
+  totalSprints: number;
+  totalFundsSpent: number;
+  averageProgress: number;
+  bugRate: number;
+  topAgents: Array<{ id: string; name: string; sprints: number }>;
+}
+
 const SLOT_KEY_PREFIX = 'ai_manager_tycoon_save_slot_';
 const AUTOSAVE_CONFIG_KEY = 'ai_manager_tycoon_autosave_config';
 const OLD_SAVE_KEY = 'ai_manager_tycoon_save_v2';
+const BACKUP_KEY_PREFIX = 'ai_manager_tycoon_backup_slot_';
+const INDEX_KEY_PREFIX = 'ai_manager_tycoon_index_';
 
 export const MANUAL_SLOTS = ['1', '2', '3'];
 export const AUTO_SLOT = 'auto';
 
+/** 内存缓存的索引 */
+const achievementIndexCache = new Map<string, AchievementIndex>();
+const statisticsIndexCache = new Map<string, StatisticsIndex>();
+
 /** 获取存档位的 localStorage key */
 export function getSlotKey(slotId: string): string {
   return `${SLOT_KEY_PREFIX}${slotId}`;
+}
+
+/** 获取备份的 localStorage key */
+function getBackupKey(slotId: string): string {
+  return `${BACKUP_KEY_PREFIX}${slotId}`;
+}
+
+/** 获取索引的 localStorage key */
+function getIndexKey(slotId: string, type: string): string {
+  return `${INDEX_KEY_PREFIX}${slotId}_${type}`;
 }
 
 function checkLocalStorageAvailability(): boolean {
@@ -93,6 +130,8 @@ export function resetStorageCheck(): void {
   hasCheckedLocalStorage = false;
   isUsingFallbackStorage = false;
   storageCache.clear();
+  achievementIndexCache.clear();
+  statisticsIndexCache.clear();
 }
 
 export function isFallbackStorageActive(): boolean {
@@ -144,6 +183,44 @@ function cachedRemoveItem(key: string): void {
   }
 }
 
+/** 计算简单校验和用于数据完整性验证 */
+function calculateChecksum(data: string): string {
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    const char = data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/** 创建存档备份 */
+function createBackup(slotId: string): void {
+  try {
+    const current = cachedGetItem(getSlotKey(slotId));
+    if (current) {
+      cachedSetItem(getBackupKey(slotId), current);
+    }
+  } catch (e) {
+    console.warn('Failed to create backup', e);
+  }
+}
+
+/** 从备份恢复存档 */
+export function restoreFromBackup(slotId: string): boolean {
+  try {
+    const backup = cachedGetItem(getBackupKey(slotId));
+    if (backup) {
+      cachedSetItem(getSlotKey(slotId), backup);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('Failed to restore from backup', e);
+    return false;
+  }
+}
+
 /** 读取自动存档配置，默认启用且间隔 5 分钟 */
 export function getAutosaveConfig(): AutosaveConfig {
   try {
@@ -166,55 +243,221 @@ export function setAutosaveConfig(config: AutosaveConfig): void {
   }
 }
 
+/** 计算两个状态之间的差异 */
+function calculateDelta(oldState: GameState, newState: GameState): Partial<GameState> {
+  const delta: Partial<GameState> = {};
+
+  if (oldState.funds !== newState.funds) delta.funds = newState.funds;
+  if (oldState.sprintCount !== newState.sprintCount) delta.sprintCount = newState.sprintCount;
+  if (oldState.gameOver !== newState.gameOver) delta.gameOver = newState.gameOver;
+  if (oldState.gameOverReason !== newState.gameOverReason) delta.gameOverReason = newState.gameOverReason;
+  if (oldState.reputation !== newState.reputation) delta.reputation = newState.reputation;
+  if (oldState.confidence !== newState.confidence) delta.confidence = newState.confidence;
+
+  // 比较数组
+  if (JSON.stringify(oldState.completedProjectIds) !== JSON.stringify(newState.completedProjectIds)) {
+    delta.completedProjectIds = newState.completedProjectIds;
+  }
+  if (JSON.stringify(oldState.unlockedAchievementIds) !== JSON.stringify(newState.unlockedAchievementIds)) {
+    delta.unlockedAchievementIds = newState.unlockedAchievementIds;
+  }
+
+  // 对于复杂数组，检查长度变化或内容变化
+  if (oldState.agents.length !== newState.agents.length ||
+      JSON.stringify(oldState.agents) !== JSON.stringify(newState.agents)) {
+    delta.agents = newState.agents;
+  }
+  if (oldState.projects.length !== newState.projects.length ||
+      JSON.stringify(oldState.projects) !== JSON.stringify(newState.projects)) {
+    delta.projects = newState.projects;
+  }
+  if (oldState.history.length !== newState.history.length ||
+      JSON.stringify(oldState.history) !== JSON.stringify(newState.history)) {
+    delta.history = newState.history;
+  }
+  if (oldState.relations.length !== newState.relations.length ||
+      JSON.stringify(oldState.relations) !== JSON.stringify(newState.relations)) {
+    delta.relations = newState.relations;
+  }
+
+  return delta;
+}
+
 /** 保存游戏到指定存档位（1/2/3/auto），包含元数据更新 */
 export function saveToSlot(
   slotId: string,
   name: string,
   state: GameState,
-  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory' | 'quarterlyEvaluations' | 'reputationScore' | 'triggeredCheckpoints' | 'teamDynamics' | 'performanceHistory' | 'strategyPreferences'>>
+  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory' | 'quarterlyEvaluations' | 'reputationScore' | 'triggeredCheckpoints' | 'teamDynamics' | 'performanceHistory' | 'strategyPreferences'>>,
+  options?: { incremental?: boolean }
 ): void {
   try {
-    const saveData: SaveData = {
-      version: SAVE_VERSION,
-      gameState: state,
-      savedAt: new Date().toISOString(),
-      name,
-      skillTrees: extra?.skillTrees || {},
-      relationships: extra?.relationships || {},
-      achievements: extra?.achievements || state.unlockedAchievementIds || [],
-      projectHistory: extra?.projectHistory || state.history || [],
-      quarterlyEvaluations: extra?.quarterlyEvaluations || [],
-      reputationScore: extra?.reputationScore ?? 0,
-      triggeredCheckpoints: extra?.triggeredCheckpoints || [],
-      teamDynamics: extra?.teamDynamics || calculateTeamDynamics(state),
-      performanceHistory: extra?.performanceHistory || calculatePerformanceHistory(state),
-      strategyPreferences: extra?.strategyPreferences || {},
-    };
+    let saveData: SaveData;
+
+    // 增量保存模式
+    if (options?.incremental) {
+      const existing = loadFromSlot(slotId);
+      if (existing && existing.version === SAVE_VERSION) {
+        const delta = calculateDelta(existing.gameState, state);
+        const hasChanges = Object.keys(delta).length > 0;
+
+        if (!hasChanges) {
+          return; // 没有变化，跳过保存
+        }
+
+        // 有变化时才创建备份
+        createBackup(slotId);
+
+        saveData = {
+          version: SAVE_VERSION,
+          gameState: state,
+          savedAt: new Date().toISOString(),
+          name,
+          baseVersion: existing.baseVersion || existing.version,
+          delta: { gameState: delta } as any,
+          skillTrees: extra?.skillTrees || existing.skillTrees || {},
+          relationships: extra?.relationships || existing.relationships || {},
+          achievements: extra?.achievements || state.unlockedAchievementIds || [],
+          projectHistory: extra?.projectHistory || state.history || [],
+          quarterlyEvaluations: extra?.quarterlyEvaluations || existing.quarterlyEvaluations || [],
+          reputationScore: extra?.reputationScore ?? existing.reputationScore ?? 0,
+          triggeredCheckpoints: extra?.triggeredCheckpoints || existing.triggeredCheckpoints || [],
+          teamDynamics: extra?.teamDynamics || calculateTeamDynamics(state),
+          performanceHistory: extra?.performanceHistory || calculatePerformanceHistory(state),
+          strategyPreferences: extra?.strategyPreferences || existing.strategyPreferences || {},
+        };
+      } else {
+        // 首次保存或版本不匹配，执行完整保存
+        createBackup(slotId);
+        saveData = createFullSaveData(state, name, extra);
+      }
+    } else {
+      // 完整保存模式
+      createBackup(slotId);
+      saveData = createFullSaveData(state, name, extra);
+    }
+
+    // 计算校验和
+    const dataString = JSON.stringify(saveData);
+    saveData.checksum = calculateChecksum(dataString);
 
     cachedSetItem(getSlotKey(slotId), JSON.stringify(saveData));
 
-    // Update metadata list
-    const metadataList = getSaveSlotsMetadata();
-    const existingIndex = metadataList.findIndex(m => m.id === slotId);
+    // 更新索引
+    updateAchievementIndex(slotId, state);
+    updateStatisticsIndex(slotId, state);
 
-    const newMetadata: SaveMetadata = {
-      id: slotId,
-      name,
-      sprintCount: state.sprintCount,
-      funds: state.funds,
-      completedProjectsCount: state.completedProjectIds.length,
-      savedAt: saveData.savedAt,
-      version: SAVE_VERSION
-    };
-
-    if (existingIndex >= 0) {
-      metadataList[existingIndex] = newMetadata;
-    } else {
-      metadataList.push(newMetadata);
-    }
+    // 更新元数据列表
+    updateMetadataList(slotId, name, state, saveData);
   } catch (e) {
     console.error(`Failed to save to slot ${slotId}`, e);
     throw new Error(`存档失败: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+  }
+}
+
+/** 创建完整保存数据 */
+function createFullSaveData(
+  state: GameState,
+  name: string,
+  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory' | 'quarterlyEvaluations' | 'reputationScore' | 'triggeredCheckpoints' | 'teamDynamics' | 'performanceHistory' | 'strategyPreferences'>>
+): SaveData {
+  return {
+    version: SAVE_VERSION,
+    gameState: state,
+    savedAt: new Date().toISOString(),
+    name,
+    skillTrees: extra?.skillTrees || {},
+    relationships: extra?.relationships || {},
+    achievements: extra?.achievements || state.unlockedAchievementIds || [],
+    projectHistory: extra?.projectHistory || state.history || [],
+    quarterlyEvaluations: extra?.quarterlyEvaluations || [],
+    reputationScore: extra?.reputationScore ?? 0,
+    triggeredCheckpoints: extra?.triggeredCheckpoints || [],
+    teamDynamics: extra?.teamDynamics || calculateTeamDynamics(state),
+    performanceHistory: extra?.performanceHistory || calculatePerformanceHistory(state),
+    strategyPreferences: extra?.strategyPreferences || {},
+  };
+}
+
+/** 更新成就索引 */
+function updateAchievementIndex(slotId: string, state: GameState): void {
+  const index: AchievementIndex = {
+    unlockedIds: new Set(state.unlockedAchievementIds),
+    unlockedAt: new Map(),
+    count: state.unlockedAchievementIds.length,
+  };
+
+  // 记录解锁时间
+  state.unlockedAchievementIds.forEach(id => {
+    if (!index.unlockedAt.has(id)) {
+      index.unlockedAt.set(id, new Date().toISOString());
+    }
+  });
+
+  achievementIndexCache.set(slotId, index);
+
+  // 持久化索引
+  try {
+    const indexData = {
+      unlockedIds: Array.from(index.unlockedIds),
+      unlockedAt: Object.fromEntries(index.unlockedAt),
+      count: index.count,
+    };
+    cachedSetItem(getIndexKey(slotId, 'achievements'), JSON.stringify(indexData));
+  } catch (e) {
+    console.warn('Failed to persist achievement index', e);
+  }
+}
+
+/** 更新统计索引 */
+function updateStatisticsIndex(slotId: string, state: GameState): void {
+  const history = state.history || [];
+  const agents = state.agents || [];
+
+  const totalProgress = history.reduce((sum, h) => sum + (h.progressDelta || 0), 0);
+  const totalBugs = history.reduce((sum, h) => sum + Math.max(0, h.bugsDelta || 0), 0);
+
+  const index: StatisticsIndex = {
+    totalProjects: state.completedProjectIds.length,
+    totalSprints: state.sprintCount,
+    totalFundsSpent: history.reduce((sum, h) => sum + (h.cost || 0), 0),
+    averageProgress: history.length > 0 ? totalProgress / history.length : 0,
+    bugRate: state.sprintCount > 0 ? totalBugs / state.sprintCount : 0,
+    topAgents: agents
+      .map(a => ({ id: a.id, name: a.name, sprints: a.totalSprintsWorked || 0 }))
+      .sort((a, b) => b.sprints - a.sprints)
+      .slice(0, 5),
+  };
+
+  statisticsIndexCache.set(slotId, index);
+
+  // 持久化索引
+  try {
+    cachedSetItem(getIndexKey(slotId, 'statistics'), JSON.stringify(index));
+  } catch (e) {
+    console.warn('Failed to persist statistics index', e);
+  }
+}
+
+/** 更新元数据列表 */
+function updateMetadataList(slotId: string, name: string, state: GameState, saveData: SaveData): void {
+  const metadataList = getSaveSlotsMetadata();
+  const existingIndex = metadataList.findIndex(m => m.id === slotId);
+
+  const newMetadata: SaveMetadata = {
+    id: slotId,
+    name,
+    sprintCount: state.sprintCount,
+    funds: state.funds,
+    completedProjectsCount: state.completedProjectIds.length,
+    savedAt: saveData.savedAt,
+    version: SAVE_VERSION
+  };
+
+  if (existingIndex >= 0) {
+    metadataList[existingIndex] = newMetadata;
+  } else {
+    metadataList.push(newMetadata);
   }
 }
 
@@ -227,9 +470,29 @@ export function loadFromSlot(slotId: string): SaveData | null {
 
     const data = JSON.parse(saved) as SaveData;
 
+    // 校验和验证
+    if (data.checksum) {
+      const dataWithoutChecksum = { ...data };
+      delete dataWithoutChecksum.checksum;
+      const expectedChecksum = calculateChecksum(JSON.stringify(dataWithoutChecksum));
+      if (data.checksum !== expectedChecksum) {
+        console.warn(`存档校验和不匹配 (slot ${slotId})，尝试从备份恢复`);
+        if (restoreFromBackup(slotId)) {
+          return loadFromSlot(slotId); // 重试加载
+        }
+        console.error('备份恢复失败，存档可能损坏');
+      }
+    }
+
     // Auto migration if needed (also handles raw GameState without version/gameState wrapper)
     if (!data.version || data.version < SAVE_VERSION || !data.gameState) {
       return migrateSaveData(data);
+    }
+
+    // 处理增量存档
+    if (data.delta) {
+      // 增量存档已包含完整gameState，直接返回
+      delete data.delta;
     }
 
     return data;
@@ -237,6 +500,87 @@ export function loadFromSlot(slotId: string): SaveData | null {
     console.error(`Failed to load from slot ${slotId}`, e);
     throw new Error(`加载存档失败: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
   }
+}
+
+/** 获取成就索引 */
+export function getAchievementIndex(slotId: string): AchievementIndex | null {
+  // 先检查缓存
+  if (achievementIndexCache.has(slotId)) {
+    return achievementIndexCache.get(slotId)!;
+  }
+
+  // 从存储加载
+  try {
+    const saved = cachedGetItem(getIndexKey(slotId, 'achievements'));
+    if (saved) {
+      const data = JSON.parse(saved);
+      const index: AchievementIndex = {
+        unlockedIds: new Set(data.unlockedIds),
+        unlockedAt: new Map(Object.entries(data.unlockedAt)),
+        count: data.count,
+      };
+      achievementIndexCache.set(slotId, index);
+      return index;
+    }
+  } catch (e) {
+    console.warn('Failed to load achievement index', e);
+  }
+
+  // 从存档数据构建索引
+  const saveData = loadFromSlot(slotId);
+  if (saveData) {
+    updateAchievementIndex(slotId, saveData.gameState);
+    return achievementIndexCache.get(slotId) || null;
+  }
+
+  return null;
+}
+
+/** 获取统计索引 */
+export function getStatisticsIndex(slotId: string): StatisticsIndex | null {
+  // 先检查缓存
+  if (statisticsIndexCache.has(slotId)) {
+    return statisticsIndexCache.get(slotId)!;
+  }
+
+  // 从存储加载
+  try {
+    const saved = cachedGetItem(getIndexKey(slotId, 'statistics'));
+    if (saved) {
+      const index = JSON.parse(saved) as StatisticsIndex;
+      statisticsIndexCache.set(slotId, index);
+      return index;
+    }
+  } catch (e) {
+    console.warn('Failed to load statistics index', e);
+  }
+
+  // 从存档数据构建索引
+  const saveData = loadFromSlot(slotId);
+  if (saveData) {
+    updateStatisticsIndex(slotId, saveData.gameState);
+    return statisticsIndexCache.get(slotId) || null;
+  }
+
+  return null;
+}
+
+/** 检查成就是否已解锁（使用索引快速查询） */
+export function isAchievementUnlocked(slotId: string, achievementId: string): boolean {
+  const index = getAchievementIndex(slotId);
+  return index ? index.unlockedIds.has(achievementId) : false;
+}
+
+/** 批量检查成就解锁状态 */
+export function batchCheckAchievements(slotId: string, achievementIds: string[]): Map<string, boolean> {
+  const index = getAchievementIndex(slotId);
+  const result = new Map<string, boolean>();
+
+  achievementIds.forEach(id => {
+    result.set(id, index ? index.unlockedIds.has(id) : false);
+  });
+
+  return result;
 }
 
 /** 验证指定存档位的数据完整性 */
@@ -258,6 +602,11 @@ export function validateSlot(slotId: string): SaveValidationResult {
 export function deleteSlot(slotId: string): void {
   try {
     cachedRemoveItem(getSlotKey(slotId));
+    cachedRemoveItem(getBackupKey(slotId));
+    cachedRemoveItem(getIndexKey(slotId, 'achievements'));
+    cachedRemoveItem(getIndexKey(slotId, 'statistics'));
+    achievementIndexCache.delete(slotId);
+    statisticsIndexCache.delete(slotId);
   } catch (e) {
     console.error(`Failed to delete slot ${slotId}`, e);
   }
@@ -388,6 +737,18 @@ function migrateV5ToV6(oldData: any): any {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateV6ToV7(oldData: any): any {
+  // v7 added: checksum, baseVersion, delta (incremental save support)
+  return {
+    ...oldData,
+    version: 7,
+    checksum: oldData.checksum || undefined,
+    baseVersion: oldData.baseVersion || undefined,
+    delta: oldData.delta || undefined,
+  };
+}
+
 /** 版本迁移链：每一步只处理相邻版本的差异 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MIGRATION_CHAIN: Array<(data: any) => any> = [
@@ -395,6 +756,7 @@ const MIGRATION_CHAIN: Array<(data: any) => any> = [
   migrateV3ToV4, // index 1: v3→v4
   migrateV4ToV5, // index 2: v4→v5
   migrateV5ToV6, // index 3: v5→v6
+  migrateV6ToV7, // index 4: v6→v7
 ];
 
 /** 执行版本迁移：从当前版本逐步升级到最新版本 */
@@ -439,6 +801,9 @@ function migrateSaveData(oldData: any): SaveData {
     teamDynamics: migrated.teamDynamics || { averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 },
     performanceHistory: migrated.performanceHistory || { bestSprintProgress: 0, worstSprintProgress: 0, averageSprintProgress: 0, totalBugsCreated: 0, totalBugsFixed: 0 },
     strategyPreferences: migrated.strategyPreferences || {},
+    checksum: migrated.checksum,
+    baseVersion: migrated.baseVersion,
+    delta: migrated.delta,
   };
 }
 
@@ -517,9 +882,44 @@ export function validateSaveData(data: unknown): SaveValidationResult {
     }
   }
 
+  // v7+ fields (incremental save)
+  if (saveVersion >= 7) {
+    if (save.checksum !== undefined && typeof save.checksum !== 'string') {
+      warnings.push('校验和格式异常');
+    }
+    if (save.delta !== undefined && typeof save.delta !== 'object') {
+      errors.push('增量数据格式错误');
+    }
+  }
+
+  // 验证校验和
+  if (save.checksum && typeof save.checksum === 'string') {
+    const dataWithoutChecksum = { ...save };
+    delete dataWithoutChecksum.checksum;
+    const expectedChecksum = calculateChecksum(JSON.stringify(dataWithoutChecksum));
+    if (save.checksum !== expectedChecksum) {
+      warnings.push('存档校验和不匹配，数据可能被修改');
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
     warnings,
   };
+}
+
+/** 清除所有索引缓存 */
+export function clearIndexCache(): void {
+  achievementIndexCache.clear();
+  statisticsIndexCache.clear();
+}
+
+/** 重建指定存档位的所有索引 */
+export function rebuildIndexes(slotId: string): void {
+  const saveData = loadFromSlot(slotId);
+  if (saveData) {
+    updateAchievementIndex(slotId, saveData.gameState);
+    updateStatisticsIndex(slotId, saveData.gameState);
+  }
 }

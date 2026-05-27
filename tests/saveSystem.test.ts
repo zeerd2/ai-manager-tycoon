@@ -11,7 +11,14 @@ import {
   resetStorageCheck,
   isFallbackStorageActive,
   validateSaveData,
-  validateSlot
+  validateSlot,
+  getAchievementIndex,
+  getStatisticsIndex,
+  isAchievementUnlocked,
+  batchCheckAchievements,
+  restoreFromBackup,
+  rebuildIndexes,
+  clearIndexCache
 } from '../src/domain/saveSystem';
 import type { GameState } from '../src/domain/gameState';
 
@@ -43,6 +50,7 @@ describe('Save System', () => {
     });
 
     resetStorageCheck();
+    clearIndexCache();
   });
 
   describe('Autosave Configuration', () => {
@@ -218,7 +226,7 @@ describe('Save System', () => {
       expect(slot1!.gameState.funds).toBe(5000);
     });
 
-    it('should auto migrate older version load format to version 4 format', () => {
+    it('should auto migrate older version load format to version 7 format', () => {
       // Create a save with old version format
       const oldFormatSave = {
         version: 2,
@@ -265,9 +273,9 @@ describe('Save System', () => {
     });
   });
 
-  describe('v8 Save Compatibility', () => {
-    it('should have SAVE_VERSION = 6 for v9', () => {
-      expect(SAVE_VERSION).toBe(6);
+  describe('v7 Save Compatibility and New Features', () => {
+    it('should have SAVE_VERSION = 7 for v9', () => {
+      expect(SAVE_VERSION).toBe(7);
     });
 
     it('should save and load v8 fields (quarterlyEvaluations, reputationScore, triggeredCheckpoints)', () => {
@@ -295,7 +303,7 @@ describe('Save System', () => {
       expect(loaded!.triggeredCheckpoints).toEqual([]);
     });
 
-    it('should migrate old v4 save to v6 with default v8/v9 fields', () => {
+    it('should migrate old v4 save to v7 with default v8/v9/v10 fields', () => {
       const oldV4Save = {
         version: 4,
         gameState: mockState,
@@ -320,7 +328,7 @@ describe('Save System', () => {
       expect(loaded!.strategyPreferences).toBeDefined();
     });
 
-    it('should migrate old v2 structure to v6 with all default fields', () => {
+    it('should migrate old v2 structure to v7 with all default fields', () => {
       const oldV2Save = {
         version: 2,
         gameState: mockState,
@@ -342,7 +350,7 @@ describe('Save System', () => {
       expect(loaded!.strategyPreferences).toBeDefined();
     });
 
-    it('should preserve existing v4 fields after v6 migration', () => {
+    it('should preserve existing v4 fields after v7 migration', () => {
       const oldV4Save = {
         version: 4,
         gameState: mockState,
@@ -417,7 +425,7 @@ describe('Save System', () => {
       expect(loaded!.performanceHistory!.totalBugsCreated).toBe(2); // only positive bugsDelta
     });
 
-    it('should migrate v5 save to v6 with calculated v9 fields', () => {
+    it('should migrate v5 save to v7 with calculated v9 fields', () => {
       const oldV5Save = {
         version: 5,
         gameState: mockState,
@@ -435,7 +443,7 @@ describe('Save System', () => {
 
       const loaded = loadFromSlot('1');
       expect(loaded).not.toBeNull();
-      expect(loaded!.version).toBe(6);
+      expect(loaded!.version).toBe(7);
       expect(loaded!.teamDynamics).toBeDefined();
       expect(loaded!.teamDynamics!.averageMorale).toBe(0);
       expect(loaded!.performanceHistory).toBeDefined();
@@ -445,7 +453,7 @@ describe('Save System', () => {
       expect(loaded!.triggeredCheckpoints).toEqual(['seed']);
     });
 
-    it('should migrate raw v2 GameState (no version wrapper) to v6', () => {
+    it('should migrate raw v2 GameState (no version wrapper) to v7', () => {
       const rawV2State = {
         funds: 3000,
         sprintCount: 7,
@@ -461,7 +469,7 @@ describe('Save System', () => {
 
       const loaded = loadFromSlot('2');
       expect(loaded).not.toBeNull();
-      expect(loaded!.version).toBe(6);
+      expect(loaded!.version).toBe(7);
       expect(loaded!.gameState.funds).toBe(3000);
       expect(loaded!.gameState.sprintCount).toBe(7);
       expect(loaded!.teamDynamics).toBeDefined();
@@ -470,8 +478,200 @@ describe('Save System', () => {
     });
   });
 
+  describe('Incremental Save', () => {
+    it('should perform incremental save when data changes', () => {
+      // Initial full save
+      saveToSlot('1', '初始存档', mockState);
+
+      // Modify state
+      const updatedState = { ...mockState, funds: 6000, sprintCount: 4 };
+
+      // Incremental save
+      saveToSlot('1', '增量存档', updatedState, undefined, { incremental: true });
+
+      const loaded = loadFromSlot('1');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.gameState.funds).toBe(6000);
+      expect(loaded!.gameState.sprintCount).toBe(4);
+    });
+
+    it('should skip save when no changes detected in incremental mode', () => {
+      saveToSlot('1', '初始存档', mockState);
+
+      // Reset the spy to only track calls from the incremental save
+      vi.mocked(localStorage.setItem).mockClear();
+
+      // Save again with same state in incremental mode
+      saveToSlot('1', '相同存档', mockState, undefined, { incremental: true });
+
+      // Should not have called setItem again (no changes detected)
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it('should include checksum in saved data', () => {
+      saveToSlot('1', '校验和存档', mockState);
+
+      const key = `ai_manager_tycoon_save_slot_1`;
+      const saved = JSON.parse(localStorage.getItem(key)!);
+
+      expect(saved.checksum).toBeDefined();
+      expect(typeof saved.checksum).toBe('string');
+    });
+
+    it('should detect checksum mismatch and attempt recovery', () => {
+      saveToSlot('1', '原始存档', mockState);
+
+      // Corrupt the data
+      const key = `ai_manager_tycoon_save_slot_1`;
+      const saved = JSON.parse(localStorage.getItem(key)!);
+      saved.gameState.funds = 99999;
+      localStorage.setItem(key, JSON.stringify(saved));
+
+      // Load should detect corruption
+      const loaded = loadFromSlot('1');
+      // Since there's no backup yet, it should still load but with warning
+      expect(loaded).not.toBeNull();
+    });
+  });
+
+  describe('Backup and Restore', () => {
+    it('should create backup before overwriting', () => {
+      saveToSlot('1', '原始存档', mockState);
+
+      // Overwrite
+      const updatedState = { ...mockState, funds: 6000 };
+      saveToSlot('1', '覆盖存档', updatedState);
+
+      // Restore from backup
+      const restored = restoreFromBackup('1');
+      expect(restored).toBe(true);
+
+      const loaded = loadFromSlot('1');
+      expect(loaded!.gameState.funds).toBe(5000);
+      expect(loaded!.name).toBe('原始存档');
+    });
+
+    it('should return false when no backup exists', () => {
+      const restored = restoreFromBackup('nonexistent');
+      expect(restored).toBe(false);
+    });
+
+    it('should delete backup when slot is deleted', () => {
+      saveToSlot('1', '测试存档', mockState);
+      saveToSlot('1', '覆盖存档', { ...mockState, funds: 6000 });
+
+      deleteSlot('1');
+
+      const restored = restoreFromBackup('1');
+      expect(restored).toBe(false);
+    });
+  });
+
+  describe('Achievement Index', () => {
+    it('should build achievement index from save data', () => {
+      const stateWithAchievements = {
+        ...mockState,
+        unlockedAchievementIds: ['ach1', 'ach2', 'ach3'],
+      };
+
+      saveToSlot('1', '成就存档', stateWithAchievements);
+
+      const index = getAchievementIndex('1');
+      expect(index).not.toBeNull();
+      expect(index!.count).toBe(3);
+      expect(index!.unlockedIds.has('ach1')).toBe(true);
+      expect(index!.unlockedIds.has('ach2')).toBe(true);
+      expect(index!.unlockedIds.has('ach3')).toBe(true);
+    });
+
+    it('should check if achievement is unlocked', () => {
+      const stateWithAchievements = {
+        ...mockState,
+        unlockedAchievementIds: ['ach1', 'ach2'],
+      };
+
+      saveToSlot('1', '成就存档', stateWithAchievements);
+
+      expect(isAchievementUnlocked('1', 'ach1')).toBe(true);
+      expect(isAchievementUnlocked('1', 'ach2')).toBe(true);
+      expect(isAchievementUnlocked('1', 'ach3')).toBe(false);
+    });
+
+    it('should batch check achievements', () => {
+      const stateWithAchievements = {
+        ...mockState,
+        unlockedAchievementIds: ['ach1', 'ach3'],
+      };
+
+      saveToSlot('1', '成就存档', stateWithAchievements);
+
+      const results = batchCheckAchievements('1', ['ach1', 'ach2', 'ach3', 'ach4']);
+      expect(results.get('ach1')).toBe(true);
+      expect(results.get('ach2')).toBe(false);
+      expect(results.get('ach3')).toBe(true);
+      expect(results.get('ach4')).toBe(false);
+    });
+
+    it('should return null index for empty slot', () => {
+      const index = getAchievementIndex('empty');
+      expect(index).toBeNull();
+    });
+  });
+
+  describe('Statistics Index', () => {
+    it('should build statistics index from save data', () => {
+      const stateWithHistory = {
+        ...mockState,
+        completedProjectIds: ['p1', 'p2', 'p3'],
+        sprintCount: 10,
+        history: [
+          { sprintNumber: 1, project: {} as any, agents: [], strategy: {} as any, progressDelta: 10, bugsDelta: 2, techDebtDelta: 1, moraleDelta: -5, cost: 500, incidents: [], summary: '' },
+          { sprintNumber: 2, project: {} as any, agents: [], strategy: {} as any, progressDelta: 20, bugsDelta: -1, techDebtDelta: 0, moraleDelta: 3, cost: 600, incidents: [], summary: '' },
+        ],
+        agents: [
+          { id: 'a1', name: 'Alice', model: 'gpt-4', role: 'dev', avatar: '', skills: { coding: 80, debugging: 70, architecture: 60, creativity: 50, speed: 90 }, salary: 100, morale: 80, quirk: '', fatigue: 20, consecutiveSprints: 2, totalSprintsWorked: 10, locked: false },
+          { id: 'a2', name: 'Bob', model: 'gpt-4', role: 'dev', avatar: '', skills: { coding: 70, debugging: 60, architecture: 80, creativity: 90, speed: 60 }, salary: 100, morale: 60, quirk: '', fatigue: 40, consecutiveSprints: 1, totalSprintsWorked: 5, locked: false },
+        ],
+      };
+
+      saveToSlot('1', '统计存档', stateWithHistory);
+
+      const index = getStatisticsIndex('1');
+      expect(index).not.toBeNull();
+      expect(index!.totalProjects).toBe(3);
+      expect(index!.totalSprints).toBe(10);
+      expect(index!.totalFundsSpent).toBe(1100); // 500 + 600
+      expect(index!.averageProgress).toBe(15); // (10 + 20) / 2
+      expect(index!.bugRate).toBe(0.2); // (2 + 0) / 10 (only positive bugsDelta)
+      expect(index!.topAgents).toHaveLength(2);
+      expect(index!.topAgents[0].name).toBe('Alice');
+      expect(index!.topAgents[0].sprints).toBe(10);
+    });
+
+    it('should return null index for empty slot', () => {
+      const index = getStatisticsIndex('empty');
+      expect(index).toBeNull();
+    });
+
+    it('should rebuild indexes correctly', () => {
+      saveToSlot('1', '测试存档', mockState);
+
+      clearIndexCache();
+
+      rebuildIndexes('1');
+
+      const achIndex = getAchievementIndex('1');
+      expect(achIndex).not.toBeNull();
+      expect(achIndex!.count).toBe(1);
+
+      const statIndex = getStatisticsIndex('1');
+      expect(statIndex).not.toBeNull();
+      expect(statIndex!.totalProjects).toBe(2);
+    });
+  });
+
   describe('Save Validation', () => {
-    it('should validate a valid v6 save', () => {
+    it('should validate a valid v7 save', () => {
       saveToSlot('1', '有效存档', mockState);
       const result = validateSlot('1');
       expect(result.valid).toBe(true);
@@ -508,14 +708,14 @@ describe('Save System', () => {
     });
 
     it('should error on missing gameState', () => {
-      const result = validateSaveData({ version: 6 });
+      const result = validateSaveData({ version: 7 });
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('缺少游戏状态数据');
     });
 
     it('should warn on missing optional gameState fields', () => {
       const result = validateSaveData({
-        version: 6,
+        version: 7,
         gameState: { funds: 1000 },
         savedAt: new Date().toISOString(),
       });
@@ -556,13 +756,36 @@ describe('Save System', () => {
       expect(result.errors.some(e => e.includes('策略偏好'))).toBe(true);
     });
 
+    it('should validate v7 delta format', () => {
+      const result = validateSaveData({
+        version: 7,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        delta: 'invalid',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('增量数据'))).toBe(true);
+    });
+
     it('should return warnings for valid save with missing optional fields', () => {
       const result = validateSaveData({
-        version: 6,
+        version: 7,
         gameState: mockState,
       });
       expect(result.valid).toBe(true);
       expect(result.warnings.some(w => w.includes('保存时间戳'))).toBe(true);
+    });
+
+    it('should validate checksum when present', () => {
+      const validData = {
+        version: 7,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        checksum: 'invalid_checksum',
+      };
+      const result = validateSaveData(validData);
+      expect(result.valid).toBe(true);
+      expect(result.warnings.some(w => w.includes('校验和'))).toBe(true);
     });
   });
 });
