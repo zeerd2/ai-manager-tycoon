@@ -11,7 +11,11 @@ export interface UnlockResult {
 }
 
 /** 从 GameState 构建成就检查上下文 */
-export function buildAchievementContext(state: GameState, currentSprintBugs?: number): AchievementContext {
+export function buildAchievementContext(
+  state: GameState,
+  currentSprintBugs?: number,
+  cheapestAgentOnly?: boolean,
+): AchievementContext {
   const totalFundsSpent = state.history.reduce((sum, h) => sum + h.cost, 0);
 
   return {
@@ -33,6 +37,7 @@ export function buildAchievementContext(state: GameState, currentSprintBugs?: nu
       progressDelta: h.progressDelta,
       cost: h.cost,
     })),
+    cheapestAgentOnly,
   };
 }
 
@@ -40,8 +45,9 @@ export function buildAchievementContext(state: GameState, currentSprintBugs?: nu
 export function checkAllAchievements(
   state: GameState,
   currentSprintBugs?: number,
+  cheapestAgentOnly?: boolean,
 ): UnlockResult {
-  const context = buildAchievementContext(state, currentSprintBugs);
+  const context = buildAchievementContext(state, currentSprintBugs, cheapestAgentOnly);
   const alreadyUnlocked = new Set(state.unlockedAchievementIds);
   const newlyUnlocked: Achievement[] = [];
 

@@ -3,7 +3,6 @@ import { sampleAgents } from './data/sampleAgents';
 import { sampleProjects } from './data/sampleProjects';
 import { incidentTemplates } from './data/incidentTemplates';
 import { strategies } from './data/strategies';
-import { achievements } from './data/achievements';
 import { runSprint } from './domain/simulation';
 import { createRNG } from './domain/random';
 import {
@@ -12,7 +11,7 @@ import {
   checkUnlocks
 } from './domain/gameEngine';
 import { unlockSkill } from './domain/skillTreeLogic';
-import { checkAchievement } from './domain/achievement';
+import { checkAllAchievements } from './domain/achievementUnlock';
 import {
   saveToSlot,
   deleteSlot,
@@ -338,44 +337,13 @@ export default function App() {
       });
     }
 
-    // 5. Check achievements
+    // 5. Check achievements using the achievement unlock API
     const cheapestAgentOnly = isProjCompletedNow && chosenAgents.every(a => a.salary <= 80);
-    const achievementContext = {
-      completedProjectIds: newState.completedProjectIds,
-      currentSprintBugs: result.bugsDelta,
-      fundsRemaining: newState.funds,
-      totalFundsSpent: newState.history.reduce((sum, h) => sum + h.cost, 0),
-      agents: newState.agents.map(a => ({
-        morale: a.morale,
-        locked: a.locked,
-        salary: a.salary,
-        consecutiveSprints: a.consecutiveSprints,
-        skills: a.skills,
-      })),
-      sprintCount: newState.sprintCount,
-      projectsInOneGame: newState.completedProjectIds.length,
-      history: newState.history.map(h => ({
-        bugsDelta: h.bugsDelta,
-        progressDelta: h.progressDelta,
-      })),
-      cheapestAgentOnly,
-    };
+    const achievementResult = checkAllAchievements(newState, result.bugsDelta, cheapestAgentOnly);
 
-    const newAchievementsUnlocked: Achievement[] = [];
-    const newUnlockedIds = [...newState.unlockedAchievementIds];
-
-    for (const ach of achievements) {
-      if (!newState.unlockedAchievementIds.includes(ach.id)) {
-        if (checkAchievement(ach, achievementContext)) {
-          newAchievementsUnlocked.push(ach);
-          newUnlockedIds.push(ach.id);
-        }
-      }
-    }
-
-    if (newAchievementsUnlocked.length > 0) {
-      newState.unlockedAchievementIds = newUnlockedIds;
-      setToastQueue(prev => [...prev, ...newAchievementsUnlocked]);
+    if (achievementResult.newlyUnlocked.length > 0) {
+      newState.unlockedAchievementIds = achievementResult.unlockedIds;
+      setToastQueue(prev => [...prev, ...achievementResult.newlyUnlocked]);
     }
 
     // 6. Update local states
@@ -542,7 +510,7 @@ export default function App() {
         return (
           <ErrorBoundary local>
             <Suspense fallback={<div className="panel-loading">加载历史记录...</div>}>
-              <HistoryPanel history={gameState.history} />
+              <HistoryPanel gameState={gameState} />
             </Suspense>
           </ErrorBoundary>
         );
@@ -780,7 +748,7 @@ export default function App() {
           >
             <ErrorBoundary local>
               <Suspense fallback={<div className="panel-loading">加载历史记录...</div>}>
-                <HistoryPanel history={gameState.history} />
+                <HistoryPanel gameState={gameState} />
               </Suspense>
             </ErrorBoundary>
           </section>
