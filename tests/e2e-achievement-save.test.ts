@@ -9,6 +9,8 @@ import {
   checkAndMigrateOldSave,
   SAVE_VERSION,
   resetStorageCheck,
+  getAutosaveConfig,
+  setAutosaveConfig,
 } from '../src/domain/saveSystem';
 import { createInitialGameState, processPostSprint, checkGameOver } from '../src/domain/gameEngine';
 import type { AchievementContext } from '../src/domain/achievement';
@@ -323,6 +325,69 @@ describe('E2E: Achievement Unlock Flow', () => {
     expect(checkAchievement(getAchievement('big-spender'), ctx)).toBe(true);
   });
 
+  it('unlocks "under-budget" when completing a project with >80% funds remaining', () => {
+    let state = createInitialGameState(agents, projects);
+    // Start with 5000, spend very little
+    state.funds = 4800;
+    state.completedProjectIds = ['easy'];
+    state.history = [makeSprintResult({ cost: 200 })];
+
+    const ctx = contextFromState(state);
+    // 4800 / (4800 + 200) = 0.96 > 0.8
+    expect(checkAchievement(getAchievement('under-budget'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "under-budget" when funds < 80% of total', () => {
+    let state = createInitialGameState(agents, projects);
+    state.funds = 2000;
+    state.completedProjectIds = ['easy'];
+    state.history = [makeSprintResult({ cost: 3000 })];
+
+    const ctx = contextFromState(state);
+    // 2000 / (2000 + 3000) = 0.4 < 0.8
+    expect(checkAchievement(getAchievement('under-budget'), ctx)).toBe(false);
+  });
+
+  it('unlocks "penny-pincher" when only cheapest agents used for a project', () => {
+    const cheapAgents = [
+      makeAgent({ id: 'c1', salary: 60 }),
+      makeAgent({ id: 'c2', salary: 80 }),
+    ];
+    let state = createInitialGameState(cheapAgents, projects);
+    state.completedProjectIds = ['easy'];
+
+    const ctx = contextFromState(state, { cheapestAgentOnly: true });
+    expect(checkAchievement(getAchievement('penny-pincher'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "penny-pincher" when expensive agents are used', () => {
+    let state = createInitialGameState(agents, projects);
+    state.completedProjectIds = ['easy'];
+
+    // a2 has salary 100, which is > 80
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('penny-pincher'), ctx)).toBe(false);
+  });
+
+  it('unlocks "bug-factory" when a single sprint produces 15+ bugs', () => {
+    let state = createInitialGameState(agents, projects);
+
+    const ctx = contextFromState(state);
+    ctx.currentSprintBugs = 15;
+    expect(checkAchievement(getAchievement('bug-factory'), ctx)).toBe(true);
+
+    ctx.currentSprintBugs = 20;
+    expect(checkAchievement(getAchievement('bug-factory'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "bug-factory" when bugs < 15', () => {
+    let state = createInitialGameState(agents, projects);
+
+    const ctx = contextFromState(state);
+    ctx.currentSprintBugs = 14;
+    expect(checkAchievement(getAchievement('bug-factory'), ctx)).toBe(false);
+  });
+
   it('tracks achievement progress correctly through game state changes', () => {
     let state = createInitialGameState(agents, projects);
 
@@ -339,6 +404,310 @@ describe('E2E: Achievement Unlock Flow', () => {
     state.funds = 6500;
     progress = getAchievementProgress(getAchievement('financial-freedom'), state);
     expect(progress).toEqual({ current: 6500, target: 8000, display: '6500 / 8000' });
+  });
+
+  // ── Boundary conditions ──────────────────────────────────
+
+  it('unlocks "speed-run" at exactly 5 sprints (boundary)', () => {
+    let state = createInitialGameState(agents, projects);
+    state.sprintCount = 4;
+
+    const result = makeSprintResult({
+      project: { ...projects[0], progress: 60 },
+      progressDelta: 60,
+      sprintNumber: 5,
+      cost: 80,
+    });
+    state = processPostSprint(state, result, ['a1']);
+
+    expect(state.sprintCount).toBe(5);
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('speed-run'), ctx)).toBe(true);
+  });
+
+  it('unlocks "financial-freedom" at exactly 8000 funds (boundary)', () => {
+    let state = createInitialGameState(agents, projects);
+    state.funds = 8000;
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('financial-freedom'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "financial-freedom" at 7999 funds', () => {
+    let state = createInitialGameState(agents, projects);
+    state.funds = 7999;
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('financial-freedom'), ctx)).toBe(false);
+  });
+
+  it('unlocks "big-team" at exactly 6 agents (boundary)', () => {
+    const sixAgents = Array.from({ length: 6 }, (_, i) =>
+      makeAgent({ id: `a${i}`, locked: false }),
+    );
+    const state = createInitialGameState(sixAgents, projects);
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('big-team'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "big-team" with only 5 agents', () => {
+    const fiveAgents = Array.from({ length: 5 }, (_, i) =>
+      makeAgent({ id: `a${i}`, locked: false }),
+    );
+    const state = createInitialGameState(fiveAgents, projects);
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('big-team'), ctx)).toBe(false);
+  });
+
+  it('unlocks "iron-man" at exactly 6 consecutive sprints (boundary)', () => {
+    const worker = makeAgent({ id: 'w1', consecutiveSprints: 5 });
+    let state = createInitialGameState([worker], projects);
+
+    const result = makeSprintResult({ agents: [worker], cost: 100 });
+    state = processPostSprint(state, result, ['w1']);
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('iron-man'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "iron-man" at 5 consecutive sprints', () => {
+    const worker = makeAgent({ id: 'w1', consecutiveSprints: 5 });
+    const state = createInitialGameState([worker], projects);
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('iron-man'), ctx)).toBe(false);
+  });
+
+  it('unlocks "bug-factory" at exactly 15 bugs (boundary)', () => {
+    let state = createInitialGameState(agents, projects);
+    const ctx = contextFromState(state);
+    ctx.currentSprintBugs = 15;
+    expect(checkAchievement(getAchievement('bug-factory'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "bug-factory" at 14 bugs', () => {
+    let state = createInitialGameState(agents, projects);
+    const ctx = contextFromState(state);
+    ctx.currentSprintBugs = 14;
+    expect(checkAchievement(getAchievement('bug-factory'), ctx)).toBe(false);
+  });
+
+  it('unlocks "murphy-law" at exactly 50 total bugs (boundary)', () => {
+    let state = createInitialGameState(agents, projects);
+    state.history = [
+      makeSprintResult({ bugsDelta: 25, cost: 100 }),
+      makeSprintResult({ bugsDelta: 25, cost: 100 }),
+    ];
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('murphy-law'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "murphy-law" at 49 total bugs', () => {
+    let state = createInitialGameState(agents, projects);
+    state.history = [
+      makeSprintResult({ bugsDelta: 25, cost: 100 }),
+      makeSprintResult({ bugsDelta: 24, cost: 100 }),
+    ];
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('murphy-law'), ctx)).toBe(false);
+  });
+
+  it('unlocks "big-spender" at exactly 10000 total spent (boundary)', () => {
+    let state = createInitialGameState(agents, projects);
+    state.history = Array.from({ length: 100 }, () =>
+      makeSprintResult({ cost: 100 }),
+    );
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('big-spender'), ctx)).toBe(true);
+  });
+
+  it('does NOT unlock "big-spender" at 9900 total spent', () => {
+    let state = createInitialGameState(agents, projects);
+    state.history = Array.from({ length: 99 }, () =>
+      makeSprintResult({ cost: 100 }),
+    );
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('big-spender'), ctx)).toBe(false);
+  });
+
+  // ── Negative / edge cases ────────────────────────────────
+
+  it('does NOT unlock "team-wipe" when agents array is empty', () => {
+    const state = createInitialGameState([], projects);
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('team-wipe'), ctx)).toBe(false);
+  });
+
+  it('does NOT unlock "team-wipe" when only locked agents have 0 morale', () => {
+    const mixedAgents = [
+      makeAgent({ id: 'a1', morale: 50, locked: false }),
+      makeAgent({ id: 'a2', morale: 0, locked: true }),
+    ];
+    const state = createInitialGameState(mixedAgents, projects);
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('team-wipe'), ctx)).toBe(false);
+  });
+
+  it('does NOT unlock "max-skill" when one skill is below 100', () => {
+    const almostMaxed = makeAgent({
+      id: 'almost',
+      skills: { coding: 100, debugging: 100, architecture: 100, creativity: 100, speed: 99 },
+    });
+    const state = createInitialGameState([almostMaxed], projects);
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('max-skill'), ctx)).toBe(false);
+  });
+
+  it('does NOT unlock "talent-scout" when total skills < 450', () => {
+    const notQuiteStar = makeAgent({
+      id: 'not-star',
+      skills: { coding: 89, debugging: 89, architecture: 89, creativity: 89, speed: 89 },
+    });
+    const state = createInitialGameState([notQuiteStar], projects);
+    const ctx = contextFromState(state);
+    // 89 * 5 = 445 < 450
+    expect(checkAchievement(getAchievement('talent-scout'), ctx)).toBe(false);
+  });
+
+  it('does NOT unlock "survivor" when no bugs in history', () => {
+    let state = createInitialGameState(agents, projects);
+    state.completedProjectIds = ['easy'];
+    state.history = [makeSprintResult({ bugsDelta: 0, cost: 100 })];
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('survivor'), ctx)).toBe(false);
+  });
+
+  it('does NOT unlock "survivor" when bugs exist but no project completed', () => {
+    let state = createInitialGameState(agents, projects);
+    state.completedProjectIds = [];
+    state.history = [makeSprintResult({ bugsDelta: 20, cost: 100 })];
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('survivor'), ctx)).toBe(false);
+  });
+
+  it('does NOT unlock "under-budget" at exactly 80% funds (needs > 80%)', () => {
+    let state = createInitialGameState(agents, projects);
+    // 4000 / (4000 + 1000) = 0.8 exactly, not > 0.8
+    state.funds = 4000;
+    state.completedProjectIds = ['easy'];
+    state.history = [makeSprintResult({ cost: 1000 })];
+
+    const ctx = contextFromState(state);
+    expect(checkAchievement(getAchievement('under-budget'), ctx)).toBe(false);
+  });
+
+  // ── getAchievementProgress coverage ──────────────────────
+
+  it('tracks progress for all achievement types', () => {
+    const state = createInitialGameState(
+      [
+        makeAgent({ id: 'a1', morale: 50, consecutiveSprints: 3 }),
+        makeAgent({ id: 'a2', morale: 0, locked: false }),
+      ],
+      [
+        makeProject({ id: 'p1', progress: 0 }),
+      ],
+    );
+    state.funds = 5000;
+    state.sprintCount = 4;
+    state.completedProjectIds = [];
+    state.history = [
+      makeSprintResult({ bugsDelta: 10, cost: 200 }),
+      makeSprintResult({ bugsDelta: 20, cost: 300 }),
+    ];
+
+    // bug-factory: max single-sprint bugs = 20, capped at 15
+    let progress = getAchievementProgress(getAchievement('bug-factory'), state);
+    expect(progress).toEqual({ current: 15, target: 15, display: '20 / 15' });
+
+    // team-wipe: 1 of 2 active agents at 0 morale
+    progress = getAchievementProgress(getAchievement('team-wipe'), state);
+    expect(progress).toEqual({ current: 1, target: 2, display: '1 / 2' });
+
+    // 10x-company: 0 of 3
+    progress = getAchievementProgress(getAchievement('10x-company'), state);
+    expect(progress).toEqual({ current: 0, target: 3, display: '0 / 3' });
+
+    // speed-run: 4 of 5 sprints
+    progress = getAchievementProgress(getAchievement('speed-run'), state);
+    expect(progress).toEqual({ current: 4, target: 5, display: '4 / 5' });
+
+    // iron-man: max consecutive = 3, target 6
+    progress = getAchievementProgress(getAchievement('iron-man'), state);
+    expect(progress).toEqual({ current: 3, target: 6, display: '3 / 6' });
+
+    // big-team: 2 unlocked, target 6
+    progress = getAchievementProgress(getAchievement('big-team'), state);
+    expect(progress).toEqual({ current: 2, target: 6, display: '2 / 6' });
+
+    // big-spender: 500 spent, target 10000
+    progress = getAchievementProgress(getAchievement('big-spender'), state);
+    expect(progress).toEqual({ current: 500, target: 10000, display: '500 / 10000' });
+
+    // murphy-law: 30 total bugs, target 50
+    progress = getAchievementProgress(getAchievement('murphy-law'), state);
+    expect(progress).toEqual({ current: 30, target: 50, display: '30 / 50' });
+
+    // survivor: max bugs = 20, capped at 15
+    progress = getAchievementProgress(getAchievement('survivor'), state);
+    expect(progress).toEqual({ current: 15, target: 15, display: '20 / 15' });
+
+    // legendary-project: 0 of 1
+    progress = getAchievementProgress(getAchievement('legendary-project'), state);
+    expect(progress).toEqual({ current: 0, target: 1, display: '0 / 1' });
+
+    // max-skill: 0 of 5 skills at 100
+    progress = getAchievementProgress(getAchievement('max-skill'), state);
+    expect(progress).toEqual({ current: 0, target: 5, display: '0 / 5' });
+
+    // talent-scout: max total = 250 (50*5), target 450
+    progress = getAchievementProgress(getAchievement('talent-scout'), state);
+    expect(progress).toEqual({ current: 250, target: 450, display: '250 / 450' });
+  });
+
+  it('getAchievementProgress returns null for unknown conditionType', () => {
+    const state = createInitialGameState(agents, projects);
+    const fakeAchievement = {
+      id: 'fake',
+      name: 'Fake',
+      emoji: '?',
+      description: 'Unknown',
+      conditionType: 'nonexistent_type',
+      category: 'project' as const,
+      rarity: 'common' as const,
+    };
+    expect(getAchievementProgress(fakeAchievement, state)).toBeNull();
+  });
+
+  it('getAchievementProgress caps current values at target', () => {
+    const state = createInitialGameState(agents, projects);
+    state.funds = 20000; // way above 8000 target
+
+    const progress = getAchievementProgress(getAchievement('financial-freedom'), state);
+    expect(progress).toEqual({ current: 8000, target: 8000, display: '20000 / 8000' });
+  });
+
+  it('checkAchievement returns false for unknown conditionType', () => {
+    const state = createInitialGameState(agents, projects);
+    const ctx = contextFromState(state);
+    const fakeAchievement = {
+      id: 'fake',
+      name: 'Fake',
+      emoji: '?',
+      description: 'Unknown',
+      conditionType: 'nonexistent_type',
+      category: 'project' as const,
+      rarity: 'common' as const,
+    };
+    expect(checkAchievement(fakeAchievement, ctx)).toBe(false);
   });
 });
 
@@ -696,5 +1065,160 @@ describe('E2E: Data Consistency', () => {
     expect(loaded.relations).toHaveLength(1);
     expect(loaded.relations[0].agent1Id).toBe('a1');
     expect(loaded.relations[0].trust).toBe(75);
+  });
+
+  it('autosave config persists through save/load', () => {
+    setAutosaveConfig({ enabled: false, interval: 10 });
+    const config = getAutosaveConfig();
+    expect(config.enabled).toBe(false);
+    expect(config.interval).toBe(10);
+
+    // Overwrite with different values
+    setAutosaveConfig({ enabled: true, interval: 3 });
+    const updated = getAutosaveConfig();
+    expect(updated.enabled).toBe(true);
+    expect(updated.interval).toBe(3);
+  });
+
+  it('multiple achievements unlock and persist through save/load', () => {
+    // Set up state that triggers multiple achievements
+    mockState.completedProjectIds = ['p1'];
+    mockState.unlockedAchievementIds = ['first-blood', 'speed-run'];
+    mockState.funds = 8500;
+    mockState.sprintCount = 4;
+    mockState.history = [
+      makeSprintResult({ cost: 100, bugsDelta: 20 }),
+      makeSprintResult({ cost: 100, bugsDelta: 15 }),
+      makeSprintResult({ cost: 100, bugsDelta: 15 }),
+    ];
+
+    saveToSlot('1', 'Multi Achievement', mockState);
+    const loaded = loadFromSlot('1')!.gameState;
+
+    // Verify all achievements are preserved
+    expect(loaded.unlockedAchievementIds).toContain('first-blood');
+    expect(loaded.unlockedAchievementIds).toContain('speed-run');
+
+    // Verify the loaded state still satisfies achievement conditions
+    const ctx = contextFromState(loaded);
+    expect(checkAchievement(getAchievement('first-blood'), ctx)).toBe(true);
+    expect(checkAchievement(getAchievement('speed-run'), ctx)).toBe(true);
+    expect(checkAchievement(getAchievement('financial-freedom'), ctx)).toBe(true);
+    expect(checkAchievement(getAchievement('murphy-law'), ctx)).toBe(true);
+  });
+
+  it('achievement unlock after save does not corrupt existing save data', () => {
+    // Save initial state
+    mockState.completedProjectIds = [];
+    mockState.unlockedAchievementIds = [];
+    saveToSlot('1', 'Before', mockState);
+
+    // Simulate unlocking an achievement
+    mockState.completedProjectIds = ['p1'];
+    mockState.unlockedAchievementIds = ['first-blood'];
+    saveToSlot('1', 'After', mockState);
+
+    const loaded = loadFromSlot('1')!.gameState;
+    expect(loaded.completedProjectIds).toEqual(['p1']);
+    expect(loaded.unlockedAchievementIds).toEqual(['first-blood']);
+    // Original fields untouched
+    expect(loaded.agents).toHaveLength(2);
+    expect(loaded.projects).toHaveLength(2);
+  });
+
+  // ── Auto-save slot ───────────────────────────────────────
+
+  it('auto-save slot works like manual slots', () => {
+    saveToSlot('auto', 'Auto Save', mockState);
+    const loaded = loadFromSlot('auto');
+    expect(loaded).not.toBeNull();
+    expect(loaded!.gameState.funds).toBe(mockState.funds);
+    expect(loaded!.name).toBe('Auto Save');
+  });
+
+  it('auto-save appears in metadata alongside manual slots', () => {
+    saveToSlot('1', 'Manual', mockState);
+    saveToSlot('auto', 'Auto Save', mockState);
+
+    const metadata = getSaveSlotsMetadata();
+    const ids = metadata.map(m => m.id);
+    expect(ids).toContain('1');
+    expect(ids).toContain('auto');
+  });
+
+  // ── Edge cases ───────────────────────────────────────────
+
+  it('loading from nonexistent slot returns null', () => {
+    expect(loadFromSlot('nonexistent')).toBeNull();
+  });
+
+  it('loading from empty slot returns null', () => {
+    expect(loadFromSlot('1')).toBeNull();
+  });
+
+  it('save with no extra fields uses defaults', () => {
+    saveToSlot('1', 'No Extra', mockState);
+    const loaded = loadFromSlot('1')!;
+
+    expect(loaded.skillTrees).toEqual({});
+    expect(loaded.relationships).toEqual({});
+    expect(loaded.quarterlyEvaluations).toEqual([]);
+    expect(loaded.reputationScore).toBe(0);
+    expect(loaded.triggeredCheckpoints).toEqual([]);
+  });
+
+  it('saveToSlot falls back to memory storage when localStorage fails', () => {
+    // Override localStorage to throw on setItem
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(() => { throw new Error('QuotaExceeded'); }),
+      removeItem: vi.fn(),
+    });
+    resetStorageCheck();
+
+    // Should not throw — falls back silently
+    expect(() => saveToSlot('1', 'Fallback', mockState)).not.toThrow();
+
+    // Data is still loadable from the fallback cache
+    const loaded = loadFromSlot('1');
+    expect(loaded).not.toBeNull();
+    expect(loaded!.gameState.funds).toBe(mockState.funds);
+  });
+
+  it('deleteSlot on nonexistent slot does not throw', () => {
+    expect(() => deleteSlot('nonexistent')).not.toThrow();
+  });
+
+  it('getSaveSlotsMetadata returns empty array when no slots exist', () => {
+    const metadata = getSaveSlotsMetadata();
+    expect(metadata).toEqual([]);
+  });
+
+  it('concurrent saves to different slots do not interfere', () => {
+    const state1 = { ...mockState, funds: 1111 };
+    const state2 = { ...mockState, funds: 2222 };
+    const state3 = { ...mockState, funds: 3333 };
+
+    saveToSlot('1', 'A', state1);
+    saveToSlot('2', 'B', state2);
+    saveToSlot('3', 'C', state3);
+
+    // Overwrite slot 2
+    saveToSlot('2', 'B2', { ...state2, funds: 9999 });
+
+    expect(loadFromSlot('1')!.gameState.funds).toBe(1111);
+    expect(loadFromSlot('2')!.gameState.funds).toBe(9999);
+    expect(loadFromSlot('3')!.gameState.funds).toBe(3333);
+  });
+
+  it('save/load preserves agent quirks and fatigue', () => {
+    mockState.agents[0].quirk = 'Perfectionist';
+    mockState.agents[0].fatigue = 42;
+
+    saveToSlot('1', 'Quirks', mockState);
+    const loaded = loadFromSlot('1')!.gameState;
+
+    expect(loaded.agents[0].quirk).toBe('Perfectionist');
+    expect(loaded.agents[0].fatigue).toBe(42);
   });
 });
