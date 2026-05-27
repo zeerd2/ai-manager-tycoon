@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App';
+import { GameStateProvider } from '../src/context/GameStateContext';
 
 const storage = new Map<string, string>();
 
@@ -18,7 +19,7 @@ beforeEach(() => {
 
 describe('mobile UX shell', () => {
   it('renders the mobile one-screen command center with compact selection state', () => {
-    const html = renderToStaticMarkup(<App />);
+    const html = renderToStaticMarkup(<GameStateProvider><App /></GameStateProvider>);
 
     expect(html).toContain('class="mobile-command-center"');
     expect(html).toContain('移动端主控台');
@@ -30,7 +31,7 @@ describe('mobile UX shell', () => {
   });
 
   it('renders fixed bottom tabs and the fullscreen overlay entry points', () => {
-    const html = renderToStaticMarkup(<App />);
+    const html = renderToStaticMarkup(<GameStateProvider><App /></GameStateProvider>);
 
     expect(html).toContain('class="mobile-bottom-tabbar"');
     expect(html).toContain('aria-label="移动端底部功能导航"');

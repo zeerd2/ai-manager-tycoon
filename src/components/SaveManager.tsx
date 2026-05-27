@@ -13,6 +13,7 @@ import {
 } from '../domain/saveSystem';
 import type { SaveMetadata, AutosaveConfig, SaveValidationResult } from '../domain/saveSystem';
 import type { GameState } from '../domain/gameState';
+import type { QuarterEvaluation } from '../domain/quarterlyTarget';
 
 interface SaveManagerProps {
   gameState: GameState;
@@ -133,7 +134,7 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
           const loadedState: GameState = {
             ...saveData.gameState,
             reputationScore: saveData.reputationScore ?? 0,
-            quarterlyEvaluations: saveData.quarterlyEvaluations || [],
+            quarterlyEvaluations: (saveData.quarterlyEvaluations as QuarterEvaluation[]) || [],
             triggeredCheckpoints: saveData.triggeredCheckpoints || [],
           };
           onLoadGame(loadedState, slotId);

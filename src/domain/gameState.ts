@@ -1,8 +1,8 @@
 import type { Agent } from './agent';
 import type { Project } from './project';
 import type { SprintResult } from './simulation';
-
 import type { AgentRelation } from './relations/types';
+import type { QuarterEvaluation } from './quarterlyTarget';
 
 export interface GameState {
   funds: number;
@@ -18,6 +18,6 @@ export interface GameState {
   reputation: number;
   confidence: number;
   reputationScore?: number;
-  quarterlyEvaluations?: any[];
-  triggeredCheckpoints?: string[];
+  quarterlyEvaluations: QuarterEvaluation[];
+  triggeredCheckpoints: string[];
 }

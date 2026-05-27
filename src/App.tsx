@@ -1,25 +1,16 @@
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { sampleAgents } from './data/sampleAgents';
-import { sampleProjects } from './data/sampleProjects';
-import { incidentTemplates } from './data/incidentTemplates';
+import { useCallback, Suspense } from 'react';
 import { strategies } from './data/strategies';
 import { achievements } from './data/achievements';
+import { incidentTemplates } from './data/incidentTemplates';
 import { runSprint } from './domain/simulation';
 import { createRNG } from './domain/random';
 import {
-  createInitialGameState,
   processPostSprint,
   checkUnlocks
 } from './domain/gameEngine';
+import { getDifficultyReward } from './domain/project';
 import { unlockSkill } from './domain/skillTreeLogic';
 import { checkAchievement } from './domain/achievement';
-import {
-  saveToSlot,
-  deleteSlot,
-  getAutosaveConfig,
-  getSaveSlotsMetadata,
-  setAutosaveConfig
-} from './domain/saveSystem';
 import {
   generateQuarterTarget,
   evaluateQuarterTarget,
@@ -33,19 +24,18 @@ import {
   evaluateQuarterCheckpoints
 } from './domain/financing';
 import { calculateRating } from './domain/rating';
-import type { AutosaveConfig } from './domain/saveSystem';
-import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
-import type { SprintResult } from './domain/simulation';
 import type { Agent } from './domain/agent';
 import type { Project } from './domain/project';
-import { getDifficultyReward } from './domain/project';
 import type { Strategy } from './domain/strategy';
 import type { RNG } from './domain/random';
 
 import { generateTeamEvent } from './domain/relations/events';
-import type { PendingTeamEvent, TeamEventResult } from './domain/relations/events';
+import type { TeamEventResult } from './domain/relations/events';
 import { RelationsManager } from './domain/relations/manager';
+
+// Context
+import { useGameState, type MobileOverlayId } from './context/GameStateContext';
 
 // Components
 import { AgentCard } from './components/AgentCard';
@@ -55,7 +45,7 @@ import { CompanyDashboard } from './components/CompanyDashboard';
 import { QuarterlyGoalsPanel } from './components/QuarterlyGoalsPanel';
 import { AchievementToast } from './components/AchievementToast';
 import { RelationsNetwork } from './components/RelationsNetwork';
-import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
+import { MobileSectionNav } from './components/MobileSectionNav';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { lazyWithRetry } from './utils/lazyWithRetry';
 
@@ -70,15 +60,13 @@ const TutorialGuide = lazyWithRetry(() => import('./components/TutorialGuide').t
 
 import './App.css';
 
-const MAIN_SECTIONS: Array<{ id: MainSectionId; label: string }> = [
-  { id: 'team', label: '团队' },
-  { id: 'project', label: '项目' },
-  { id: 'strategy', label: '策略' },
-  { id: 'result', label: '结果' },
-  { id: 'history', label: '记录' },
+const MAIN_SECTIONS = [
+  { id: 'team' as const, label: '团队' },
+  { id: 'project' as const, label: '项目' },
+  { id: 'strategy' as const, label: '策略' },
+  { id: 'result' as const, label: '结果' },
+  { id: 'history' as const, label: '记录' },
 ];
-
-type MobileOverlayId = 'team' | 'project' | 'strategy' | 'achievements' | 'history';
 
 const MOBILE_TABS: Array<{ id: MobileOverlayId; label: string }> = [
   { id: 'team', label: '团队' },
@@ -89,97 +77,32 @@ const MOBILE_TABS: Array<{ id: MobileOverlayId; label: string }> = [
 ];
 
 export default function App() {
-  const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
-  const [isSaveManagerOpen, setIsSaveManagerOpen] = useState(false);
-  const [isStartup, setIsStartup] = useState(true);
-  const [autosaveConfig, setAutosaveConfigState] = useState(() => getAutosaveConfig());
-
-  const [gameState, setGameState] = useState<GameState>(() => {
-    return createInitialGameState(sampleAgents, sampleProjects);
-  });
-
-  const [selectedAgentIds, setSelectedAgentIds] = useState<Set<string>>(new Set());
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<SprintResult | null>(null);
-  const [activeSkillTreeAgentId, setActiveSkillTreeAgentId] = useState<string | null>(null);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(true);
-  const [activeMainSection, setActiveMainSection] = useState<MainSectionId>('team');
-  const [activeMobileOverlay, setActiveMobileOverlay] = useState<MobileOverlayId | null>(null);
-  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // States for notifications and celebration
-  const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
-  const [newlyUnlockedAgents, setNewlyUnlockedAgents] = useState<Array<{ name: string; avatar: string }>>([]);
-  const [projectCompleted, setProjectCompleted] = useState(false);
-  const [projectBonus, setProjectBonus] = useState(0);
-
-  // Event system state
-  const [pendingEvent, setPendingEvent] = useState<PendingTeamEvent | null>(null);
-  const [sprintContext, setSprintContext] = useState<{
-    chosenAgents: Agent[];
-    project: Project;
-    strategy: Strategy;
-    rng: RNG;
-  } | null>(null);
-
-  // Automatically save game whenever gameState changes and a slot is active
-  useEffect(() => {
-    if (currentSlotId) {
-      try {
-        // Query current name if exists
-        const savedSlots = getSaveSlotsMetadata();
-        const activeSlot = savedSlots.find(s => s.id === currentSlotId);
-        const name = activeSlot?.name || (currentSlotId === 'auto' ? '自动存档' : `存档位 ${currentSlotId}`);
-        saveToSlot(currentSlotId, name, gameState, {
-          reputationScore: gameState.reputationScore,
-          quarterlyEvaluations: gameState.quarterlyEvaluations,
-          triggeredCheckpoints: gameState.triggeredCheckpoints,
-        });
-      } catch (e) {
-        console.error('Failed to auto-save to current slot', e);
-      }
-    }
-  }, [gameState, currentSlotId]);
-
-  // Periodic autosave loop using separate auto slot
-  useEffect(() => {
-    if (!autosaveConfig.enabled || !currentSlotId || gameState.gameOver) {
-      return;
-    }
-
-    const intervalMs = autosaveConfig.interval * 60 * 1000;
-    const timer = setInterval(() => {
-      try {
-        saveToSlot('auto', '自动存档', gameState, {
-          reputationScore: gameState.reputationScore,
-          quarterlyEvaluations: gameState.quarterlyEvaluations,
-          triggeredCheckpoints: gameState.triggeredCheckpoints,
-        });
-      } catch (e) {
-        console.error('Autosave failed', e);
-      }
-    }, intervalMs);
-
-    return () => clearInterval(timer);
-  }, [autosaveConfig.enabled, autosaveConfig.interval, currentSlotId, gameState]);
+  const {
+    gameState, setGameState,
+    autosaveConfig, handleUpdateAutosaveConfig,
+    isSaveManagerOpen, setIsSaveManagerOpen,
+    isStartup,
+    selectedAgentIds, setSelectedAgentIds,
+    selectedProjectId, setSelectedProjectId,
+    selectedStrategyId, setSelectedStrategyId,
+    lastResult, setLastResult,
+    pendingEvent, setPendingEvent,
+    sprintContext, setSprintContext,
+    toastQueue, setToastQueue,
+    newlyUnlockedAgents, setNewlyUnlockedAgents,
+    projectCompleted, setProjectCompleted,
+    projectBonus, setProjectBonus,
+    activeSkillTreeAgentId, setActiveSkillTreeAgentId,
+    isTutorialOpen, setIsTutorialOpen,
+    activeMainSection, setActiveMainSection,
+    activeMobileOverlay, setActiveMobileOverlay,
+    isOnline,
+    handleLoadGame, handleNewGame, handleReset,
+  } = useGameState();
 
   const toggleAgent = useCallback((id: string) => {
     const agent = gameState.agents.find(a => a.id === id);
-    if (agent?.locked) return; // Locked agents cannot be selected
+    if (agent?.locked) return;
 
     setSelectedAgentIds(prev => {
       const next = new Set(prev);
@@ -187,13 +110,13 @@ export default function App() {
       else next.add(id);
       return next;
     });
-  }, [gameState.agents]);
+  }, [gameState.agents, setSelectedAgentIds]);
 
   const handleSelectProject = useCallback((id: string) => {
     if (!gameState.completedProjectIds.includes(id)) {
       setSelectedProjectId(id);
     }
-  }, [gameState.completedProjectIds]);
+  }, [gameState.completedProjectIds, setSelectedProjectId]);
 
   function handleRunSprint() {
     if (selectedAgentIds.size === 0 || !selectedProjectId || !selectedStrategyId) return;
@@ -201,19 +124,16 @@ export default function App() {
     const chosenAgents = gameState.agents.filter(a => selectedAgentIds.has(a.id));
     const project = gameState.projects.find(p => p.id === selectedProjectId)!;
     const strategy = strategies.find(s => s.id === selectedStrategyId)!;
-    // eslint-disable-next-line react-hooks/purity
     const rng = createRNG(Date.now());
 
-    // Check for random team event BEFORE sprint starts
     const event = generateTeamEvent(gameState.agents.filter(a => !a.locked), rng);
 
     if (event) {
       setPendingEvent(event);
       setSprintContext({ chosenAgents, project, strategy, rng });
-      return; // Pause sprint execution until event is resolved
+      return;
     }
 
-    // No event, proceed normally
     executeSprint(chosenAgents, project, strategy, rng, null);
   }
 
@@ -233,12 +153,10 @@ export default function App() {
     rng: RNG,
     eventResult: TeamEventResult | null
   ) {
-    // 1. Run simulation
     const result = runSprint(gameState.sprintCount + 1, chosenAgents, project, strategy, incidentTemplates, rng);
 
     const relationsManager = new RelationsManager(gameState.relations || []);
 
-    // Apply event results to sprint outcome if there was one
     if (eventResult) {
       result.moraleDelta += eventResult.moraleDelta;
       result.project.progress = Math.min(result.project.maxProgress, result.project.progress + eventResult.progressDelta);
@@ -246,43 +164,36 @@ export default function App() {
       result.summary += ` | Event resolved: ${eventResult.message}`;
     }
 
-    // Apply relations multiplier
     const collabMultiplier = relationsManager.getCollaborationMultiplier(chosenAgents.map(a => a.id));
     result.project.progress = Math.round(result.project.progress * collabMultiplier);
 
-    // 2. Determine if project was completed in this sprint
     const isProjCompletedNow = result.project.progress >= result.project.maxProgress &&
       !gameState.completedProjectIds.includes(project.id);
     const bonus = getDifficultyReward(project);
 
-    // 3. Process new state
     const newState = processPostSprint(gameState, result, Array.from(selectedAgentIds));
 
     if (eventResult) {
-       newState.funds += eventResult.fundsDelta;
+      newState.funds += eventResult.fundsDelta;
     }
 
-    // Save relations back to state
     newState.relations = relationsManager.getRelations();
 
-    // After a successful project, increase relations among participants
     if (isProjCompletedNow) {
-       for (let i = 0; i < chosenAgents.length; i++) {
-         for (let j = i + 1; j < chosenAgents.length; j++) {
-            relationsManager.updateRelation(chosenAgents[i].id, chosenAgents[j].id, 5);
-         }
-       }
-       newState.relations = relationsManager.getRelations();
+      for (let i = 0; i < chosenAgents.length; i++) {
+        for (let j = i + 1; j < chosenAgents.length; j++) {
+          relationsManager.updateRelation(chosenAgents[i].id, chosenAgents[j].id, 5);
+        }
+      }
+      newState.relations = relationsManager.getRelations();
     }
 
-    // Calculate new reputation score
     const currentReputation = gameState.reputationScore ?? 0;
     const newRep = calculateNewReputation(currentReputation, result, isProjCompletedNow);
     newState.reputationScore = newRep;
     newState.quarterlyEvaluations = gameState.quarterlyEvaluations || [];
     newState.triggeredCheckpoints = gameState.triggeredCheckpoints || [];
 
-    // Trigger quarterly review
     if (isQuarterEnd(newState.sprintCount)) {
       const qNum = getQuarterNumber(newState.sprintCount);
       const target = generateQuarterTarget(qNum);
@@ -297,7 +208,6 @@ export default function App() {
         }
       ];
 
-      // Evaluate financing checkpoints
       const ratingInput = {
         completedProjects: newState.completedProjectIds.length,
         totalBugs: newState.projects.reduce((sum, p) => sum + p.bugs, 0),
@@ -325,7 +235,6 @@ export default function App() {
       newState.triggeredCheckpoints = triggeredIds;
     }
 
-    // 4. Check for newly unlocked agents
     const newlyUnlockedIds = checkUnlocks(newState);
     const unlockedAgentDetails: Array<{ name: string; avatar: string }> = [];
 
@@ -339,7 +248,6 @@ export default function App() {
       });
     }
 
-    // 5. Check achievements
     const cheapestAgentOnly = isProjCompletedNow && chosenAgents.every(a => a.salary <= 80);
     const achievementContext = {
       completedProjectIds: newState.completedProjectIds,
@@ -379,73 +287,14 @@ export default function App() {
       setToastQueue(prev => [...prev, ...newAchievementsUnlocked]);
     }
 
-    // 6. Update local states
     setProjectCompleted(isProjCompletedNow);
     setProjectBonus(isProjCompletedNow ? bonus : 0);
     setNewlyUnlockedAgents(unlockedAgentDetails);
     setLastResult(result);
     setGameState(newState);
 
-    // Clear agent selection (non-locked agents can still be selected next turn)
     setSelectedAgentIds(new Set());
   }
-
-  const handleLoadGame = useCallback((loadedState: GameState, slotId: string) => {
-    setGameState(loadedState);
-    setCurrentSlotId(slotId);
-    setIsStartup(false);
-    setIsSaveManagerOpen(false);
-
-    setSelectedAgentIds(new Set());
-    setSelectedProjectId(null);
-    setSelectedStrategyId(null);
-    setLastResult(null);
-  }, []);
-
-  const handleNewGame = useCallback((slotId: string) => {
-    const initialState = createInitialGameState(sampleAgents, sampleProjects);
-    initialState.reputationScore = 0;
-    initialState.quarterlyEvaluations = [];
-    initialState.triggeredCheckpoints = [];
-    saveToSlot(slotId, `存档位 ${slotId}`, initialState, {
-      reputationScore: 0,
-      quarterlyEvaluations: [],
-      triggeredCheckpoints: []
-    });
-    setGameState(initialState);
-    setCurrentSlotId(slotId);
-    setIsStartup(false);
-    setIsSaveManagerOpen(false);
-
-    setSelectedAgentIds(new Set());
-    setSelectedProjectId(null);
-    setSelectedStrategyId(null);
-    setLastResult(null);
-  }, []);
-
-  const handleUpdateAutosaveConfig = useCallback((newConfig: AutosaveConfig) => {
-    setAutosaveConfigState(newConfig);
-    setAutosaveConfig(newConfig);
-  }, []);
-
-  const handleReset = useCallback(() => {
-    if (currentSlotId) {
-      deleteSlot(currentSlotId);
-    }
-    setCurrentSlotId(null);
-    setIsStartup(true);
-    setIsSaveManagerOpen(false);
-    setGameState(createInitialGameState(sampleAgents, sampleProjects));
-    setSelectedAgentIds(new Set());
-    setSelectedProjectId(null);
-    setSelectedStrategyId(null);
-    setLastResult(null);
-    setToastQueue([]);
-    setNewlyUnlockedAgents([]);
-    setProjectCompleted(false);
-    setProjectBonus(0);
-    setPendingEvent(null);
-  }, [currentSlotId]);
 
   const handleUnlockSkill = useCallback((agentId: string, skillId: string) => {
     setGameState(prev => {
@@ -470,7 +319,7 @@ export default function App() {
         agents: prev.agents.map(a => a.id === agentId ? clonedAgent : a)
       };
     });
-  }, []);
+  }, [setGameState]);
 
   const canRun = selectedAgentIds.size > 0 && selectedProjectId && selectedStrategyId && !gameState.gameOver && !pendingEvent;
 
@@ -594,13 +443,10 @@ export default function App() {
         <p className="subtitle">管理你的 AI 工程团队。尽量别发布太多 Bug。</p>
       </header>
 
-      {/* 2. Company Dashboard */}
       <CompanyDashboard gameState={gameState} selectedProjectId={selectedProjectId} />
 
-      {/* 2.1 Quarterly Goals Panel - Enhanced Version */}
       <QuarterlyGoalsPanel gameState={gameState} selectedProjectId={selectedProjectId} />
 
-      {/* 4. Achievement Toast System */}
       {toastQueue.length > 0 && (
         <AchievementToast
           key={toastQueue[0].id}
@@ -609,7 +455,6 @@ export default function App() {
         />
       )}
 
-      {/* 3. Game Over Screen Overlay */}
       {gameState.gameOver && (
         <ErrorBoundary local>
           <Suspense fallback={null}>
@@ -721,16 +566,14 @@ export default function App() {
           >
             <h2>项目</h2>
             <div className="card-grid">
-              {gameState.projects.map(p => {
-                return (
-                  <ProjectCard
-                    key={p.id}
-                    project={p}
-                    selected={selectedProjectId === p.id}
-                    onSelect={handleSelectProject}
-                  />
-                );
-              })}
+              {gameState.projects.map(p => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  selected={selectedProjectId === p.id}
+                  onSelect={handleSelectProject}
+                />
+              ))}
             </div>
           </section>
 

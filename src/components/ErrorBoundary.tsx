@@ -4,6 +4,8 @@ interface Props {
   children: ReactNode;
   local?: boolean;
   onReset?: () => void;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  fallback?: ReactNode;
 }
 
 interface State {
@@ -23,6 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error in component tree:', error, errorInfo);
+    this.props.onError?.(error, errorInfo);
   }
 
   private handleReset = () => {
@@ -38,6 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       if (this.props.local) {
         return (
           <div className="panel error-boundary-local" style={{ padding: '20px', border: '1px solid var(--accent-red)', borderRadius: '6px', margin: '16px 0', textAlign: 'center', backgroundColor: 'var(--bg-dark)' }}>
