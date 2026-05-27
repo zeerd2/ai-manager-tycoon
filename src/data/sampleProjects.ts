@@ -103,6 +103,22 @@ export const sampleProjects: Project[] = [
     deadline: 9,
   },
 
+  // v9 新增: 数据分析与玩家行为追踪
+  {
+    id: 'player-analytics',
+    name: '玩家行为分析平台',
+    description: '收集并分析每秒 50 万条玩家行为数据。数据湖已经淹没了三个机房，但老板说"数据就是新石油"。',
+    difficulty: 55,
+    urgency: 60,
+    risk: 42,
+    progress: 0,
+    bugs: 0,
+    techDebt: 0,
+    maxProgress: 115,
+    difficultyLevel: 'normal',
+    deadline: 8,
+  },
+
   // === 困难项目 (hard) ===
   {
     id: 'self-driving',
@@ -188,6 +204,36 @@ export const sampleProjects: Project[] = [
     difficultyLevel: 'hard',
     deadline: 14,
   },
+  // v9 新增: 存档异常检测
+  {
+    id: 'save-anomaly-detector',
+    name: '存档数据异常检测系统',
+    description: '实时监控百万玩家的存档数据完整性。系统上线第一天就检测到 3000 份"薛定谔存档"——同时存在又不存在。',
+    difficulty: 75,
+    urgency: 70,
+    risk: 58,
+    progress: 0,
+    bugs: 0,
+    techDebt: 0,
+    maxProgress: 195,
+    difficultyLevel: 'hard',
+    deadline: 14,
+  },
+  // v9 新增: 跨平台成就同步
+  {
+    id: 'achievement-sync-engine',
+    name: '跨平台成就同步引擎',
+    description: '让玩家在 PC、手机、智能冰箱上同步成就进度。冰箱端的成就"冰镇通关"意外成为最热门成就。',
+    difficulty: 70,
+    urgency: 65,
+    risk: 52,
+    progress: 0,
+    bugs: 0,
+    techDebt: 0,
+    maxProgress: 175,
+    difficultyLevel: 'hard',
+    deadline: 14,
+  },
 
   // === 传说项目 (legend) ===
   {
@@ -215,6 +261,36 @@ export const sampleProjects: Project[] = [
     bugs: 0,
     techDebt: 0,
     maxProgress: 640,
+    difficultyLevel: 'legend',
+    deadline: 24,
+  },
+  // v9 新增: 实时成就生态监控
+  {
+    id: 'achievement-ecosystem-monitor',
+    name: '成就生态实时监控平台',
+    description: '监控全球 500 万玩家的成就解锁流、连锁反应和异常模式。上线首日就捕获到一个成就解锁速率呈指数增长的"成就风暴"——最终发现是某个成就的检测逻辑在自我触发。',
+    difficulty: 78,
+    urgency: 72,
+    risk: 65,
+    progress: 0,
+    bugs: 0,
+    techDebt: 0,
+    maxProgress: 210,
+    difficultyLevel: 'hard',
+    deadline: 14,
+  },
+  // v9 新增: 神经玩家画像系统
+  {
+    id: 'neural-player-profiler',
+    name: '神经玩家画像系统',
+    description: '用深度学习构建每位玩家的心理模型。系统预测准确率 99.8%——它甚至比玩家自己更了解他们下一步想做什么。伦理委员会已经解散，因为他们也"被画像了"。',
+    difficulty: 92,
+    urgency: 85,
+    risk: 82,
+    progress: 0,
+    bugs: 0,
+    techDebt: 0,
+    maxProgress: 580,
     difficultyLevel: 'legend',
     deadline: 24,
   },
