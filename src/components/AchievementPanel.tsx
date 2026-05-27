@@ -1,15 +1,17 @@
 import { memo } from 'react';
 import { achievements } from '../data/achievements';
 import { getAchievementProgress } from '../domain/achievement';
+import type { Achievement } from '../domain/achievement';
 import type { GameState } from '../domain/gameState';
 import { useState } from 'react';
 
 interface Props {
   unlockedAchievementIds: string[];
   gameState?: GameState;
+  onAchievementClick?: (achievement: Achievement) => void;
 }
 
-export const AchievementPanel = memo(function AchievementPanel({ unlockedAchievementIds, gameState }: Props) {
+export const AchievementPanel = memo(function AchievementPanel({ unlockedAchievementIds, gameState, onAchievementClick }: Props) {
   const [activeCategory, setActiveCategory] = useState<'all' | 'employee' | 'project' | 'economic' | 'incident'>('all');
 
   const categories = [
@@ -71,7 +73,11 @@ export const AchievementPanel = memo(function AchievementPanel({ unlockedAchieve
           return (
             <div
               key={achievement.id}
-              className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`}
+              className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'} ${onAchievementClick ? 'clickable' : ''}`}
+              onClick={() => onAchievementClick?.(achievement)}
+              role={onAchievementClick ? 'button' : undefined}
+              tabIndex={onAchievementClick ? 0 : undefined}
+              onKeyDown={onAchievementClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onAchievementClick(achievement); } : undefined}
             >
               <div className="achievement-icon">{isUnlocked ? achievement.emoji : '🔒'}</div>
               <div className="achievement-info">

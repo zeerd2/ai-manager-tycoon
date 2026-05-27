@@ -36,6 +36,8 @@ import { calculateRating } from './domain/rating';
 import type { AutosaveConfig } from './domain/saveSystem';
 import type { GameState } from './domain/gameState';
 import type { Achievement } from './domain/achievement';
+import { AchievementDetailModal } from './components/AchievementDetailModal';
+import { PlayerDataDashboard } from './components/PlayerDataDashboard';
 import type { SprintResult } from './domain/simulation';
 import type { Agent } from './domain/agent';
 import type { Project } from './domain/project';
@@ -106,6 +108,7 @@ export default function App() {
   const [activeMainSection, setActiveMainSection] = useState<MainSectionId>('team');
   const [activeMobileOverlay, setActiveMobileOverlay] = useState<MobileOverlayId | null>(null);
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [selectedAchievementForDetail, setSelectedAchievementForDetail] = useState<Achievement | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -534,7 +537,7 @@ export default function App() {
         return (
           <ErrorBoundary local>
             <Suspense fallback={<div className="panel-loading">加载成就...</div>}>
-              <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+              <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} onAchievementClick={setSelectedAchievementForDetail} />
             </Suspense>
           </ErrorBoundary>
         );
@@ -595,6 +598,9 @@ export default function App() {
 
       {/* 2. Company Dashboard */}
       <CompanyDashboard gameState={gameState} selectedProjectId={selectedProjectId} />
+
+      {/* 2.5 Player Data Dashboard */}
+      <PlayerDataDashboard gameState={gameState} />
 
       {/* 4. Achievement Toast System */}
       {toastQueue.length > 0 && (
@@ -788,7 +794,7 @@ export default function App() {
           <div className={activeMainSection !== 'history' ? 'mobile-hidden' : ''}>
             <ErrorBoundary local>
               <Suspense fallback={<div className="panel-loading">加载成就...</div>}>
-                <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} />
+                <AchievementPanel unlockedAchievementIds={gameState.unlockedAchievementIds} gameState={gameState} onAchievementClick={setSelectedAchievementForDetail} />
               </Suspense>
             </ErrorBoundary>
           </div>
@@ -845,6 +851,15 @@ export default function App() {
             />
           </Suspense>
         </ErrorBoundary>
+      )}
+
+      {selectedAchievementForDetail && (
+        <AchievementDetailModal
+          achievement={selectedAchievementForDetail}
+          isUnlocked={gameState.unlockedAchievementIds.includes(selectedAchievementForDetail.id)}
+          gameState={gameState}
+          onClose={() => setSelectedAchievementForDetail(null)}
+        />
       )}
     </div>
   );

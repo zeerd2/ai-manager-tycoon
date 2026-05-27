@@ -1695,6 +1695,340 @@ body {
 .achievement-card.unlocked .achievement-progress-fill {
   background: var(--positive);
 }
+/* Achievement Card clickable */
+.achievement-card.clickable {
+  cursor: pointer;
+}
+
+.achievement-card.clickable:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+/* Achievement Detail Modal */
+.achievement-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 15, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(6px);
+  padding: 20px;
+}
+
+.achievement-detail-modal {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+  animation: modal-slide-in 0.25s ease-out;
+}
+
+@keyframes modal-slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.achievement-detail-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+  z-index: 1;
+}
+
+.achievement-detail-close:hover {
+  color: var(--negative);
+  background: rgba(255, 51, 102, 0.1);
+}
+
+.achievement-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.achievement-detail-icon {
+  font-size: 2.5rem;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 240, 255, 0.06);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.achievement-detail-title-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.achievement-detail-name {
+  font-size: 1.2rem;
+  color: var(--text-h);
+  margin: 0 0 6px;
+  font-weight: 800;
+}
+
+.achievement-detail-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.category-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.achievement-detail-check {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.achievement-detail-body {
+  padding: 20px 24px 24px;
+}
+
+.achievement-detail-desc {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.achievement-detail-progress {
+  margin-bottom: 20px;
+}
+
+.achievement-detail-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.achievement-detail-progress-value {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.achievement-detail-progress-bar {
+  height: 8px;
+  background: #080c18;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.achievement-detail-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #b040ff);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.achievement-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.achievement-detail-meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta-value {
+  font-size: 0.85rem;
+  color: var(--text-h);
+  font-weight: 700;
+}
+
+.unlocked-text {
+  color: var(--positive);
+}
+
+.locked-text {
+  color: var(--text-dim);
+}
+
+/* Player Data Dashboard */
+.player-data-dashboard {
+  background: rgba(10, 15, 30, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.06);
+}
+
+.dashboard-title {
+  font-size: 1.1rem;
+  color: var(--text-h);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.dash-stat-card {
+  background: rgba(18, 22, 43, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.dash-stat-card:hover {
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.dash-stat-icon {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.dash-stat-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+  margin-bottom: 2px;
+}
+
+.dash-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.dashboard-sections {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.dash-section {
+  background: rgba(18, 22, 43, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.dash-section-title {
+  font-size: 0.9rem;
+  color: var(--text-h);
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.dash-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.dash-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.dash-detail-label {
+  color: var(--text-dim);
+}
+
+.dash-detail-value {
+  color: var(--text-h);
+  font-weight: 700;
+}
+
+.dash-detail-value.danger {
+  color: var(--negative);
+}
+
+.dash-detail-value.success {
+  color: var(--positive);
+}
+
+.dash-achievement-bar-wrapper {
+  margin-top: 4px;
+}
+
+.dash-achievement-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.dash-achievement-bar {
+  height: 8px;
+  background: #080c18;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dash-achievement-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--positive));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
 /* Event Dialog */
 .event-dialog-overlay {
   position: fixed;
@@ -3236,6 +3570,81 @@ body {
     font-size: 0.6rem !important;
   }
 
+  /* Player Data Dashboard - mobile */
+  .player-data-dashboard {
+    padding: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .dash-stat-value {
+    font-size: 1rem !important;
+  }
+
+  .dash-stat-label {
+    font-size: 0.65rem !important;
+  }
+
+  .dashboard-sections {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .dash-detail-grid {
+    gap: 6px !important;
+  }
+
+  .dash-detail-item {
+    font-size: 0.78rem !important;
+  }
+
+  /* Achievement Detail Modal - mobile */
+  .achievement-detail-overlay {
+    padding: 12px !important;
+    align-items: flex-end !important;
+  }
+
+  .achievement-detail-modal {
+    max-width: 100% !important;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .achievement-detail-header {
+    padding: 18px 16px 12px !important;
+    gap: 12px !important;
+  }
+
+  .achievement-detail-icon {
+    font-size: 2rem !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .achievement-detail-name {
+    font-size: 1.05rem !important;
+  }
+
+  .achievement-detail-body {
+    padding: 14px 16px 18px !important;
+  }
+
+  .achievement-detail-desc {
+    font-size: 0.88rem !important;
+  }
+
+  .achievement-detail-meta {
+    gap: 8px !important;
+  }
+
+  .meta-value {
+    font-size: 0.8rem !important;
+  }
+
   html,
   body,
   #root {
@@ -3615,6 +4024,26 @@ body {
     max-width: none !important;
     min-height: 48px;
     font-size: 1rem !important;
+  }
+
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .dash-stat-card {
+    padding: 10px 6px !important;
+  }
+
+  .dash-stat-value {
+    font-size: 0.92rem !important;
+  }
+
+  .dash-stat-label {
+    font-size: 0.6rem !important;
+  }
+
+  .dash-detail-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
