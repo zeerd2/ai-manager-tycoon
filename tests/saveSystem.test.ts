@@ -9,7 +9,9 @@ import {
   checkAndMigrateOldSave,
   SAVE_VERSION,
   resetStorageCheck,
-  isFallbackStorageActive
+  isFallbackStorageActive,
+  validateSaveData,
+  validateSlot
 } from '../src/domain/saveSystem';
 import type { GameState } from '../src/domain/gameState';
 
@@ -26,7 +28,10 @@ describe('Save System', () => {
       completedProjectIds: ['p1', 'p2'],
       unlockedAchievementIds: ['a1'],
       gameOver: false,
-      history: []
+      history: [],
+      relations: [],
+      reputation: 0,
+      confidence: 50,
     };
 
     // Mock localStorage
@@ -261,8 +266,8 @@ describe('Save System', () => {
   });
 
   describe('v8 Save Compatibility', () => {
-    it('should have SAVE_VERSION = 5 for v8', () => {
-      expect(SAVE_VERSION).toBe(5);
+    it('should have SAVE_VERSION = 6 for v9', () => {
+      expect(SAVE_VERSION).toBe(6);
     });
 
     it('should save and load v8 fields (quarterlyEvaluations, reputationScore, triggeredCheckpoints)', () => {
@@ -290,7 +295,7 @@ describe('Save System', () => {
       expect(loaded!.triggeredCheckpoints).toEqual([]);
     });
 
-    it('should migrate old v4 save to v5 with default v8 fields', () => {
+    it('should migrate old v4 save to v6 with default v8/v9 fields', () => {
       const oldV4Save = {
         version: 4,
         gameState: mockState,
@@ -309,9 +314,13 @@ describe('Save System', () => {
       expect(loaded!.quarterlyEvaluations).toEqual([]);
       expect(loaded!.reputationScore).toBe(0);
       expect(loaded!.triggeredCheckpoints).toEqual([]);
+      // v9 fields should also be present
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.strategyPreferences).toBeDefined();
     });
 
-    it('should migrate old v2 structure to v5 with default v8 fields', () => {
+    it('should migrate old v2 structure to v6 with all default fields', () => {
       const oldV2Save = {
         version: 2,
         gameState: mockState,
@@ -328,9 +337,12 @@ describe('Save System', () => {
       expect(loaded!.triggeredCheckpoints).toEqual([]);
       expect(loaded!.skillTrees).toBeDefined();
       expect(loaded!.relationships).toBeDefined();
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.strategyPreferences).toBeDefined();
     });
 
-    it('should preserve existing v4 fields after v5 migration', () => {
+    it('should preserve existing v4 fields after v6 migration', () => {
       const oldV4Save = {
         version: 4,
         gameState: mockState,
@@ -348,6 +360,209 @@ describe('Save System', () => {
       expect(loaded!.relationships).toEqual(oldV4Save.relationships);
       expect(loaded!.achievements).toEqual(oldV4Save.achievements);
       expect(loaded!.projectHistory).toEqual(oldV4Save.projectHistory);
+    });
+  });
+
+  describe('v9 Save Migration and New Fields', () => {
+    it('should save and load v9 fields (teamDynamics, performanceHistory, strategyPreferences)', () => {
+      const v9Extra = {
+        teamDynamics: { averageMorale: 75, totalFatigue: 30, averageLoyalty: 80 },
+        performanceHistory: { bestSprintProgress: 25, worstSprintProgress: 5, averageSprintProgress: 15, totalBugsCreated: 12, totalBugsFixed: 8 },
+        strategyPreferences: { 'aggressive': 3, 'balanced': 5 },
+      };
+
+      saveToSlot('2', 'v9存档', mockState, v9Extra);
+      const loaded = loadFromSlot('2');
+
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.teamDynamics).toEqual(v9Extra.teamDynamics);
+      expect(loaded!.performanceHistory).toEqual(v9Extra.performanceHistory);
+      expect(loaded!.strategyPreferences).toEqual(v9Extra.strategyPreferences);
+    });
+
+    it('should calculate teamDynamics from agents when not provided', () => {
+      const stateWithAgents: GameState = {
+        ...mockState,
+        agents: [
+          { id: 'a1', name: 'Alice', model: 'gpt-4', role: 'dev', avatar: '', skills: { coding: 80, debugging: 70, architecture: 60, creativity: 50, speed: 90 }, salary: 100, morale: 80, quirk: '', fatigue: 20, consecutiveSprints: 2, totalSprintsWorked: 5, locked: false },
+          { id: 'a2', name: 'Bob', model: 'gpt-4', role: 'dev', avatar: '', skills: { coding: 70, debugging: 60, architecture: 80, creativity: 90, speed: 60 }, salary: 100, morale: 60, quirk: '', fatigue: 40, consecutiveSprints: 1, totalSprintsWorked: 3, locked: false },
+        ],
+      };
+
+      saveToSlot('1', '有员工的存档', stateWithAgents);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.teamDynamics!.averageMorale).toBe(70); // (80+60)/2
+      expect(loaded!.teamDynamics!.totalFatigue).toBe(60); // 20+40
+    });
+
+    it('should calculate performanceHistory from history when not provided', () => {
+      const stateWithHistory: GameState = {
+        ...mockState,
+        history: [
+          { sprintNumber: 1, project: {} as any, agents: [], strategy: {} as any, progressDelta: 10, bugsDelta: 2, techDebtDelta: 1, moraleDelta: -5, cost: 500, incidents: [], summary: '' },
+          { sprintNumber: 2, project: {} as any, agents: [], strategy: {} as any, progressDelta: 20, bugsDelta: -1, techDebtDelta: 0, moraleDelta: 3, cost: 600, incidents: [], summary: '' },
+        ],
+      };
+
+      saveToSlot('1', '有历史的存档', stateWithHistory);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.performanceHistory!.bestSprintProgress).toBe(20);
+      expect(loaded!.performanceHistory!.worstSprintProgress).toBe(10);
+      expect(loaded!.performanceHistory!.averageSprintProgress).toBe(15);
+      expect(loaded!.performanceHistory!.totalBugsCreated).toBe(2); // only positive bugsDelta
+    });
+
+    it('should migrate v5 save to v6 with calculated v9 fields', () => {
+      const oldV5Save = {
+        version: 5,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        skillTrees: {},
+        relationships: {},
+        achievements: [],
+        projectHistory: [],
+        quarterlyEvaluations: [],
+        reputationScore: 10,
+        triggeredCheckpoints: ['seed'],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', JSON.stringify(oldV5Save));
+
+      const loaded = loadFromSlot('1');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(6);
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.teamDynamics!.averageMorale).toBe(0);
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.strategyPreferences).toEqual({});
+      // v5 fields preserved
+      expect(loaded!.reputationScore).toBe(10);
+      expect(loaded!.triggeredCheckpoints).toEqual(['seed']);
+    });
+
+    it('should migrate raw v2 GameState (no version wrapper) to v6', () => {
+      const rawV2State = {
+        funds: 3000,
+        sprintCount: 7,
+        agents: [],
+        projects: [],
+        completedProjectIds: ['p1'],
+        unlockedAchievementIds: [],
+        gameOver: false,
+        history: [],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_2', JSON.stringify(rawV2State));
+
+      const loaded = loadFromSlot('2');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(6);
+      expect(loaded!.gameState.funds).toBe(3000);
+      expect(loaded!.gameState.sprintCount).toBe(7);
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.strategyPreferences).toBeDefined();
+    });
+  });
+
+  describe('Save Validation', () => {
+    it('should validate a valid v6 save', () => {
+      saveToSlot('1', '有效存档', mockState);
+      const result = validateSlot('1');
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should reject null/empty data', () => {
+      const result = validateSaveData(null);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it('should reject non-object data', () => {
+      const result = validateSaveData('invalid');
+      expect(result.valid).toBe(false);
+    });
+
+    it('should error on missing version', () => {
+      const result = validateSaveData({ gameState: mockState });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('缺少版本号字段');
+    });
+
+    it('should error on version too old', () => {
+      const result = validateSaveData({ version: 1, gameState: mockState });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('过旧'))).toBe(true);
+    });
+
+    it('should warn on future version', () => {
+      const result = validateSaveData({ version: 99, gameState: mockState, savedAt: new Date().toISOString() });
+      expect(result.valid).toBe(true); // not an error, just a warning
+      expect(result.warnings.some(w => w.includes('高于当前支持版本'))).toBe(true);
+    });
+
+    it('should error on missing gameState', () => {
+      const result = validateSaveData({ version: 6 });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('缺少游戏状态数据');
+    });
+
+    it('should warn on missing optional gameState fields', () => {
+      const result = validateSaveData({
+        version: 6,
+        gameState: { funds: 1000 },
+        savedAt: new Date().toISOString(),
+      });
+      expect(result.valid).toBe(true);
+      expect(result.warnings.length).toBeGreaterThan(0);
+    });
+
+    it('should validate v5 quarterly fields format', () => {
+      const result = validateSaveData({
+        version: 5,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        quarterlyEvaluations: 'invalid',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('季度评估'))).toBe(true);
+    });
+
+    it('should validate v6 teamDynamics format', () => {
+      const result = validateSaveData({
+        version: 6,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        teamDynamics: 'invalid',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('团队动态'))).toBe(true);
+    });
+
+    it('should validate v6 strategyPreferences format', () => {
+      const result = validateSaveData({
+        version: 6,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        strategyPreferences: 'invalid',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('策略偏好'))).toBe(true);
+    });
+
+    it('should return warnings for valid save with missing optional fields', () => {
+      const result = validateSaveData({
+        version: 6,
+        gameState: mockState,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.warnings.some(w => w.includes('保存时间戳'))).toBe(true);
     });
   });
 });

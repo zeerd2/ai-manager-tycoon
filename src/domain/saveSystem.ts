@@ -1,6 +1,6 @@
 import type { GameState } from './gameState';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export interface SaveMetadata {
   id: string; // '1', '2', '3', 'auto'
@@ -26,6 +26,27 @@ export interface SaveData {
   quarterlyEvaluations?: unknown[];
   reputationScore?: number;
   triggeredCheckpoints?: string[];
+  // v9 team dynamics and performance tracking
+  teamDynamics?: {
+    averageMorale: number;
+    totalFatigue: number;
+    averageLoyalty: number;
+  };
+  performanceHistory?: {
+    bestSprintProgress: number;
+    worstSprintProgress: number;
+    averageSprintProgress: number;
+    totalBugsCreated: number;
+    totalBugsFixed: number;
+  };
+  strategyPreferences?: Record<string, number>;
+}
+
+/** 存档验证结果 */
+export interface SaveValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
 
 export interface AutosaveConfig {
@@ -150,7 +171,7 @@ export function saveToSlot(
   slotId: string,
   name: string,
   state: GameState,
-  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory' | 'quarterlyEvaluations' | 'reputationScore' | 'triggeredCheckpoints'>>
+  extra?: Partial<Pick<SaveData, 'skillTrees' | 'relationships' | 'achievements' | 'projectHistory' | 'quarterlyEvaluations' | 'reputationScore' | 'triggeredCheckpoints' | 'teamDynamics' | 'performanceHistory' | 'strategyPreferences'>>
 ): void {
   try {
     const saveData: SaveData = {
@@ -165,6 +186,9 @@ export function saveToSlot(
       quarterlyEvaluations: extra?.quarterlyEvaluations || [],
       reputationScore: extra?.reputationScore ?? 0,
       triggeredCheckpoints: extra?.triggeredCheckpoints || [],
+      teamDynamics: extra?.teamDynamics || calculateTeamDynamics(state),
+      performanceHistory: extra?.performanceHistory || calculatePerformanceHistory(state),
+      strategyPreferences: extra?.strategyPreferences || {},
     };
 
     cachedSetItem(getSlotKey(slotId), JSON.stringify(saveData));
@@ -203,8 +227,8 @@ export function loadFromSlot(slotId: string): SaveData | null {
 
     const data = JSON.parse(saved) as SaveData;
 
-    // Auto migration if needed
-    if (data.version < SAVE_VERSION) {
+    // Auto migration if needed (also handles raw GameState without version/gameState wrapper)
+    if (!data.version || data.version < SAVE_VERSION || !data.gameState) {
       return migrateSaveData(data);
     }
 
@@ -212,6 +236,21 @@ export function loadFromSlot(slotId: string): SaveData | null {
   } catch (e) {
     console.error(`Failed to load from slot ${slotId}`, e);
     throw new Error(`加载存档失败: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+  }
+}
+
+/** 验证指定存档位的数据完整性 */
+export function validateSlot(slotId: string): SaveValidationResult {
+  try {
+    const key = getSlotKey(slotId);
+    const saved = cachedGetItem(key);
+    if (!saved) {
+      return { valid: false, errors: ['存档位为空'], warnings: [] };
+    }
+    const data = JSON.parse(saved);
+    return validateSaveData(data);
+  } catch (e) {
+    return { valid: false, errors: [`解析存档失败: ${e instanceof Error ? e.message : String(e)}`], warnings: [] };
   }
 }
 
@@ -277,21 +316,210 @@ export function checkAndMigrateOldSave(): boolean {
   }
 }
 
+/** 计算团队动态数据 */
+function calculateTeamDynamics(state: GameState): SaveData['teamDynamics'] {
+  const agents = state.agents || [];
+  if (agents.length === 0) {
+    return { averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 };
+  }
+  const averageMorale = agents.reduce((sum, a) => sum + (a.morale || 0), 0) / agents.length;
+  const totalFatigue = agents.reduce((sum, a) => sum + (a.fatigue || 0), 0);
+  return { averageMorale, totalFatigue, averageLoyalty: 0 };
+}
+
+/** 计算绩效历史数据 */
+function calculatePerformanceHistory(state: GameState): SaveData['performanceHistory'] {
+  const history = state.history || [];
+  if (history.length === 0) {
+    return { bestSprintProgress: 0, worstSprintProgress: 0, averageSprintProgress: 0, totalBugsCreated: 0, totalBugsFixed: 0 };
+  }
+  const progresses = history.map(h => h.progressDelta || 0);
+  const bestSprintProgress = Math.max(...progresses);
+  const worstSprintProgress = Math.min(...progresses);
+  const averageSprintProgress = progresses.reduce((s, p) => s + p, 0) / progresses.length;
+  const totalBugsCreated = history.reduce((s, h) => s + Math.max(0, h.bugsDelta || 0), 0);
+  return { bestSprintProgress, worstSprintProgress, averageSprintProgress, totalBugsCreated, totalBugsFixed: 0 };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateSaveData(oldData: any): SaveData {
-  // Migration strategy: upgrade version and ensure all v5 keys exist
-  const migrated: SaveData = {
-    version: SAVE_VERSION,
-    gameState: oldData.gameState || oldData, // Handle if v2 structure was raw GameState
-    savedAt: oldData.savedAt || new Date().toISOString(),
+function migrateV2ToV3(oldData: any): any {
+  // v3 added: relationships, achievements, projectHistory
+  return {
+    ...oldData,
+    version: 3,
     skillTrees: oldData.skillTrees || {},
     relationships: oldData.relationships || {},
     achievements: oldData.achievements || oldData.gameState?.unlockedAchievementIds || [],
     projectHistory: oldData.projectHistory || oldData.gameState?.history || [],
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateV3ToV4(oldData: any): any {
+  // v4 is same structure as v3, just version bump for consistency
+  return {
+    ...oldData,
+    version: 4,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateV4ToV5(oldData: any): any {
+  // v5 added: quarterlyEvaluations, reputationScore, triggeredCheckpoints
+  return {
+    ...oldData,
+    version: 5,
     quarterlyEvaluations: oldData.quarterlyEvaluations || [],
     reputationScore: oldData.reputationScore ?? 0,
     triggeredCheckpoints: oldData.triggeredCheckpoints || [],
   };
+}
 
-  return migrated;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateV5ToV6(oldData: any): any {
+  // v6 added: teamDynamics, performanceHistory, strategyPreferences
+  const gameState = oldData.gameState || oldData;
+  return {
+    ...oldData,
+    version: 6,
+    teamDynamics: oldData.teamDynamics || calculateTeamDynamics(gameState),
+    performanceHistory: oldData.performanceHistory || calculatePerformanceHistory(gameState),
+    strategyPreferences: oldData.strategyPreferences || {},
+  };
+}
+
+/** 版本迁移链：每一步只处理相邻版本的差异 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MIGRATION_CHAIN: Array<(data: any) => any> = [
+  migrateV2ToV3, // index 0: v2→v3
+  migrateV3ToV4, // index 1: v3→v4
+  migrateV4ToV5, // index 2: v4→v5
+  migrateV5ToV6, // index 3: v5→v6
+];
+
+/** 执行版本迁移：从当前版本逐步升级到最新版本 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function migrateSaveData(oldData: any): SaveData {
+  let currentVersion = oldData.version || 2;
+  let migrated = { ...oldData };
+
+  // Handle raw v2 GameState (no version field, no wrapper)
+  if (!oldData.version && !oldData.gameState) {
+    migrated = { version: 2, gameState: oldData, savedAt: new Date().toISOString() };
+    currentVersion = 2;
+  }
+
+  // Step through migration chain
+  while (currentVersion < SAVE_VERSION) {
+    const migrationIndex = currentVersion - 2; // v2 is index 0
+    if (migrationIndex >= 0 && migrationIndex < MIGRATION_CHAIN.length) {
+      migrated = MIGRATION_CHAIN[migrationIndex](migrated);
+      currentVersion = migrated.version;
+    } else {
+      // Unknown version, force to current
+      console.warn(`Unknown save version ${currentVersion}, forcing to ${SAVE_VERSION}`);
+      migrated.version = SAVE_VERSION;
+      break;
+    }
+  }
+
+  // Ensure all required fields exist at final version
+  return {
+    version: SAVE_VERSION,
+    gameState: migrated.gameState || migrated,
+    savedAt: migrated.savedAt || new Date().toISOString(),
+    name: migrated.name,
+    skillTrees: migrated.skillTrees || {},
+    relationships: migrated.relationships || {},
+    achievements: migrated.achievements || [],
+    projectHistory: migrated.projectHistory || [],
+    quarterlyEvaluations: migrated.quarterlyEvaluations || [],
+    reputationScore: migrated.reputationScore ?? 0,
+    triggeredCheckpoints: migrated.triggeredCheckpoints || [],
+    teamDynamics: migrated.teamDynamics || { averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 },
+    performanceHistory: migrated.performanceHistory || { bestSprintProgress: 0, worstSprintProgress: 0, averageSprintProgress: 0, totalBugsCreated: 0, totalBugsFixed: 0 },
+    strategyPreferences: migrated.strategyPreferences || {},
+  };
+}
+
+/** 验证存档数据的完整性和结构 */
+export function validateSaveData(data: unknown): SaveValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!data || typeof data !== 'object') {
+    return { valid: false, errors: ['存档数据为空或格式错误'], warnings };
+  }
+
+  const save = data as Record<string, unknown>;
+
+  // Check version
+  if (typeof save.version !== 'number') {
+    errors.push('缺少版本号字段');
+  } else if (save.version > SAVE_VERSION) {
+    warnings.push(`存档版本 (${save.version}) 高于当前支持版本 (${SAVE_VERSION})，可能丢失新功能数据`);
+  } else if (save.version < 2) {
+    errors.push(`存档版本 (${save.version}) 过旧，无法迁移`);
+  }
+
+  // Check gameState
+  if (!save.gameState || typeof save.gameState !== 'object') {
+    errors.push('缺少游戏状态数据');
+  } else {
+    const gs = save.gameState as Record<string, unknown>;
+    if (typeof gs.funds !== 'number') warnings.push('缺少资金数据，将使用默认值');
+    if (typeof gs.sprintCount !== 'number') warnings.push('缺少 Sprint 计数，将使用默认值');
+    if (!Array.isArray(gs.agents)) warnings.push('缺少员工数据，将使用空数组');
+    if (!Array.isArray(gs.projects)) warnings.push('缺少项目数据，将使用空数组');
+    if (!Array.isArray(gs.completedProjectIds)) warnings.push('缺少已完成项目列表');
+    if (!Array.isArray(gs.history)) warnings.push('缺少历史记录');
+  }
+
+  // Check savedAt
+  if (!save.savedAt || typeof save.savedAt !== 'string') {
+    warnings.push('缺少保存时间戳');
+  }
+
+  // v5+ fields
+  const saveVersion = save.version as number;
+  if (saveVersion >= 5) {
+    if (save.quarterlyEvaluations !== undefined && !Array.isArray(save.quarterlyEvaluations)) {
+      errors.push('季度评估数据格式错误');
+    }
+    if (save.reputationScore !== undefined && typeof save.reputationScore !== 'number') {
+      errors.push('声望分数格式错误');
+    }
+    if (save.triggeredCheckpoints !== undefined && !Array.isArray(save.triggeredCheckpoints)) {
+      errors.push('融资检查点数据格式错误');
+    }
+  }
+
+  // v6+ fields
+  if (saveVersion >= 6) {
+    if (save.teamDynamics !== undefined) {
+      const td = save.teamDynamics as Record<string, unknown>;
+      if (typeof td !== 'object') {
+        errors.push('团队动态数据格式错误');
+      } else {
+        if (td.averageMorale !== undefined && typeof td.averageMorale !== 'number') {
+          warnings.push('团队平均士气数据格式异常');
+        }
+      }
+    }
+    if (save.performanceHistory !== undefined) {
+      const ph = save.performanceHistory as Record<string, unknown>;
+      if (typeof ph !== 'object') {
+        errors.push('绩效历史数据格式错误');
+      }
+    }
+    if (save.strategyPreferences !== undefined && typeof save.strategyPreferences !== 'object') {
+      errors.push('策略偏好数据格式错误');
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
 }

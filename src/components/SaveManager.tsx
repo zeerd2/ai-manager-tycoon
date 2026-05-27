@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import {
   MANUAL_SLOTS,
   AUTO_SLOT,
+  SAVE_VERSION,
   getSaveSlotsMetadata,
   saveToSlot,
   loadFromSlot,
   deleteSlot,
   checkAndMigrateOldSave,
-  isFallbackStorageActive
+  isFallbackStorageActive,
+  validateSlot
 } from '../domain/saveSystem';
-import type { SaveMetadata, AutosaveConfig } from '../domain/saveSystem';
+import type { SaveMetadata, AutosaveConfig, SaveValidationResult } from '../domain/saveSystem';
 import type { GameState } from '../domain/gameState';
 
 interface SaveManagerProps {
@@ -46,6 +48,7 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
     message: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationResult, setValidationResult] = useState<SaveValidationResult | null>(null);
 
   useEffect(() => {
     if (notification && notification.type === 'success') {
@@ -110,8 +113,21 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
   const executeLoad = (slotId: string) => {
     setIsLoading(true);
     setNotification(null);
+    setValidationResult(null);
     setTimeout(() => {
       try {
+        // Validate before loading
+        const validation = validateSlot(slotId);
+        if (!validation.valid) {
+          setValidationResult(validation);
+          setNotification({ type: 'error', message: '存档数据损坏，无法加载' });
+          setIsLoading(false);
+          return;
+        }
+        if (validation.warnings.length > 0) {
+          setValidationResult(validation);
+        }
+
         const saveData = loadFromSlot(slotId);
         if (saveData) {
           const loadedState: GameState = {
@@ -299,6 +315,26 @@ export const SaveManager: React.FC<SaveManagerProps> = ({
             <button style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', fontSize: '1.2rem', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }} onClick={() => setNotification(null)}>
               &times;
             </button>
+          </div>
+        )}
+
+        {validationResult && validationResult.warnings.length > 0 && (
+          <div style={{
+            backgroundColor: 'rgba(255, 165, 0, 0.1)',
+            borderLeft: '4px solid orange',
+            padding: '12px 20px',
+            margin: '12px 24px 0',
+            fontSize: '0.85rem',
+            color: 'orange',
+            borderRadius: '4px'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>⚠️ 存档迁移提示</div>
+            {validationResult.warnings.map((w, i) => (
+              <div key={i} style={{ marginLeft: '8px' }}>• {w}</div>
+            ))}
+            <div style={{ marginTop: '4px', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+              存档将自动升级到 v{SAVE_VERSION} 格式
+            </div>
           </div>
         )}
 
