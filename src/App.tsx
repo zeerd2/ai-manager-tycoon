@@ -52,6 +52,7 @@ import { AgentCard } from './components/AgentCard';
 import { ProjectCard } from './components/ProjectCard';
 import { StrategySelector } from './components/StrategySelector';
 import { CompanyDashboard } from './components/CompanyDashboard';
+import { QuarterlyGoalsPanel } from './components/QuarterlyGoalsPanel';
 import { AchievementToast } from './components/AchievementToast';
 import { RelationsNetwork } from './components/RelationsNetwork';
 import { MobileSectionNav, type MainSectionId } from './components/MobileSectionNav';
@@ -595,6 +596,9 @@ export default function App() {
 
       {/* 2. Company Dashboard */}
       <CompanyDashboard gameState={gameState} selectedProjectId={selectedProjectId} />
+
+      {/* 2.1 Quarterly Goals Panel - Enhanced Version */}
+      <QuarterlyGoalsPanel gameState={gameState} selectedProjectId={selectedProjectId} />
 
       {/* 4. Achievement Toast System */}
       {toastQueue.length > 0 && (

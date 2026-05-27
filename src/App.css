@@ -910,6 +910,255 @@ body {
   font-style: italic;
 }
 
+/* Quarterly Goals Panel - Enhanced Version */
+.quarterly-goals-panel {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 2fr;
+  gap: 16px;
+  background: rgba(10, 15, 30, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.06);
+}
+
+.quarterly-goals-panel .panel-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.quarterly-goals-panel .panel-section:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.quarterly-goals-panel .quarter-info h3 {
+  font-size: 1.25rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.quarterly-goals-panel .quarter-info .subtext {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.checkpoint-countdown {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 240, 255, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.countdown-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-right: 6px;
+}
+
+.countdown-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.quarterly-goals-panel .kpi-info h4,
+.quarterly-goals-panel .reputation-confidence h4,
+.quarterly-goals-panel .financing-checkpoints h4,
+.quarterly-goals-panel .contract-info h4 {
+  font-size: 0.88rem;
+  color: var(--text-h);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.quarterly-goals-panel .kpi-targets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.quarterly-goals-panel .kpi-target-item {
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quarterly-goals-panel .kpi-label {
+  color: var(--text-dim);
+}
+
+.quarterly-goals-panel .kpi-value.passed {
+  color: var(--positive);
+  font-weight: 700;
+}
+
+.quarterly-goals-panel .kpi-value.pending {
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.quarterly-goals-panel .kpi-desc {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.indicators-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.indicator-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.indicator-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  min-width: 60px;
+}
+
+.indicator-bar {
+  flex: 1;
+  height: 20px;
+  background: rgba(10, 14, 26, 0.6);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+.indicator-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.indicator-fill.reputation {
+  background: linear-gradient(90deg, var(--negative), var(--warning), var(--positive));
+}
+
+.indicator-fill.confidence {
+  background: linear-gradient(90deg, var(--negative), var(--warning), var(--accent));
+}
+
+.indicator-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-h);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+.checkpoints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkpoint-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+.checkpoint-item.triggered {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+}
+
+.checkpoint-item.pending {
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.checkpoint-name {
+  color: var(--text);
+}
+
+.checkpoint-reward {
+  font-weight: 700;
+}
+
+.checkpoint-item.triggered .checkpoint-reward {
+  color: var(--positive);
+}
+
+.checkpoint-item.pending .checkpoint-reward {
+  color: var(--warning);
+}
+
+.no-checkpoints {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.quarterly-goals-panel .contract-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quarterly-goals-panel .contract-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quarterly-goals-panel .contract-deadline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  gap: 8px;
+}
+
+.quarterly-goals-panel .remaining-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.quarterly-goals-panel .remaining-badge.positive {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--positive);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+}
+
+.quarterly-goals-panel .remaining-badge.negative {
+  background: rgba(255, 51, 102, 0.12);
+  color: var(--negative);
+  border: 1px solid rgba(255, 51, 102, 0.25);
+}
+
+.quarterly-goals-panel .contract-empty {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 /* Quarter KPI Notification in Result Report */
 .quarter-kpi-notification {
   position: relative;
@@ -3536,8 +3785,29 @@ body {
     gap: 8px !important;
   }
 
+  .quarterly-goals-panel {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .quarterly-goals-panel .panel-section {
+    padding: 4px 0;
+  }
+
+  .quarterly-goals-panel .panel-section:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+  }
+
   .quarter-info h3 {
     font-size: 1.05rem !important;
+  }
+
+  .quarterly-goals-panel .quarter-info h3 {
+    font-size: 1.05rem;
   }
 
   .quarter-info .subtext,
@@ -3546,9 +3816,22 @@ body {
     font-size: 0.78rem !important;
   }
 
+  .quarterly-goals-panel .quarter-info .subtext,
+  .quarterly-goals-panel .kpi-info h4,
+  .quarterly-goals-panel .reputation-confidence h4,
+  .quarterly-goals-panel .financing-checkpoints h4,
+  .quarterly-goals-panel .contract-info h4 {
+    font-size: 0.78rem;
+  }
+
   .kpi-target-item {
     font-size: 0.72rem !important;
     gap: 3px !important;
+  }
+
+  .quarterly-goals-panel .kpi-target-item {
+    font-size: 0.72rem;
+    gap: 3px;
   }
 
   .kpi-desc,
@@ -3558,9 +3841,57 @@ body {
     font-size: 0.72rem !important;
   }
 
+  .quarterly-goals-panel .kpi-desc,
+  .quarterly-goals-panel .contract-name,
+  .quarterly-goals-panel .contract-deadline-row,
+  .quarterly-goals-panel .contract-empty {
+    font-size: 0.72rem;
+  }
+
   .remaining-badge {
     padding: 1px 4px !important;
     font-size: 0.65rem !important;
+  }
+
+  .quarterly-goals-panel .remaining-badge {
+    padding: 1px 4px;
+    font-size: 0.65rem;
+  }
+
+  .checkpoint-countdown {
+    margin-top: 6px;
+    padding: 4px 8px;
+  }
+
+  .countdown-label,
+  .countdown-value {
+    font-size: 0.72rem;
+  }
+
+  .indicators-grid {
+    gap: 8px;
+  }
+
+  .indicator-item {
+    gap: 6px;
+  }
+
+  .indicator-label {
+    font-size: 0.72rem;
+    min-width: 50px;
+  }
+
+  .indicator-bar {
+    height: 16px;
+  }
+
+  .indicator-text {
+    font-size: 0.62rem;
+  }
+
+  .checkpoint-item {
+    padding: 4px 8px;
+    font-size: 0.68rem;
   }
 
   .dashboard-item .label {
