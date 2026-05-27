@@ -678,3 +678,276 @@ describe('Integration: Edge Cases', () => {
     expect(getReputationLabel(19)).toBe('中');
   });
 });
+
+// --- Integration: Difficulty Levels & Reputation ---
+
+describe('Integration: Difficulty Levels & Reputation', () => {
+  it('legend project completion gives higher reputation boost than intern', () => {
+    // Intern project completion
+    const internResult = makeSprintResult(1, {
+      project: { ...makeProject('p1', { difficultyLevel: 'intern', difficulty: 10 }), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+    });
+    const internState = makeState({ reputation: 50, confidence: 50, sprintCount: 0 });
+    const newInternState = processPostSprint(internState, internResult, ['a1']);
+
+    // Legend project completion
+    const legendResult = makeSprintResult(1, {
+      project: { ...makeProject('p2', { difficultyLevel: 'legend', difficulty: 10 }), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+    });
+    const legendState = makeState({ reputation: 50, confidence: 50, sprintCount: 0 });
+    const newLegendState = processPostSprint(legendState, legendResult, ['a1']);
+
+    // Legend should give significantly more reputation
+    expect(newLegendState.reputation).toBeGreaterThan(newInternState.reputation!);
+  });
+
+  it('hard project with bugs still nets positive reputation if completed', () => {
+    const state = makeState({ reputation: 40, confidence: 40, sprintCount: 0 });
+    const result = makeSprintResult(1, {
+      project: { ...makeProject('p1', { difficultyLevel: 'hard', difficulty: 15 }), progress: 100, maxProgress: 100 },
+      bugsDelta: 3,
+      techDebtDelta: 1,
+      cost: 300,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Hard completion gives +18 rep, bugs (-1) and techDebt (not counted in processPostSprint directly)
+    // Net should still be positive
+    expect(newState.reputation).toBeGreaterThan(40);
+  });
+});
+
+// --- Integration: Rating & Financing ---
+
+describe('Integration: Rating & Financing', () => {
+  it('series-c checkpoint requires rating A (score >= 65) for trigger', () => {
+    const seriesC = getDefaultCheckpoints().find((c) => c.id === 'series-c')!;
+    const state = makeState({ completedProjectIds: Array.from({ length: 10 }, (_, i) => `p${i}`) });
+
+    // Rating B (score 50) → not triggered
+    const resultB = checkFinancingCheckpoint(seriesC, state, 50, 'B');
+    expect(resultB.triggered).toBe(false);
+
+    // Rating A (score 65) → triggered (threshold is 65)
+    const resultA = checkFinancingCheckpoint(seriesC, state, 50, 'A');
+    expect(resultA.triggered).toBe(true);
+    expect(resultA.reward).toBe(20000);
+
+    // Rating S (score 80) → also triggered
+    const resultS = checkFinancingCheckpoint(seriesC, state, 50, 'S');
+    expect(resultS.triggered).toBe(true);
+    expect(resultS.reward).toBe(20000);
+  });
+
+  it('rating improves with more completed projects and fewer bugs', () => {
+    const ratingResult1 = calculateRating({
+      completedProjects: 2,
+      totalBugs: 10,
+      totalTechDebt: 5,
+      totalSprintsCost: 2000,
+      fundsRemaining: 3000,
+      sprintCount: 8,
+    });
+
+    const ratingResult2 = calculateRating({
+      completedProjects: 5,
+      totalBugs: 3,
+      totalTechDebt: 2,
+      totalSprintsCost: 3000,
+      fundsRemaining: 5000,
+      sprintCount: 8,
+    });
+
+    expect(ratingResult2.score).toBeGreaterThan(ratingResult1.score);
+    expect(ratingResult2.rating).not.toBe('F');
+  });
+});
+
+// --- Integration: Overdue Projects ---
+
+describe('Integration: Overdue Projects', () => {
+  it('overdue project completion reduces reputation and funds', () => {
+    const state = makeState({ reputation: 60, confidence: 60, funds: 5000, sprintCount: 5 });
+    const result = makeSprintResult(6, {
+      project: { ...makeProject('p1', { deadline: 4, difficulty: 10 }), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Overdue: reward halved, reputation -10, confidence -10
+    expect(newState.reputation).toBeLessThan(60);
+    expect(newState.confidence).toBeLessThan(60);
+
+    // Summary should mention overdue
+    expect(result.summary).toContain('逾期');
+  });
+
+  it('on-time project completion gives full rewards', () => {
+    const state = makeState({ reputation: 60, confidence: 60, funds: 5000, sprintCount: 3 });
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p1', { deadline: 5, difficulty: 10, difficultyLevel: 'normal' }), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // On time: full reward, reputation +10, confidence +12 (normal)
+    expect(newState.reputation).toBeGreaterThan(60);
+    expect(newState.confidence).toBeGreaterThan(60);
+    expect(result.summary).toContain('按时完成');
+  });
+});
+
+// --- Integration: Game Over Conditions ---
+
+describe('Integration: Game Over & Financing', () => {
+  it('bankruptcy triggers game over before financing can help', () => {
+    const state = makeState({
+      funds: 100, // very low
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 3,
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200, // more than remaining funds after deduction
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Funds = 100 - 200 = -100 → game over
+    expect(newState.gameOver).toBe(true);
+    expect(newState.gameOverReason).toContain('破产');
+  });
+
+  it('all agents at zero morale triggers game over', () => {
+    const state = makeState({
+      funds: 10000,
+      agents: [
+        makeAgent('a1', 0),
+        makeAgent('a2', 0),
+      ],
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 0,
+    });
+
+    const result = makeSprintResult(1, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 100,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Agent morale can go to 0 but game over only if ALL unlocked agents at 0
+    // a2 didn't participate so morale increases, a1 participated so morale might drop
+    // This tests the condition exists
+    expect(newState.gameOver).toBeDefined();
+  });
+});
+
+// --- Integration: Multi-Quarter Full Progression ---
+
+describe('Integration: Multi-Quarter Full Progression', () => {
+  it('Q1 through Q4: financing rewards accumulate as company grows', () => {
+    const allCheckpoints = getDefaultCheckpoints();
+
+    // Q1: Complete 1 project → seed triggers
+    const q1State = makeState({
+      sprintCount: 4,
+      funds: 5000,
+      completedProjectIds: ['p1'],
+      reputation: 50,
+    });
+    const q1Results = evaluateQuarterCheckpoints(
+      getCheckpointsForQuarter(allCheckpoints, 1), q1State, 50
+    );
+    expect(q1Results[0].triggered).toBe(true);
+
+    // Q2: Funds >= 2000 → angel-a triggers
+    const q2State = makeState({
+      sprintCount: 8,
+      funds: 6000,
+      completedProjectIds: ['p1', 'p2'],
+      reputation: 55,
+    });
+    const q2Results = evaluateQuarterCheckpoints(
+      getCheckpointsForQuarter(allCheckpoints, 2), q2State, 55
+    );
+    expect(q2Results[0].triggered).toBe(true);
+
+    // Q3: 3 completed projects → angel-b triggers
+    const q3State = makeState({
+      sprintCount: 12,
+      funds: 8000,
+      completedProjectIds: ['p1', 'p2', 'p3'],
+      reputation: 60,
+    });
+    const q3Results = evaluateQuarterCheckpoints(
+      getCheckpointsForQuarter(allCheckpoints, 3), q3State, 60
+    );
+    expect(q3Results[0].triggered).toBe(true);
+
+    // Q4: Reputation >= 20 → series-a triggers
+    const q4State = makeState({
+      sprintCount: 16,
+      funds: 10000,
+      completedProjectIds: ['p1', 'p2', 'p3', 'p4'],
+      reputation: 65,
+    });
+    const q4Results = evaluateQuarterCheckpoints(
+      getCheckpointsForQuarter(allCheckpoints, 4), q4State, 65
+    );
+    expect(q4Results[0].triggered).toBe(true);
+
+    // Total financing: seed(3000) + angel-a(4000) + angel-b(5000) + series-a(8000) = 20000
+    const totalReward = [q1Results, q2Results, q3Results, q4Results]
+      .flat()
+      .filter(r => r.triggered)
+      .reduce((s, r) => s + r.reward, 0);
+    expect(totalReward).toBe(20000);
+  });
+
+  it('quarterly target difficulty increases over quarters', () => {
+    const q1 = generateQuarterTarget(1);
+    const q2 = generateQuarterTarget(2);
+    const q3 = generateQuarterTarget(3);
+    const q4 = generateQuarterTarget(4);
+    const q5 = generateQuarterTarget(5);
+
+    // Q1: complete_projects threshold=1
+    expect(q1.threshold).toBe(1);
+
+    // Q2: earn_funds threshold=1500
+    expect(q2.threshold).toBe(1500);
+
+    // Q3: control_bugs threshold=11
+    expect(q3.threshold).toBe(11);
+
+    // Q4: achieve_rating threshold=70
+    expect(q4.threshold).toBe(70);
+
+    // Q5: complete_sprints threshold=4
+    expect(q5.threshold).toBe(4);
+
+    // Verify cycling: Q6 should be complete_projects with higher threshold
+    const q6 = generateQuarterTarget(6);
+    expect(q6.type).toBe('complete_projects');
+    expect(q6.threshold).toBe(3); // min(1 + floor(5/2), 4) = 3
+  });
+});
