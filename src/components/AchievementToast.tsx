@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { achievementUI, getRarityIcon } from '../data/achievementUI';
 import type { Achievement } from '../domain/achievement';
 
 interface Props {
@@ -29,22 +30,16 @@ export function AchievementToast({ achievement, onClose }: Props) {
   }, [achievement, onClose]);
 
   const getRarityLabel = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return '普通';
-      case 'rare': return '稀有';
-      case 'epic': return '史诗';
-      case 'legendary': return '传说';
-      default: return '';
-    }
+    return achievementUI.rarity[rarity as keyof typeof achievementUI.rarity] || '';
   };
 
   return (
     <div className={`achievement-toast ${visible ? 'show' : ''}`}>
       <span className="toast-emoji">{achievement.emoji}</span>
       <div className="toast-content">
-        <div className="toast-title">成就解锁: {achievement.name}</div>
+        <div className="toast-title">{achievementUI.toast.title} {achievement.name}</div>
         <span className={`rarity-badge rarity-${achievement.rarity}`}>
-          {getRarityLabel(achievement.rarity)}
+          {getRarityIcon(achievement.rarity)} {getRarityLabel(achievement.rarity)}
         </span>
         <div className="toast-desc">{achievement.description}</div>
       </div>

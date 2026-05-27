@@ -41,6 +41,11 @@ export interface AchievementContext {
     cost?: number;
   }>;
   cheapestAgentOnly?: boolean;
+  currentBugs?: number;           // 当前项目 bugs 数
+  totalIncidents?: number;        // 总事故数
+  strategyUsed?: string;          // 使用的策略
+  totalTechDebtRemoved?: number;  // 清理的技术债
+  minFundsReached?: number;       // 历史最低资金
 }
 
 // 根据 conditionType 检查是否达成
@@ -137,6 +142,89 @@ export function checkAchievement(
 
     case 'fifty_bugs_total':
       return context.history.reduce((sum, h) => sum + h.bugsDelta, 0) >= 50;
+
+    // v9 新增成就检查逻辑
+    case 'five_projects_one_game':
+      return context.projectsInOneGame >= 5;
+
+    case 'zero_bugs_completion':
+      return (
+        context.completedProjectIds.length > 0 &&
+        context.currentBugs !== undefined &&
+        context.currentBugs === 0
+      );
+
+    case 'all_agents_high_morale':
+      return (
+        context.agents.length > 0 &&
+        context.agents.filter(a => !a.locked).length > 0 &&
+        context.agents.filter(a => !a.locked).every(a => a.morale >= 80)
+      );
+
+    case 'three_agents_burnout':
+      return (
+        context.agents.filter(a => !a.locked && a.morale < 20).length >= 3
+      );
+
+    case 'funds_reach_15000':
+      return context.fundsRemaining >= 15000;
+
+    case 'recover_from_bankruptcy':
+      return (
+        context.minFundsReached !== undefined &&
+        context.minFundsReached <= 100 &&
+        context.fundsRemaining >= 2000
+      );
+
+    case 'hundred_bugs_total':
+      return context.history.reduce((sum, h) => sum + h.bugsDelta, 0) >= 100;
+
+    case 'ten_incidents':
+      return context.totalIncidents !== undefined && context.totalIncidents >= 10;
+
+    case 'complete_with_yolo':
+      return (
+        context.completedProjectIds.length > 0 &&
+        context.strategyUsed === 'yolo'
+      );
+
+    case 'refactor_50_debt':
+      return (
+        context.totalTechDebtRemoved !== undefined &&
+        context.totalTechDebtRemoved >= 50
+      );
+
+    case 'complete_with_crunch':
+      return (
+        context.completedProjectIds.length > 0 &&
+        context.strategyUsed === 'crunch' &&
+        context.agents.some(a => a.morale > 0)
+      );
+
+    // 隐藏成就
+    case 'diva_agent_unlocked':
+      return (
+        context.agents.filter(a => !a.locked).length >= 8 &&
+        context.agents.some(
+          a =>
+            a.skills !== undefined &&
+            a.skills.coding >= 90 &&
+            a.skills.creativity >= 90
+        )
+      );
+
+    case 'chaos_theory':
+      return (
+        context.history.reduce((sum, h) => sum + h.bugsDelta, 0) >= 200 &&
+        context.completedProjectIds.length > 0
+      );
+
+    case 'perfect_run':
+      return (
+        context.completedProjectIds.length >= 3 &&
+        context.history.reduce((sum, h) => sum + h.bugsDelta, 0) === 0 &&
+        context.fundsRemaining >= 5000
+      );
 
     default:
       return false;
@@ -290,6 +378,80 @@ export function getAchievementProgress(
         display: `${totalBugs} / 50`,
       };
     }
+
+    // v9 新增成就进度追踪
+    case 'five_projects_one_game':
+      return {
+        current: Math.min(completedCount, 5),
+        target: 5,
+        display: `${completedCount} / 5`,
+      };
+
+    case 'zero_bugs_completion':
+      return null; // 二元成就，无进度
+
+    case 'all_agents_high_morale': {
+      const activeAgents = gameState.agents.filter(a => !a.locked);
+      const highMoraleCount = activeAgents.filter(a => a.morale >= 80).length;
+      return {
+        current: highMoraleCount,
+        target: activeAgents.length || 1,
+        display: `${highMoraleCount} / ${activeAgents.length}`,
+      };
+    }
+
+    case 'three_agents_burnout': {
+      const activeAgents = gameState.agents.filter(a => !a.locked);
+      const burnoutCount = activeAgents.filter(a => a.morale < 20).length;
+      return {
+        current: Math.min(burnoutCount, 3),
+        target: 3,
+        display: `${burnoutCount} / 3`,
+      };
+    }
+
+    case 'funds_reach_15000':
+      return {
+        current: Math.min(gameState.funds, 15000),
+        target: 15000,
+        display: `${gameState.funds} / 15000`,
+      };
+
+    case 'recover_from_bankruptcy':
+      return null; // 需要历史最低资金追踪
+
+    case 'hundred_bugs_total': {
+      const totalBugs = gameState.history.reduce((sum, h) => sum + h.bugsDelta, 0);
+      return {
+        current: Math.min(totalBugs, 100),
+        target: 100,
+        display: `${totalBugs} / 100`,
+      };
+    }
+
+    case 'ten_incidents': {
+      const totalIncidents = gameState.history.reduce((sum, h) => sum + (h.incidents?.length || 0), 0);
+      return {
+        current: Math.min(totalIncidents, 10),
+        target: 10,
+        display: `${totalIncidents} / 10`,
+      };
+    }
+
+    case 'complete_with_yolo':
+      return null; // 需要策略追踪
+
+    case 'refactor_50_debt':
+      return null; // 需要技术债清理追踪
+
+    case 'complete_with_crunch':
+      return null; // 需要策略追踪
+
+    // 隐藏成就不显示进度
+    case 'diva_agent_unlocked':
+    case 'chaos_theory':
+    case 'perfect_run':
+      return null;
 
     default:
       return null;
