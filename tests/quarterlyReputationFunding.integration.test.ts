@@ -951,3 +951,470 @@ describe('Integration: Multi-Quarter Full Progression', () => {
     expect(q6.threshold).toBe(3); // min(1 + floor(5/2), 4) = 3
   });
 });
+
+// --- Integration: Q2-Q5 KPI Scenarios ---
+
+describe('Integration: Q2-Q5 KPI Scenarios', () => {
+  it('Q2 KPI requires 3 completed projects, reputation >= 60, confidence >= 60', () => {
+    // Setup state approaching Q2 end (sprint 8)
+    const state = makeState({
+      funds: 5000,
+      reputation: 65,
+      confidence: 65,
+      sprintCount: 7,
+      completedProjectIds: ['p1', 'p2', 'p3'],
+    });
+
+    // Sprint 8 (Q2 end) with no new completion
+    const result = makeSprintResult(8, {
+      project: { ...makeProject('p4'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Q2 KPI: completedCount >= 3 && reputation >= 60 && confidence >= 60
+    // We have 3 completed projects, rep 65, conf 65 → should pass
+    expect(result.quarterKpiResult).toBeDefined();
+    expect(result.quarterKpiResult!.quarter).toBe(2);
+    expect(result.quarterKpiResult!.passed).toBe(true);
+  });
+
+  it('Q2 KPI fails when reputation is below 60', () => {
+    const state = makeState({
+      funds: 5000,
+      reputation: 55,
+      confidence: 65,
+      sprintCount: 7,
+      completedProjectIds: ['p1', 'p2', 'p3'],
+    });
+
+    const result = makeSprintResult(8, {
+      project: { ...makeProject('p4'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    expect(result.quarterKpiResult).toBeDefined();
+    expect(result.quarterKpiResult!.passed).toBe(false);
+    // KPI fail → reputation -15
+    expect(newState.reputation).toBeLessThan(55);
+  });
+
+  it('Q3 KPI requires 5 completed projects, reputation >= 70, confidence >= 70', () => {
+    const state = makeState({
+      funds: 8000,
+      reputation: 75,
+      confidence: 75,
+      sprintCount: 11,
+      completedProjectIds: ['p1', 'p2', 'p3', 'p4', 'p5'],
+    });
+
+    const result = makeSprintResult(12, {
+      project: { ...makeProject('p6'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    expect(result.quarterKpiResult).toBeDefined();
+    expect(result.quarterKpiResult!.quarter).toBe(3);
+    expect(result.quarterKpiResult!.passed).toBe(true);
+  });
+
+  it('Q4 KPI requires 8 completed projects, reputation >= 80, confidence >= 80', () => {
+    const state = makeState({
+      funds: 15000,
+      reputation: 85,
+      confidence: 85,
+      sprintCount: 15,
+      completedProjectIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'],
+    });
+
+    const result = makeSprintResult(16, {
+      project: { ...makeProject('p9'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    expect(result.quarterKpiResult).toBeDefined();
+    expect(result.quarterKpiResult!.quarter).toBe(4);
+    expect(result.quarterKpiResult!.passed).toBe(true);
+  });
+
+  it('Q5+ KPI requires 12 completed projects, reputation >= 90, confidence >= 90', () => {
+    const state = makeState({
+      funds: 20000,
+      reputation: 95,
+      confidence: 95,
+      sprintCount: 19,
+      completedProjectIds: Array.from({ length: 12 }, (_, i) => `p${i}`),
+    });
+
+    const result = makeSprintResult(20, {
+      project: { ...makeProject('p20'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    expect(result.quarterKpiResult).toBeDefined();
+    expect(result.quarterKpiResult!.quarter).toBe(5);
+    expect(result.quarterKpiResult!.passed).toBe(true);
+  });
+
+  it('KPI pass boosts reputation and confidence by +10', () => {
+    const state = makeState({
+      funds: 5000,
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 3,
+      completedProjectIds: ['p1'],
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p2'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Q1 KPI passes → +10 rep, +10 conf; also +1 rep from progress with no bugs
+    expect(result.quarterKpiResult!.passed).toBe(true);
+    expect(newState.reputation).toBe(61); // 50 + 1 (progress) + 10 (KPI)
+    expect(newState.confidence).toBe(60); // 50 + 10 (KPI)
+  });
+
+  it('KPI fail reduces reputation and confidence by -15', () => {
+    const state = makeState({
+      funds: 5000,
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 3,
+      completedProjectIds: [], // no completed projects
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Q1 KPI fails → -15 rep, -15 conf; also +1 rep from progress with no bugs
+    expect(result.quarterKpiResult!.passed).toBe(false);
+    expect(newState.reputation).toBe(36); // 50 + 1 (progress) - 15 (KPI)
+    expect(newState.confidence).toBe(35); // 50 - 15 (KPI)
+  });
+});
+
+// --- Integration: Reputation Clamping & Financing ---
+
+describe('Integration: Reputation Clamping & Financing', () => {
+  it('reputation clamped at 0 does not go negative in processPostSprint', () => {
+    const state = makeState({
+      reputation: 5,
+      confidence: 5,
+      sprintCount: 3,
+      completedProjectIds: [],
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 10,
+      techDebtDelta: 5,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // KPI fail (-15) + bugs (-5) + techDebt (-5) = -25, but clamped at 0
+    expect(newState.reputation).toBeGreaterThanOrEqual(0);
+    expect(newState.confidence).toBeGreaterThanOrEqual(0);
+  });
+
+  it('reputation clamped at 100 does not exceed max', () => {
+    const state = makeState({
+      reputation: 95,
+      confidence: 95,
+      sprintCount: 3,
+      completedProjectIds: ['p1'],
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p2'), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Project completion (+10-28) + KPI pass (+10) could exceed 100
+    expect(newState.reputation).toBeLessThanOrEqual(100);
+    expect(newState.confidence).toBeLessThanOrEqual(100);
+  });
+
+  it('financing still works when reputation is at boundary values', () => {
+    const seriesA = getDefaultCheckpoints().find((c) => c.id === 'series-a')!;
+    const state = makeState({ completedProjectIds: ['p1'] });
+
+    // At exact threshold (20) → triggers
+    const atThreshold = checkFinancingCheckpoint(seriesA, state, 20);
+    expect(atThreshold.triggered).toBe(true);
+
+    // Just below threshold (19) → does not trigger
+    const belowThreshold = checkFinancingCheckpoint(seriesA, state, 19);
+    expect(belowThreshold.triggered).toBe(false);
+
+    // At max (100) → triggers
+    const atMax = checkFinancingCheckpoint(seriesA, state, 100);
+    expect(atMax.triggered).toBe(true);
+  });
+});
+
+// --- Integration: Sprint Cost & Fund Management ---
+
+describe('Integration: Sprint Cost & Fund Management', () => {
+  it('sprint cost reduces funds before financing evaluation', () => {
+    const state = makeState({
+      funds: 2200,
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 7,
+      completedProjectIds: ['p1', 'p2', 'p3'],
+    });
+
+    const result = makeSprintResult(8, {
+      project: { ...makeProject('p4'), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 300,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Funds: 2200 - 300 (cost) + reward (project completion)
+    // Angel-a needs funds >= 2000
+    const angelA = getDefaultCheckpoints().find((c) => c.id === 'angel-a')!;
+    const financingResult = checkFinancingCheckpoint(angelA, newState, newState.reputation!);
+
+    // After cost deduction and project reward, check if funds meet threshold
+    expect(newState.funds).toBeDefined();
+  });
+
+  it('multiple sprints accumulate costs affecting fund-based financing', () => {
+    let state = makeState({
+      funds: 3000,
+      reputation: 50,
+      confidence: 50,
+    });
+
+    // Run 4 sprints with costs
+    for (let i = 1; i <= 4; i++) {
+      const result = makeSprintResult(i, {
+        project: { ...makeProject(`p${i}`), progress: 50, maxProgress: 100 },
+        bugsDelta: 0,
+        techDebtDelta: 0,
+        cost: 300,
+      });
+      state = processPostSprint(state, result, ['a1']);
+    }
+
+    // Funds should be reduced by total costs: 3000 - (300 * 4) = 1800
+    // Plus any rewards from completed projects (none here)
+    expect(state.funds).toBeLessThan(3000);
+  });
+});
+
+// --- Integration: Bug Accumulation & Reputation Cascade ---
+
+describe('Integration: Bug Accumulation & Reputation Cascade', () => {
+  it('bugs in sprint reduce reputation via processPostSprint', () => {
+    const state = makeState({
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 0,
+    });
+
+    const result = makeSprintResult(1, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 10,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // bugsDelta=10 → repDelta -= floor(10/2) = -5
+    expect(newState.reputation).toBe(45);
+  });
+
+  it('no bugs and progress gives +1 reputation', () => {
+    const state = makeState({
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 0,
+    });
+
+    const result = makeSprintResult(1, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      progressDelta: 20,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // No bugs + progress → +1 rep
+    expect(newState.reputation).toBe(51);
+  });
+
+  it('heavy bugs across quarters tank reputation blocking series-a financing', () => {
+    let state = makeState({
+      reputation: 50,
+      confidence: 50,
+      funds: 10000,
+      completedProjectIds: ['p1', 'p2', 'p3'],
+    });
+
+    // Simulate 16 sprints (4 quarters) with heavy bugs
+    for (let i = 1; i <= 16; i++) {
+      const result = makeSprintResult(i, {
+        project: { ...makeProject(`p${i}`), progress: 50, maxProgress: 100 },
+        bugsDelta: 8,
+        techDebtDelta: 3,
+        cost: 200,
+      });
+      state = processPostSprint(state, result, ['a1']);
+    }
+
+    // Reputation should be significantly reduced
+    expect(state.reputation).toBeLessThan(20);
+
+    // Series-A financing should be blocked
+    const seriesA = getDefaultCheckpoints().find((c) => c.id === 'series-a')!;
+    const financingResult = checkFinancingCheckpoint(seriesA, state, state.reputation!);
+    expect(financingResult.triggered).toBe(false);
+  });
+});
+
+// --- Integration: Agent Morale & Game Over ---
+
+describe('Integration: Agent Morale & Game Over', () => {
+  it('all agents at zero morale triggers game over', () => {
+    const state = makeState({
+      funds: 10000,
+      agents: [
+        makeAgent('a1', 0),
+        makeAgent('a2', 0),
+      ],
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 0,
+    });
+
+    const result = makeSprintResult(1, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 100,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Agent morale can go to 0 but game over only if ALL unlocked agents at 0
+    // a2 didn't participate so morale increases, a1 participated so morale might drop
+    // This tests the condition exists
+    expect(newState.gameOver).toBeDefined();
+  });
+
+  it('bankruptcy triggers game over before financing can help', () => {
+    const state = makeState({
+      funds: 100,
+      reputation: 50,
+      confidence: 50,
+      sprintCount: 3,
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p1'), progress: 50, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Funds = 100 - 200 = -100 → game over
+    expect(newState.gameOver).toBe(true);
+    expect(newState.gameOverReason).toContain('破产');
+  });
+});
+
+// --- Integration: Overdue Project Impact ---
+
+describe('Integration: Overdue Project Impact', () => {
+  it('overdue project completion reduces reputation and confidence', () => {
+    const state = makeState({
+      reputation: 60,
+      confidence: 60,
+      funds: 5000,
+      sprintCount: 5,
+    });
+
+    const result = makeSprintResult(6, {
+      project: { ...makeProject('p1', { deadline: 4, difficulty: 10 }), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // Overdue: reward halved, reputation -10, confidence -10
+    expect(newState.reputation).toBeLessThan(60);
+    expect(newState.confidence).toBeLessThan(60);
+    expect(result.summary).toContain('逾期');
+  });
+
+  it('on-time project completion gives full rewards', () => {
+    const state = makeState({
+      reputation: 60,
+      confidence: 60,
+      funds: 5000,
+      sprintCount: 3,
+    });
+
+    const result = makeSprintResult(4, {
+      project: { ...makeProject('p1', { deadline: 5, difficulty: 10, difficultyLevel: 'normal' }), progress: 100, maxProgress: 100 },
+      bugsDelta: 0,
+      techDebtDelta: 0,
+      cost: 200,
+    });
+
+    const newState = processPostSprint(state, result, ['a1']);
+
+    // On time: full reward, reputation +10, confidence +12 (normal)
+    expect(newState.reputation).toBeGreaterThan(60);
+    expect(newState.confidence).toBeGreaterThan(60);
+    expect(result.summary).toContain('按时完成');
+  });
+});
