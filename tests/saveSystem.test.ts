@@ -788,4 +788,292 @@ describe('Save System', () => {
       expect(result.warnings.some(w => w.includes('校验和'))).toBe(true);
     });
   });
+
+  describe('Error Recovery - Corrupted Data', () => {
+    it('should throw on corrupted JSON in loadFromSlot', () => {
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', '{invalid json!!!');
+      expect(() => loadFromSlot('1')).toThrow();
+    });
+
+    it('should return invalid for corrupted JSON in validateSlot', () => {
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', '{broken json');
+      const result = validateSlot('1');
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it('should return invalid for empty slot in validateSlot', () => {
+      const result = validateSlot('nonexistent');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('存档位为空');
+    });
+
+    it('should handle corrupted old save in checkAndMigrateOldSave', () => {
+      localStorage.setItem('ai_manager_tycoon_save_v2', '{bad json}');
+      const result = checkAndMigrateOldSave();
+      expect(result).toBe(false);
+    });
+
+    it('should handle null localStorage values gracefully in validateSlot', () => {
+      // Slot doesn't exist → null
+      const result = validateSlot('999');
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe('Error Recovery - Migration Edge Cases', () => {
+    it('should migrate v2 save preserving all gameState fields', () => {
+      const v2State = {
+        funds: 7777,
+        sprintCount: 12,
+        agents: [{ id: 'a1', morale: 50 }],
+        projects: [{ id: 'proj1' }],
+        completedProjectIds: ['proj1', 'proj2'],
+        unlockedAchievementIds: ['ach1'],
+        gameOver: false,
+        history: [{ bugsDelta: 5, progressDelta: 20, cost: 300 }],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', JSON.stringify({
+        version: 2,
+        gameState: v2State,
+        savedAt: '2025-01-01T00:00:00Z',
+      }));
+
+      const loaded = loadFromSlot('1');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.gameState.funds).toBe(7777);
+      expect(loaded!.gameState.sprintCount).toBe(12);
+      expect(loaded!.gameState.completedProjectIds).toEqual(['proj1', 'proj2']);
+      expect(loaded!.gameState.unlockedAchievementIds).toEqual(['ach1']);
+    });
+
+    it('should handle v3 save migrating through full chain to v6', () => {
+      const v3Save = {
+        version: 3,
+        gameState: mockState,
+        savedAt: '2025-03-01T00:00:00Z',
+        skillTrees: { tree1: { level: 5 } },
+        relationships: { a1: { trust: 90 } },
+        achievements: ['first-blood'],
+        projectHistory: [{ id: 'p1' }],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_2', JSON.stringify(v3Save));
+      const loaded = loadFromSlot('2');
+
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.skillTrees).toEqual({ tree1: { level: 5 } });
+      expect(loaded!.relationships).toEqual({ a1: { trust: 90 } });
+      expect(loaded!.achievements).toEqual(['first-blood']);
+      expect(loaded!.projectHistory).toEqual([{ id: 'p1' }]);
+      // v5 fields added
+      expect(loaded!.quarterlyEvaluations).toEqual([]);
+      expect(loaded!.reputationScore).toBe(0);
+      expect(loaded!.triggeredCheckpoints).toEqual([]);
+      // v6 fields added
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.strategyPreferences).toEqual({});
+    });
+
+    it('should handle raw GameState without version or gameState wrapper', () => {
+      const rawState = {
+        funds: 4000,
+        sprintCount: 8,
+        agents: [],
+        projects: [],
+        completedProjectIds: ['p1'],
+        unlockedAchievementIds: ['a1'],
+        gameOver: false,
+        history: [],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_3', JSON.stringify(rawState));
+      const loaded = loadFromSlot('3');
+
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+      expect(loaded!.gameState.funds).toBe(4000);
+      expect(loaded!.gameState.completedProjectIds).toEqual(['p1']);
+    });
+
+    it('should force unknown version to SAVE_VERSION', () => {
+      const unknownVersionSave = {
+        version: 1,
+        gameState: mockState,
+        savedAt: '2025-01-01T00:00:00Z',
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', JSON.stringify(unknownVersionSave));
+      // version 1 is too old, validateSaveData should error
+      const validation = validateSaveData(unknownVersionSave);
+      expect(validation.valid).toBe(false);
+      expect(validation.errors.some(e => e.includes('过旧'))).toBe(true);
+    });
+  });
+
+  describe('Data Integrity - Achievement and History Preservation', () => {
+    it('should preserve achievements array through save/load cycle', () => {
+      const extra = {
+        achievements: ['first-blood', 'bug-factory', 'under-budget', 'team-wipe', '10x-company'],
+      };
+
+      saveToSlot('1', '成就存档', mockState, extra);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.achievements).toEqual(extra.achievements);
+      expect(loaded!.achievements).toHaveLength(5);
+    });
+
+    it('should preserve projectHistory through save/load cycle', () => {
+      const extra = {
+        projectHistory: [
+          { projectId: 'chatbot', completedAt: '2025-01-15', sprintsUsed: 4 },
+          { projectId: 'autopilot', completedAt: '2025-03-20', sprintsUsed: 8 },
+        ],
+      };
+
+      saveToSlot('2', '项目历史存档', mockState, extra);
+      const loaded = loadFromSlot('2');
+
+      expect(loaded!.projectHistory).toEqual(extra.projectHistory);
+    });
+
+    it('should default achievements to unlockedAchievementIds when extra not provided', () => {
+      const stateWithAchievements: GameState = {
+        ...mockState,
+        unlockedAchievementIds: ['ach-1', 'ach-2', 'ach-3'],
+      };
+
+      saveToSlot('1', '默认成就', stateWithAchievements);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.achievements).toEqual(['ach-1', 'ach-2', 'ach-3']);
+    });
+
+    it('should preserve teamDynamics data integrity through migration', () => {
+      const v5Save = {
+        version: 5,
+        gameState: mockState,
+        savedAt: '2025-06-01T00:00:00Z',
+        skillTrees: {},
+        relationships: {},
+        achievements: ['first-blood'],
+        projectHistory: [],
+        quarterlyEvaluations: [{ q: 1, ok: true }],
+        reputationScore: 55,
+        triggeredCheckpoints: ['seed', 'series-a'],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_1', JSON.stringify(v5Save));
+      const loaded = loadFromSlot('1');
+
+      // All v5 fields preserved
+      expect(loaded!.quarterlyEvaluations).toEqual([{ q: 1, ok: true }]);
+      expect(loaded!.reputationScore).toBe(55);
+      expect(loaded!.triggeredCheckpoints).toEqual(['seed', 'series-a']);
+      // Achievements preserved
+      expect(loaded!.achievements).toEqual(['first-blood']);
+      // v6 fields added with defaults
+      expect(loaded!.teamDynamics).toEqual({ averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 });
+      expect(loaded!.performanceHistory).toBeDefined();
+      expect(loaded!.strategyPreferences).toEqual({});
+    });
+
+    it('should handle agents with missing optional fields in teamDynamics calculation', () => {
+      const stateWithPartialAgents: GameState = {
+        ...mockState,
+        agents: [
+          { id: 'a1', morale: 70 } as any,
+          { id: 'a2', morale: 50, fatigue: 10 } as any,
+        ],
+      };
+
+      saveToSlot('1', '部分员工数据', stateWithPartialAgents);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.teamDynamics).toBeDefined();
+      expect(loaded!.teamDynamics!.averageMorale).toBe(60); // (70+50)/2
+      expect(loaded!.teamDynamics!.totalFatigue).toBe(10); // 0+10
+    });
+
+    it('should handle empty agents array in teamDynamics calculation', () => {
+      saveToSlot('1', '空员工存档', mockState);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.teamDynamics).toEqual({ averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 });
+    });
+
+    it('should handle empty history in performanceHistory calculation', () => {
+      saveToSlot('1', '空历史存档', mockState);
+      const loaded = loadFromSlot('1');
+
+      expect(loaded!.performanceHistory).toEqual({
+        bestSprintProgress: 0,
+        worstSprintProgress: 0,
+        averageSprintProgress: 0,
+        totalBugsCreated: 0,
+        totalBugsFixed: 0,
+      });
+    });
+  });
+
+  describe('Validate v6 field formats', () => {
+    it('should error on invalid performanceHistory format', () => {
+      const result = validateSaveData({
+        version: 6,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        performanceHistory: 'invalid',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('绩效历史'))).toBe(true);
+    });
+
+    it('should error on invalid quarterlyEvaluations in v5+', () => {
+      const result = validateSaveData({
+        version: 5,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        quarterlyEvaluations: 12345,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('季度评估'))).toBe(true);
+    });
+
+    it('should error on invalid reputationScore in v5+', () => {
+      const result = validateSaveData({
+        version: 5,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        reputationScore: 'not-a-number',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('声望分数'))).toBe(true);
+    });
+
+    it('should error on invalid triggeredCheckpoints in v5+', () => {
+      const result = validateSaveData({
+        version: 5,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        triggeredCheckpoints: 'not-array',
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('融资检查点'))).toBe(true);
+    });
+
+    it('should warn on invalid teamDynamics.averageMorale type', () => {
+      const result = validateSaveData({
+        version: 6,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        teamDynamics: { averageMorale: 'high' },
+      });
+      expect(result.valid).toBe(true);
+      expect(result.warnings.some(w => w.includes('平均士气'))).toBe(true);
+    });
+  });
 });

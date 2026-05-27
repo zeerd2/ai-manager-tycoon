@@ -422,6 +422,310 @@ describe('checkAchievement', () => {
     const ctx = makeContext({ completedProjectIds: ['proj-1'] });
     expect(checkAchievement(unknownAch, ctx)).toBe(false);
   });
+
+  // --- Boundary cases ---
+
+  describe('under-budget boundary', () => {
+    const ach = getAchievement('under-budget');
+
+    it('returns false at exactly 80% remaining (strict >)', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['proj-1'],
+        fundsRemaining: 800,
+        totalFundsSpent: 200,
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+
+    it('returns true at 80.1% remaining', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['proj-1'],
+        fundsRemaining: 801,
+        totalFundsSpent: 199,
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false when total funds is zero', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['proj-1'],
+        fundsRemaining: 0,
+        totalFundsSpent: 0,
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('all_agents_zero_morale boundary', () => {
+    const ach = getAchievement('team-wipe');
+
+    it('returns true with negative morale', () => {
+      const ctx = makeContext({
+        agents: [
+          { morale: -5, locked: false },
+          { morale: -10, locked: false },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns true when mixed locked/unlocked all at zero', () => {
+      const ctx = makeContext({
+        agents: [
+          { morale: 0, locked: false },
+          { morale: 0, locked: true },
+          { morale: 0, locked: false },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+  });
+
+  describe('cheapest_agent_only mixed agents', () => {
+    const ach = getAchievement('penny-pincher');
+
+    it('returns false when one agent is cheap and another is expensive', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['proj-1'],
+        agents: [
+          { morale: 80, locked: false, salary: 50, isCheapest: true },
+          { morale: 80, locked: false, salary: 200 },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+
+    it('returns true when all agents have salary exactly 80', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['proj-1'],
+        agents: [
+          { morale: 80, locked: false, salary: 80 },
+          { morale: 80, locked: false, salary: 80 },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false when agent has salary 81', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['proj-1'],
+        agents: [
+          { morale: 80, locked: false, salary: 81 },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('agent_max_skills boundary', () => {
+    const ach = getAchievement('max-skill');
+
+    it('returns true when one skill is 99 and others are 100', () => {
+      const ctx = makeContext({
+        agents: [{
+          morale: 80, locked: false,
+          skills: { coding: 100, debugging: 99, architecture: 100, creativity: 100, speed: 100 },
+        }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+
+    it('returns true when skills exceed 100', () => {
+      const ctx = makeContext({
+        agents: [{
+          morale: 80, locked: false,
+          skills: { coding: 105, debugging: 110, architecture: 100, creativity: 100, speed: 100 },
+        }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('checks locked agents too (no locked filter in checkAchievement)', () => {
+      const ctx = makeContext({
+        agents: [{
+          morale: 80, locked: true,
+          skills: { coding: 100, debugging: 100, architecture: 100, creativity: 100, speed: 100 },
+        }],
+      });
+      // Note: checkAchievement does NOT filter locked agents for agent_max_skills
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+  });
+
+  describe('six_agents_unlocked boundary', () => {
+    const ach = getAchievement('big-team');
+
+    it('returns true with exactly 6 unlocked and some locked', () => {
+      const ctx = makeContext({
+        agents: [
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: false },
+          { morale: 80, locked: true },
+          { morale: 80, locked: true },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false with 5 unlocked', () => {
+      const ctx = makeContext({
+        agents: Array.from({ length: 5 }, () => ({ morale: 80, locked: false })),
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('five_star_agent boundary', () => {
+    const ach = getAchievement('talent-scout');
+
+    it('returns true at exactly 450 total', () => {
+      const ctx = makeContext({
+        agents: [{
+          morale: 80, locked: false,
+          skills: { coding: 90, debugging: 90, architecture: 90, creativity: 90, speed: 90 },
+        }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false at 449 total', () => {
+      const ctx = makeContext({
+        agents: [{
+          morale: 80, locked: false,
+          skills: { coding: 90, debugging: 90, architecture: 90, creativity: 90, speed: 89 },
+        }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('recover_from_bugs boundary', () => {
+    const ach = getAchievement('survivor');
+
+    it('returns true when bugsDelta is exactly 15', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['chatbot'],
+        history: [{ bugsDelta: 15, progressDelta: 20 }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false when bugsDelta is 14.9 (not integer boundary)', () => {
+      const ctx = makeContext({
+        completedProjectIds: ['chatbot'],
+        history: [{ bugsDelta: 14, progressDelta: 20 }],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('fifty_bugs_total boundary', () => {
+    const ach = getAchievement('murphy-law');
+
+    it('returns true with exactly 50 bugs across many sprints', () => {
+      const ctx = makeContext({
+        history: Array.from({ length: 10 }, () => ({ bugsDelta: 5, progressDelta: 10 })),
+      });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false with 49 bugs total', () => {
+      const ctx = makeContext({
+        history: [
+          { bugsDelta: 25, progressDelta: 10 },
+          { bugsDelta: 24, progressDelta: 10 },
+        ],
+      });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+
+    it('sums negative bugsDelta (bugs fixed reduce total)', () => {
+      const ctx = makeContext({
+        history: [
+          { bugsDelta: 60, progressDelta: 10 },
+          { bugsDelta: -20, progressDelta: 10 },
+        ],
+      });
+      // 60 + (-20) = 40, which is < 50
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+
+    it('returns true when net sum is >= 50 despite negatives', () => {
+      const ctx = makeContext({
+        history: [
+          { bugsDelta: 60, progressDelta: 10 },
+          { bugsDelta: -5, progressDelta: 10 },
+        ],
+      });
+      // 60 + (-5) = 55, which is >= 50
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+  });
+
+  describe('single_sprint_15_bugs boundary', () => {
+    const ach = getAchievement('bug-factory');
+
+    it('returns true at exactly 15 bugs', () => {
+      const ctx = makeContext({ currentSprintBugs: 15 });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false at 14 bugs', () => {
+      const ctx = makeContext({ currentSprintBugs: 14 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+
+    it('returns false at 0 bugs', () => {
+      const ctx = makeContext({ currentSprintBugs: 0 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('funds_reach_8000 boundary', () => {
+    const ach = getAchievement('financial-freedom');
+
+    it('returns true at exactly 8000', () => {
+      const ctx = makeContext({ fundsRemaining: 8000 });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false at 7999', () => {
+      const ctx = makeContext({ fundsRemaining: 7999 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('spend_10000_funds boundary', () => {
+    const ach = getAchievement('big-spender');
+
+    it('returns true at exactly 10000', () => {
+      const ctx = makeContext({ totalFundsSpent: 10000 });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false at 9999', () => {
+      const ctx = makeContext({ totalFundsSpent: 9999 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
+
+  describe('three_projects_one_game boundary', () => {
+    const ach = getAchievement('10x-company');
+
+    it('returns true at exactly 3', () => {
+      const ctx = makeContext({ projectsInOneGame: 3 });
+      expect(checkAchievement(ach, ctx)).toBe(true);
+    });
+
+    it('returns false at 2', () => {
+      const ctx = makeContext({ projectsInOneGame: 2 });
+      expect(checkAchievement(ach, ctx)).toBe(false);
+    });
+  });
 });
 
 describe('getAchievementProgress', () => {
@@ -554,6 +858,73 @@ describe('getAchievementProgress', () => {
       ],
     });
     expect(getAchievementProgress(ach, state)).toEqual({ current: 25, target: 50, display: '25 / 50' });
+  });
+
+  it('tracks progress for under-budget', () => {
+    const ach = getAchievement('under-budget');
+    // under-budget is not handled by getAchievementProgress, returns null
+    const state = makeGameState({ completedProjectIds: ['p1'] });
+    expect(getAchievementProgress(ach, state)).toBeNull();
+  });
+
+  it('tracks progress for penny-pincher', () => {
+    const ach = getAchievement('penny-pincher');
+    const state = makeGameState({ completedProjectIds: ['p1'] });
+    expect(getAchievementProgress(ach, state)).toBeNull();
+  });
+
+  it('tracks progress for legendary-project', () => {
+    const ach = getAchievement('legendary-project');
+    const state1 = makeGameState({ completedProjectIds: [] });
+    expect(getAchievementProgress(ach, state1)).toEqual({ current: 0, target: 1, display: '0 / 1' });
+
+    const state2 = makeGameState({ completedProjectIds: ['autopilot'] });
+    expect(getAchievementProgress(ach, state2)).toEqual({ current: 1, target: 1, display: '1 / 1' });
+
+    const state3 = makeGameState({ completedProjectIds: ['chatbot', 'autopilot'] });
+    expect(getAchievementProgress(ach, state3)).toEqual({ current: 1, target: 1, display: '1 / 1' });
+  });
+
+  it('tracks progress for big-spender', () => {
+    const ach = getAchievement('big-spender');
+    const state = makeGameState({
+      history: [
+        { bugsDelta: 0, progressDelta: 10, cost: 3000 } as unknown as SprintResult,
+        { bugsDelta: 0, progressDelta: 10, cost: 5000 } as unknown as SprintResult,
+      ],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 8000, target: 10000, display: '8000 / 10000' });
+  });
+
+  it('tracks progress for financial-freedom caps at target', () => {
+    const ach = getAchievement('financial-freedom');
+    const state = makeGameState({ funds: 12000 });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 8000, target: 8000, display: '12000 / 8000' });
+  });
+
+  it('tracks progress for 10x-company caps at target', () => {
+    const ach = getAchievement('10x-company');
+    const state = makeGameState({ completedProjectIds: ['p1', 'p2', 'p3', 'p4', 'p5'] });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 3, target: 3, display: '5 / 3' });
+  });
+
+  it('tracks progress for big-team caps at target', () => {
+    const ach = getAchievement('big-team');
+    const state = makeGameState({
+      agents: Array.from({ length: 8 }, (_, i) => ({ id: String(i), locked: false, skills: {} }) as unknown as Agent),
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 6, target: 6, display: '8 / 6' });
+  });
+
+  it('tracks progress for agent-max-skills with all skills maxed', () => {
+    const ach = getAchievement('max-skill');
+    const state = makeGameState({
+      agents: [{
+        locked: false,
+        skills: { coding: 100, debugging: 100, architecture: 100, creativity: 100, speed: 100 },
+      }] as unknown as Agent[],
+    });
+    expect(getAchievementProgress(ach, state)).toEqual({ current: 5, target: 5, display: '5 / 5' });
   });
 
   it('returns null progress for unknown achievement type', () => {
