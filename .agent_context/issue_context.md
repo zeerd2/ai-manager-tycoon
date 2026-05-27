@@ -1,22 +1,11 @@
 # Task Assignment
 
-**Issue ID:** 281ba097-e09a-4282-a265-beeb2cbe658b
+**Issue ID:** 009898eb-5e03-4014-8073-11c8e4ece4ce
 
 **Trigger:** Comment Reply
-**Triggering comment ID:** `38186b77-8e18-4100-8086-002e7b11ce3a`
+**Triggering comment ID:** `8c78378b-cfeb-4cfb-a854-1b4a803bbf10`
 
 ## Quick Start
 
-Run `multica issue get 281ba097-e09a-4282-a265-beeb2cbe658b --output json` to fetch the full issue details.
-
-## Agent Skills
-
-The following skills are available to you:
-
-- **engineering-backend-architect**
-- **engineering-frontend-developer**
-- **engineering-git-workflow-master**
-- **engineering-senior-developer**
-- **systematic-debugging**
-- **test-driven-development**
+Run `multica issue get 009898eb-5e03-4014-8073-11c8e4ece4ce --output json` to fetch the full issue details.
 
