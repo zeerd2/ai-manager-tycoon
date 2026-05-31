@@ -71,8 +71,15 @@
 |------|------|-------|------|
 | 存档版本迁移 | ✅ 完成 | WS-101 | v8→v9 存档迁移 + 验证 |
 | 成就文案扩充 | ✅ 完成 | WS-100 | 新增成就描述、解锁剧情 |
-| 玩家统计 API | 🔄 进行中 | WS-98 | 玩家统计数据 + 成就解锁逻辑 |
-| 成就仪表盘 | 🔄 进行中 | WS-97 | 成就系统 UI + 数据仪表盘 |
-| 交互原型 | 🔄 进行中 | WS-102 | v9 新功能动画原型 |
-| v8 集成测试 | 🔄 进行中 | WS-99 | 季度目标与声望系统测试 |
-| E2E 测试 | 🔄 进行中 | WS-103 | 成就与存档迁移端到端测试 |
+| 玩家统计 API | ✅ 完成 | WS-98 | playerStats.ts + playerStats.test.ts（totalPersonSprints 已修复） |
+| 成就仪表盘 | ✅ 完成 | WS-97 | PlayerDashboard.tsx + PlayerDashboard.css + playerDashboard.test.tsx |
+| 交互原型 | ⏳ Step 1/3 | WS-102 | 成就解锁动画完成；仪表盘过渡动画和手势反馈待续 |
+| v8 集成测试 | ✅ 抢救期已覆盖 | WS-99 | 季度目标与声望系统测试（quarterSettlement + gameLoop + resultReport tests） |
+| E2E 测试 | ✅ P1 完成 | WS-103 | 剩余 P2 项为非阻塞 |
+
+## 抢救状态
+
+抢救核心目标已完成，详见 [final-rescue-closeout.md](final-rescue-closeout.md)。
+v9 功能开发已 CONDITIONAL YES 恢复。
+WS-99 已由抢救期测试覆盖。
+遗留已知问题 4 项，详见 [v9-known-issues.md](v9-known-issues.md)。

@@ -6,19 +6,20 @@
 |--------|------|------|
 | TypeScript 编译 | ✅ 通过 | `npx tsc -b` 无错误 |
 | Vite 构建 | ✅ 通过 | `npx vite build` 成功 |
-| 单元测试 | ✅ 338/338 | 20 个测试文件全部通过 |
-| ESLint | ✅ 通过 | 无 lint 错误 |
+| 单元测试 | ✅ 414/414 | 24 个测试文件全部通过 |
+| ESLint | ✅ 通过 | 0 lint 错误 |
 
 ## 代码统计
 
 | 目录 | 文件数 | 说明 |
 |------|--------|------|
-| src/domain/ | 16 | 核心游戏逻辑（状态、引擎、计算） |
-| src/components/ | 23 | React UI 组件 |
+| src/domain/ | 21 | 核心游戏逻辑（状态、引擎、计算、存档、迁移） |
+| src/components/ | 22 | React UI 组件 |
 | src/data/ | 9 | 静态数据（员工、项目、事件、成就） |
 | src/utils/ | 1 | 工具函数 |
-| tests/ | 20 | 单元测试 |
-| **总计** | **54** | **~7,600 行代码** |
+| src/hooks/ | 2 | React hooks（useAutosave, useGameLoop） |
+| tests/ | 24 | 单元测试和集成测试 |
+| **总计** | **61 源文件** | **~7,900 行 TS/TSX 源码，不含 CSS** |
 
 ## 技术栈
 
@@ -36,9 +37,15 @@
 npm install        # 安装依赖
 npm run dev        # 启动开发服务器 (http://localhost:5173)
 npm run build      # 构建生产版本
-npm test           # 运行测试 (338 个用例)
+npm test           # 运行测试 (414 个用例)
 npm run lint       # 代码检查
 ```
+
+## 抢救状态
+
+**核心抢救目标已完成。** 详见 [final-rescue-closeout.md](final-rescue-closeout.md)。
+
+恢复 v9 功能开发的前置条件已满足（CONDITIONAL YES），剩余非阻塞遗留项已记录在 closeout 报告中。
 
 ## 已知问题
 

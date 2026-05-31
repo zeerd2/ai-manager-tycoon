@@ -4,6 +4,7 @@ import {
   loadFromSlot,
   deleteSlot,
   getSaveSlotsMetadata,
+  getSaveSlotMetadata,
   getAutosaveConfig,
   setAutosaveConfig,
   checkAndMigrateOldSave,
@@ -21,6 +22,30 @@ import {
   clearIndexCache
 } from '../src/domain/saveSystem';
 import type { GameState } from '../src/domain/gameState';
+import type { Project } from '../src/domain/project';
+import type { Strategy } from '../src/domain/strategy';
+import type { Agent } from '../src/domain/agent';
+
+const testProject: Project = {
+  id: 'p1',
+  name: '测试项目',
+  description: '测试项目描述',
+  difficulty: 10,
+  urgency: 5,
+  risk: 5,
+  progress: 50,
+  bugs: 0,
+  techDebt: 0,
+  maxProgress: 100,
+  difficultyLevel: 'intern',
+};
+
+const testStrategy: Strategy = {
+  id: 's1',
+  name: '测试策略',
+  description: '测试策略描述',
+  modifiers: { progressMul: 1, bugMul: 1, techDebtMul: 1, moraleDelta: 0, incidentChanceMul: 1 },
+};
 
 describe('Save System', () => {
   let mockState: GameState;
@@ -87,6 +112,22 @@ describe('Save System', () => {
       expect(loadFromSlot('2')).toBeNull();
     });
 
+    it('should fetch correct metadata for one slot', () => {
+      saveToSlot('1', '存档一', mockState);
+
+      const metadata = getSaveSlotMetadata('1');
+      expect(metadata).toEqual({
+        id: '1',
+        name: '存档一',
+        sprintCount: 3,
+        funds: 5000,
+        completedProjectsCount: 2,
+        savedAt: expect.any(String),
+        version: SAVE_VERSION,
+      });
+      expect(getSaveSlotMetadata('2')).toBeNull();
+    });
+
     it('should fetch correct metadata for slots', () => {
       saveToSlot('1', '存档一', mockState);
       saveToSlot('3', '存档三', { ...mockState, funds: 1000, sprintCount: 15 });
@@ -148,6 +189,39 @@ describe('Save System', () => {
       const autoSlot = metadata.find(m => m.id === 'auto');
       expect(autoSlot).toBeDefined();
       expect(autoSlot!.name).toBe('自动存档');
+    });
+
+    it('should not contaminate manual slots when saving to auto slot', () => {
+      // Save to manual slot first
+      saveToSlot('1', '手动存档', { ...mockState, funds: 1000 });
+
+      // Verify manual slot is clean
+      let manual = loadFromSlot('1');
+      expect(manual!.gameState.funds).toBe(1000);
+
+      // Save to auto slot with different data
+      saveToSlot('auto', '自动存档', { ...mockState, funds: 5000 });
+
+      // Manual slot should be unchanged
+      manual = loadFromSlot('1');
+      expect(manual!.gameState.funds).toBe(1000);
+      expect(manual!.name).toBe('手动存档');
+
+      // Auto slot should have its own data
+      const auto = loadFromSlot('auto');
+      expect(auto!.gameState.funds).toBe(5000);
+      expect(auto!.name).toBe('自动存档');
+    });
+
+    it('should not contaminate auto slot when saving to manual slots', () => {
+      saveToSlot('auto', '自动存档', { ...mockState, funds: 3000 });
+      saveToSlot('1', '手动存档', { ...mockState, funds: 7000 });
+
+      const auto = loadFromSlot('auto');
+      expect(auto!.gameState.funds).toBe(3000);
+
+      const manual = loadFromSlot('1');
+      expect(manual!.gameState.funds).toBe(7000);
     });
 
     it('should handle multiple saves across all slots', () => {
@@ -410,8 +484,8 @@ describe('Save System', () => {
       const stateWithHistory: GameState = {
         ...mockState,
         history: [
-          { sprintNumber: 1, project: {} as any, agents: [], strategy: {} as any, progressDelta: 10, bugsDelta: 2, techDebtDelta: 1, moraleDelta: -5, cost: 500, incidents: [], summary: '' },
-          { sprintNumber: 2, project: {} as any, agents: [], strategy: {} as any, progressDelta: 20, bugsDelta: -1, techDebtDelta: 0, moraleDelta: 3, cost: 600, incidents: [], summary: '' },
+          { sprintNumber: 1, project: testProject, agents: [], strategy: testStrategy, progressDelta: 10, bugsDelta: 2, techDebtDelta: 1, moraleDelta: -5, cost: 500, incidents: [], summary: '' },
+          { sprintNumber: 2, project: testProject, agents: [], strategy: testStrategy, progressDelta: 20, bugsDelta: -1, techDebtDelta: 0, moraleDelta: 3, cost: 600, incidents: [], summary: '' },
         ],
       };
 
@@ -475,6 +549,95 @@ describe('Save System', () => {
       expect(loaded!.teamDynamics).toBeDefined();
       expect(loaded!.performanceHistory).toBeDefined();
       expect(loaded!.strategyPreferences).toBeDefined();
+    });
+
+    it('should migrate v5 save without quarterlyEvaluations field to defaults', () => {
+      const v5SaveNoQuarterly = {
+        version: 5,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        skillTrees: {},
+        relationships: {},
+        achievements: [],
+        projectHistory: [],
+        reputationScore: 10,
+        triggeredCheckpoints: [],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_mig_v5', JSON.stringify(v5SaveNoQuarterly));
+
+      const loaded = loadFromSlot('mig_v5');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(7);
+      expect(loaded!.quarterlyEvaluations).toEqual([]);
+      expect(loaded!.reputationScore).toBe(10);
+      expect(loaded!.triggeredCheckpoints).toEqual([]);
+    });
+
+    it('should migrate v6 save without teamDynamics field to calculated defaults', () => {
+      const v6SaveNoTeamDynamics = {
+        version: 6,
+        gameState: mockState,
+        savedAt: new Date().toISOString(),
+        skillTrees: {},
+        relationships: {},
+        achievements: [],
+        projectHistory: [],
+        quarterlyEvaluations: [],
+        reputationScore: 10,
+        triggeredCheckpoints: [],
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_mig_v6', JSON.stringify(v6SaveNoTeamDynamics));
+
+      const loaded = loadFromSlot('mig_v6');
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(7);
+      expect(loaded!.teamDynamics).toEqual({ averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 });
+      expect(loaded!.performanceHistory).toEqual({
+        bestSprintProgress: 0, worstSprintProgress: 0, averageSprintProgress: 0, totalBugsCreated: 0, totalBugsFixed: 0,
+      });
+      expect(loaded!.strategyPreferences).toEqual({});
+    });
+
+    it('should migrate full v6 save to v7 preserving all v6 fields and adding v7 structure', () => {
+      const v6SaveWithAllFields = {
+        version: 6,
+        gameState: mockState,
+        savedAt: '2025-01-01T00:00:00Z',
+        skillTrees: {},
+        relationships: {},
+        achievements: ['first-blood'],
+        projectHistory: [],
+        quarterlyEvaluations: [],
+        reputationScore: 35,
+        triggeredCheckpoints: ['seed'],
+        teamDynamics: { averageMorale: 82, totalFatigue: 45, averageLoyalty: 75 },
+        performanceHistory: {
+          bestSprintProgress: 95,
+          worstSprintProgress: 12,
+          averageSprintProgress: 48,
+          totalBugsCreated: 7,
+          totalBugsFixed: 3,
+        },
+        strategyPreferences: { 'balanced': 8, 'safe': 2 },
+      };
+
+      localStorage.setItem('ai_manager_tycoon_save_slot_v6_to_v7', JSON.stringify(v6SaveWithAllFields));
+
+      const loaded = loadFromSlot('v6_to_v7');
+
+      expect(loaded).not.toBeNull();
+      expect(loaded!.version).toBe(SAVE_VERSION);
+
+      // v6 fields must be fully preserved
+      expect(loaded!.teamDynamics).toEqual(v6SaveWithAllFields.teamDynamics);
+      expect(loaded!.performanceHistory).toEqual(v6SaveWithAllFields.performanceHistory);
+      expect(loaded!.strategyPreferences).toEqual(v6SaveWithAllFields.strategyPreferences);
+
+      // v5+ fields preserved
+      expect(loaded!.reputationScore).toBe(35);
+      expect(loaded!.triggeredCheckpoints).toEqual(['seed']);
     });
   });
 
@@ -625,8 +788,8 @@ describe('Save System', () => {
         completedProjectIds: ['p1', 'p2', 'p3'],
         sprintCount: 10,
         history: [
-          { sprintNumber: 1, project: {} as any, agents: [], strategy: {} as any, progressDelta: 10, bugsDelta: 2, techDebtDelta: 1, moraleDelta: -5, cost: 500, incidents: [], summary: '' },
-          { sprintNumber: 2, project: {} as any, agents: [], strategy: {} as any, progressDelta: 20, bugsDelta: -1, techDebtDelta: 0, moraleDelta: 3, cost: 600, incidents: [], summary: '' },
+          { sprintNumber: 1, project: testProject, agents: [], strategy: testStrategy, progressDelta: 10, bugsDelta: 2, techDebtDelta: 1, moraleDelta: -5, cost: 500, incidents: [], summary: '' },
+          { sprintNumber: 2, project: testProject, agents: [], strategy: testStrategy, progressDelta: 20, bugsDelta: -1, techDebtDelta: 0, moraleDelta: 3, cost: 600, incidents: [], summary: '' },
         ],
         agents: [
           { id: 'a1', name: 'Alice', model: 'gpt-4', role: 'dev', avatar: '', skills: { coding: 80, debugging: 70, architecture: 60, creativity: 50, speed: 90 }, salary: 100, morale: 80, quirk: '', fatigue: 20, consecutiveSprints: 2, totalSprintsWorked: 10, locked: false },
@@ -973,6 +1136,7 @@ describe('Save System', () => {
       // All v5 fields preserved
       expect(loaded!.quarterlyEvaluations).toEqual([{ q: 1, ok: true }]);
       expect(loaded!.reputationScore).toBe(55);
+      expect(loaded!.gameState.reputationScore).toBe(55);
       expect(loaded!.triggeredCheckpoints).toEqual(['seed', 'series-a']);
       // Achievements preserved
       expect(loaded!.achievements).toEqual(['first-blood']);
@@ -986,8 +1150,8 @@ describe('Save System', () => {
       const stateWithPartialAgents: GameState = {
         ...mockState,
         agents: [
-          { id: 'a1', morale: 70 } as any,
-          { id: 'a2', morale: 50, fatigue: 10 } as any,
+          { id: 'a1', morale: 70 } as Agent,
+          { id: 'a2', morale: 50, fatigue: 10 } as Agent,
         ],
       };
 

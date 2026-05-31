@@ -12,6 +12,7 @@ import {
 import type { Agent } from '../src/domain/agent';
 import type { Project } from '../src/domain/project';
 import type { SprintResult } from '../src/domain/simulation';
+import { createRNG } from '../src/domain/random';
 
 describe('Game Engine', () => {
   let mockAgents: Agent[];
@@ -113,13 +114,15 @@ describe('Game Engine', () => {
   describe('processPostSprint', () => {
     it('should deduct salary cost from funds', () => {
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost);
     });
 
     it('should increase fatigue and consecutive sprints for participating agents', () => {
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       const agent1 = newState.agents.find(a => a.id === '1')!;
       expect(agent1.fatigue).toBe(15);
       expect(agent1.consecutiveSprints).toBe(1);
@@ -128,7 +131,8 @@ describe('Game Engine', () => {
 
     it('should decrease fatigue and increase morale for resting agents', () => {
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       const agent2 = newState.agents.find(a => a.id === '2')!;
       expect(agent2.fatigue).toBe(25); // 50 - 25
       expect(agent2.consecutiveSprints).toBe(0);
@@ -138,7 +142,8 @@ describe('Game Engine', () => {
     it('should apply extra morale penalty for 3+ consecutive sprints', () => {
       mockAgents[0].consecutiveSprints = 3;
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       const agent1 = newState.agents.find(a => a.id === '1')!;
       expect(agent1.morale).toBe(45); // 50 - 5
     });
@@ -150,15 +155,30 @@ describe('Game Engine', () => {
       mockAgents[0].skills.creativity = 100;
       mockAgents[0].skills.speed = 100;
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       const agent1 = newState.agents.find(a => a.id === '1')!;
       expect(Object.values(agent1.skills).every(s => s <= 100)).toBe(true);
+    });
+
+    it('should use provided RNG for deterministic skill growth', () => {
+      const state = createInitialGameState(mockAgents, mockProjects);
+      const rng = () => 0.99; // always picks last skill (speed) with current pickRandom impl
+
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
+
+      const agent1 = newState.agents.find(a => a.id === '1')!;
+      // With rng always returning high value, pickRandom selects 'speed'
+      expect(agent1.skills.speed).toBe(51);
+      // Other skills should remain at base 50 (only speed grew)
+      expect(agent1.skills.coding).toBe(50);
     });
 
     it('should add bonus funds when project completes', () => {
       mockResult.project.progress = 100; // max is 100
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       expect(newState.funds).toBe(INITIAL_FUNDS - mockResult.cost + (10 * 20 * 1.4));
       expect(newState.completedProjectIds).toContain('p1');
     });
@@ -166,14 +186,36 @@ describe('Game Engine', () => {
     it('should initialize reputation and confidence to 50', () => {
       const state = createInitialGameState(mockAgents, mockProjects);
       expect(state.reputation).toBe(50);
+      expect(state.reputationScore).toBe(0);
       expect(state.confidence).toBe(50);
+    });
+
+    it('should keep reputationScore derived from reputation', () => {
+      const state = createInitialGameState(mockAgents, mockProjects);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
+      expect(newState.reputationScore).toBe(newState.reputation - 50);
+    });
+
+    it('should enrich history without mutating the input sprint result', () => {
+      const state = createInitialGameState(mockAgents, mockProjects);
+      const originalSummary = mockResult.summary;
+
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
+
+      expect(mockResult.summary).toBe(originalSummary);
+      expect(mockResult.reputationDelta).toBeUndefined();
+      expect(newState.history[0].summary).toBe(originalSummary);
+      expect(newState.history[0].reputationDelta).toBe(1);
     });
 
     it('should gain reputation and confidence when project is completed on time', () => {
       mockResult.project.progress = 100;
       mockResult.project.deadline = 2; // sprintNumber is 1, so on time
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       expect(newState.reputation).toBeGreaterThan(50);
       expect(newState.confidence).toBeGreaterThan(50);
     });
@@ -182,7 +224,8 @@ describe('Game Engine', () => {
       mockResult.project.progress = 100;
       mockResult.project.deadline = 0; // sprintNumber is 1, so overdue
       const state = createInitialGameState(mockAgents, mockProjects);
-      const newState = processPostSprint(state, mockResult, ['1']);
+      const rng = createRNG(12345);
+      const newState = processPostSprint(state, mockResult, ['1'], rng);
       expect(newState.reputation).toBe(41); // 50 - 10 + 1 (from progress)
       expect(newState.confidence).toBe(40); // 50 - 10
       // Half of getDifficultyReward(mockProjects[0]) which is (10 * 20 * 1.4) = 280. Half is 140.
@@ -198,7 +241,8 @@ describe('Game Engine', () => {
       statePass.sprintCount = 3; // next sprint is 4
       statePass.completedProjectIds = ['p1'];
       statePass.funds = 4500;
-      const newStatePass = processPostSprint(statePass, mockResult, ['1']);
+      const rngPass = createRNG(12345);
+      const newStatePass = processPostSprint(statePass, mockResult, ['1'], rngPass);
       expect(newStatePass.reputation).toBe(61); // 50 + 10 (pass) + 1 (from progress)
       expect(newStatePass.confidence).toBe(60); // 50 + 10 (pass)
 
@@ -206,7 +250,8 @@ describe('Game Engine', () => {
       const stateFail = createInitialGameState(mockAgents, mockProjects);
       stateFail.sprintCount = 3; // next sprint is 4
       stateFail.completedProjectIds = [];
-      const newStateFail = processPostSprint(stateFail, mockResult, ['1']);
+      const rngFail = createRNG(12345);
+      const newStateFail = processPostSprint(stateFail, mockResult, ['1'], rngFail);
       expect(newStateFail.reputation).toBe(36); // 50 - 15 (fail) + 1 (from progress)
       expect(newStateFail.confidence).toBe(35); // 50 - 15 (fail)
     });

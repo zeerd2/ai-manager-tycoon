@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { calculateRating } from '../domain/rating';
+import { calculateRating, toRatingInput } from '../domain/rating';
 import { getDefaultCheckpoints, getCheckpointsForQuarter, evaluateQuarterCheckpoints } from '../domain/financing';
 import { getReputationLabel } from '../domain/reputation';
 import type { GameState } from '../domain/gameState';
@@ -15,7 +15,7 @@ interface KpiInfo {
   targets: { label: string; current: number; target: number; passed: boolean }[];
 }
 
-export function getQuarterKpiInfo(quarter: number, completedCount: number, funds: number, reputation: number, confidence: number): KpiInfo {
+function getQuarterKpiInfo(quarter: number, completedCount: number, funds: number, reputation: number, confidence: number): KpiInfo {
   if (quarter === 1) {
     return {
       title: 'Q1 季度目标',
@@ -73,20 +73,8 @@ export function getQuarterKpiInfo(quarter: number, completedCount: number, funds
 export const QuarterlyGoalsPanel = memo(function QuarterlyGoalsPanel({ gameState, selectedProjectId }: Props) {
   const { funds, sprintCount, projects, completedProjectIds, reputation = 50, confidence = 50 } = gameState;
 
-  // Calculate rating input
   const completedProjects = completedProjectIds.length;
-  const totalBugs = projects.reduce((sum, p) => sum + p.bugs, 0);
-  const totalTechDebt = projects.reduce((sum, p) => sum + p.techDebt, 0);
-  const totalSprintsCost = gameState.history.reduce((sum, h) => sum + h.cost, 0);
-
-  const ratingResult = calculateRating({
-    completedProjects,
-    totalBugs,
-    totalTechDebt,
-    totalSprintsCost,
-    fundsRemaining: funds,
-    sprintCount,
-  });
+  const ratingResult = calculateRating(toRatingInput(gameState));
 
   // Quarterly Target Panel math
   const currentSprint = sprintCount + 1;

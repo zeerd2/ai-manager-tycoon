@@ -1,0 +1,260 @@
+/* ─── Agent Card ──────────────────────────────────── */
+.agent-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.08);
+}
+
+.agent-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00f0ff, #b040ff, #ff00ff);
+  opacity: 0.4;
+  transition: opacity 0.25s;
+}
+
+.agent-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.2);
+}
+
+.agent-card:hover::before { opacity: 0.8; }
+
+.agent-card.selected {
+  border-color: var(--border-selected);
+  background: var(--bg-selected);
+  box-shadow:
+    0 0 12px rgba(0, 240, 255, 0.25),
+    0 0 30px rgba(0, 240, 255, 0.1);
+}
+
+.agent-card.selected::before { opacity: 1; }
+
+.agent-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.agent-header .avatar { font-size: 1.8rem; }
+.agent-header h3 { font-size: 1rem; color: var(--text-h); margin-bottom: 2px; }
+.agent-header .role { font-size: 0.8rem; color: var(--text-dim); }
+
+.agent-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.stat span:first-child { color: var(--text-dim); }
+.stat span:last-child { color: var(--text-h); font-weight: 600; }
+
+.agent-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.quirk {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ─── Agent Card: Locked State ──────────────────────────────────── */
+.agent-card.locked {
+  position: relative;
+  cursor: not-allowed;
+  filter: grayscale(100%) brightness(0.6);
+  border-style: dashed;
+}
+
+.lock-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 26, 0.7);
+  z-index: 10;
+  gap: 8px;
+}
+
+.lock-icon {
+  font-size: 2rem;
+  animation: lock-wobble 3s infinite ease-in-out;
+}
+
+.lock-text {
+  font-size: 0.8rem;
+  color: var(--text-h);
+  font-weight: 700;
+  background: rgba(0,0,0,0.8);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+@keyframes lock-wobble {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.overwork-warning {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ff5500;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 6px #ff5500;
+  animation: overwork-flash 1s infinite alternate;
+}
+
+@keyframes overwork-flash {
+  from { opacity: 0.8; }
+  to { opacity: 1; box-shadow: 0 0 10px #ff5500; }
+}
+
+/* ─── Agent Card: Bars ──────────────────────────────────── */
+.agent-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bar-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+}
+
+.bar-track {
+  height: 6px;
+  background: #080c18;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.morale-fill {
+  background: linear-gradient(90deg, #ff3366, #00ff88);
+}
+
+.fatigue-fill {
+  background: linear-gradient(90deg, #ffd700, #ff3366);
+}
+
+/* ─── Agent Card: Skill Tree Button ──────────────────────────────────── */
+.btn-skill-tree-trigger {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  font-family: monospace;
+}
+
+.btn-skill-tree-trigger:hover {
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+}
+
+/* ─── Agent Card: Mobile Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .agent-card {
+    padding: 12px !important;
+  }
+
+  .agent-header .avatar {
+    font-size: 1.5rem !important;
+  }
+
+  .agent-header h3 {
+    font-size: 0.95rem !important;
+  }
+
+  .agent-header .role {
+    font-size: 0.75rem !important;
+  }
+
+  .agent-stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+  }
+
+  .stat {
+    font-size: 0.7rem !important;
+  }
+
+  .agent-meta {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .agent-bars {
+    gap: 6px !important;
+  }
+
+  .bar-label {
+    font-size: 0.7rem !important;
+  }
+
+  .quirk {
+    font-size: 0.75rem !important;
+  }
+
+  .btn-skill-tree-trigger {
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}

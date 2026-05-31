@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { Project, DifficultyLevel } from '../domain/project';
 import { DIFFICULTY_CONFIGS } from '../domain/project';
+import './ProjectCard.css';
 
 interface Props {
   project: Project;

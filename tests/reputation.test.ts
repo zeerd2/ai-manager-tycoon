@@ -6,7 +6,6 @@ import {
   getReputationLabel,
   MIN_REPUTATION,
   MAX_REPUTATION,
-  DEFAULT_IMPACT,
   summarizeReputationFactors,
 } from '../src/domain/reputation';
 import type { SprintResult } from '../src/domain/simulation';

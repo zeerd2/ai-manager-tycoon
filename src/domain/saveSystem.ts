@@ -1,16 +1,15 @@
 import type { GameState } from './gameState';
+import type { SaveMetadata } from './saveMetadata';
+import {
+  migrateSaveData,
+  normalizeReputationFields,
+  calculateTeamDynamics,
+  calculatePerformanceHistory,
+} from './saveMigration';
+import { extractSaveMetadata } from './saveMetadata';
+export type { SaveMetadata } from './saveMetadata';
 
 export const SAVE_VERSION = 7;
-
-export interface SaveMetadata {
-  id: string; // '1', '2', '3', 'auto'
-  name: string;
-  sprintCount: number;
-  funds: number;
-  completedProjectsCount: number;
-  savedAt: string;
-  version: number;
-}
 
 export interface SaveData {
   version: number;
@@ -43,7 +42,7 @@ export interface SaveData {
   // v7 incremental save support
   checksum?: string;
   baseVersion?: number;
-  delta?: Partial<SaveData>;
+  delta?: { gameState: Partial<GameState> };
 }
 
 /** 存档验证结果 */
@@ -83,6 +82,10 @@ const INDEX_KEY_PREFIX = 'ai_manager_tycoon_index_';
 
 export const MANUAL_SLOTS = ['1', '2', '3'];
 export const AUTO_SLOT = 'auto';
+
+export function getSlotDisplayName(slotId: string, name?: string): string {
+  return name || (slotId === AUTO_SLOT ? '自动存档' : `存档位 ${slotId}`);
+}
 
 /** 内存缓存的索引 */
 const achievementIndexCache = new Map<string, AchievementIndex>();
@@ -314,14 +317,14 @@ export function saveToSlot(
           savedAt: new Date().toISOString(),
           name,
           baseVersion: existing.baseVersion || existing.version,
-          delta: { gameState: delta } as any,
+          delta: { gameState: delta },
           skillTrees: extra?.skillTrees || existing.skillTrees || {},
           relationships: extra?.relationships || existing.relationships || {},
           achievements: extra?.achievements || state.unlockedAchievementIds || [],
           projectHistory: extra?.projectHistory || state.history || [],
-          quarterlyEvaluations: extra?.quarterlyEvaluations || existing.quarterlyEvaluations || [],
-          reputationScore: extra?.reputationScore ?? existing.reputationScore ?? 0,
-          triggeredCheckpoints: extra?.triggeredCheckpoints || existing.triggeredCheckpoints || [],
+          quarterlyEvaluations: extra?.quarterlyEvaluations || state.quarterlyEvaluations || existing.quarterlyEvaluations || [],
+          reputationScore: extra?.reputationScore ?? state.reputationScore ?? existing.reputationScore ?? 0,
+          triggeredCheckpoints: extra?.triggeredCheckpoints || state.triggeredCheckpoints || existing.triggeredCheckpoints || [],
           teamDynamics: extra?.teamDynamics || calculateTeamDynamics(state),
           performanceHistory: extra?.performanceHistory || calculatePerformanceHistory(state),
           strategyPreferences: extra?.strategyPreferences || existing.strategyPreferences || {},
@@ -370,9 +373,9 @@ function createFullSaveData(
     relationships: extra?.relationships || {},
     achievements: extra?.achievements || state.unlockedAchievementIds || [],
     projectHistory: extra?.projectHistory || state.history || [],
-    quarterlyEvaluations: extra?.quarterlyEvaluations || [],
-    reputationScore: extra?.reputationScore ?? 0,
-    triggeredCheckpoints: extra?.triggeredCheckpoints || [],
+    quarterlyEvaluations: extra?.quarterlyEvaluations || state.quarterlyEvaluations || [],
+    reputationScore: extra?.reputationScore ?? state.reputationScore ?? 0,
+    triggeredCheckpoints: extra?.triggeredCheckpoints || state.triggeredCheckpoints || [],
     teamDynamics: extra?.teamDynamics || calculateTeamDynamics(state),
     performanceHistory: extra?.performanceHistory || calculatePerformanceHistory(state),
     strategyPreferences: extra?.strategyPreferences || {},
@@ -495,7 +498,7 @@ export function loadFromSlot(slotId: string): SaveData | null {
       delete data.delta;
     }
 
-    return data;
+    return normalizeReputationFields(data);
   } catch (e) {
     console.error(`Failed to load from slot ${slotId}`, e);
     throw new Error(`加载存档失败: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
@@ -612,29 +615,18 @@ export function deleteSlot(slotId: string): void {
   }
 }
 
+export function getSaveSlotMetadata(slotId: string): SaveMetadata | null {
+  return extractSaveMetadata(slotId, cachedGetItem(getSlotKey(slotId)), getSlotDisplayName);
+}
+
 /** 获取所有存档位的元数据列表（用于存档管理界面） */
 export function getSaveSlotsMetadata(): SaveMetadata[] {
   const metadataList: SaveMetadata[] = [];
   const allSlots = [...MANUAL_SLOTS, AUTO_SLOT];
 
   for (const slotId of allSlots) {
-    try {
-      const saved = cachedGetItem(getSlotKey(slotId));
-      if (saved) {
-        const data = JSON.parse(saved) as SaveData;
-        metadataList.push({
-          id: slotId,
-          name: data.name || (slotId === AUTO_SLOT ? '自动存档' : `存档位 ${slotId}`),
-          sprintCount: data.gameState?.sprintCount || 0,
-          funds: data.gameState?.funds || 0,
-          completedProjectsCount: data.gameState?.completedProjectIds?.length || 0,
-          savedAt: data.savedAt || new Date().toISOString(),
-          version: data.version || 2
-        });
-      }
-    } catch (e) {
-      console.error(`Failed to parse metadata for slot ${slotId}`, e);
-    }
+    const metadata = getSaveSlotMetadata(slotId);
+    if (metadata) metadataList.push(metadata);
   }
 
   return metadataList;
@@ -665,147 +657,7 @@ export function checkAndMigrateOldSave(): boolean {
   }
 }
 
-/** 计算团队动态数据 */
-function calculateTeamDynamics(state: GameState): SaveData['teamDynamics'] {
-  const agents = state.agents || [];
-  if (agents.length === 0) {
-    return { averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 };
-  }
-  const averageMorale = agents.reduce((sum, a) => sum + (a.morale || 0), 0) / agents.length;
-  const totalFatigue = agents.reduce((sum, a) => sum + (a.fatigue || 0), 0);
-  return { averageMorale, totalFatigue, averageLoyalty: 0 };
-}
 
-/** 计算绩效历史数据 */
-function calculatePerformanceHistory(state: GameState): SaveData['performanceHistory'] {
-  const history = state.history || [];
-  if (history.length === 0) {
-    return { bestSprintProgress: 0, worstSprintProgress: 0, averageSprintProgress: 0, totalBugsCreated: 0, totalBugsFixed: 0 };
-  }
-  const progresses = history.map(h => h.progressDelta || 0);
-  const bestSprintProgress = Math.max(...progresses);
-  const worstSprintProgress = Math.min(...progresses);
-  const averageSprintProgress = progresses.reduce((s, p) => s + p, 0) / progresses.length;
-  const totalBugsCreated = history.reduce((s, h) => s + Math.max(0, h.bugsDelta || 0), 0);
-  return { bestSprintProgress, worstSprintProgress, averageSprintProgress, totalBugsCreated, totalBugsFixed: 0 };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateV2ToV3(oldData: any): any {
-  // v3 added: relationships, achievements, projectHistory
-  return {
-    ...oldData,
-    version: 3,
-    skillTrees: oldData.skillTrees || {},
-    relationships: oldData.relationships || {},
-    achievements: oldData.achievements || oldData.gameState?.unlockedAchievementIds || [],
-    projectHistory: oldData.projectHistory || oldData.gameState?.history || [],
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateV3ToV4(oldData: any): any {
-  // v4 is same structure as v3, just version bump for consistency
-  return {
-    ...oldData,
-    version: 4,
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateV4ToV5(oldData: any): any {
-  // v5 added: quarterlyEvaluations, reputationScore, triggeredCheckpoints
-  return {
-    ...oldData,
-    version: 5,
-    quarterlyEvaluations: oldData.quarterlyEvaluations || [],
-    reputationScore: oldData.reputationScore ?? 0,
-    triggeredCheckpoints: oldData.triggeredCheckpoints || [],
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateV5ToV6(oldData: any): any {
-  // v6 added: teamDynamics, performanceHistory, strategyPreferences
-  const gameState = oldData.gameState || oldData;
-  return {
-    ...oldData,
-    version: 6,
-    teamDynamics: oldData.teamDynamics || calculateTeamDynamics(gameState),
-    performanceHistory: oldData.performanceHistory || calculatePerformanceHistory(gameState),
-    strategyPreferences: oldData.strategyPreferences || {},
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateV6ToV7(oldData: any): any {
-  // v7 added: checksum, baseVersion, delta (incremental save support)
-  return {
-    ...oldData,
-    version: 7,
-    checksum: oldData.checksum || undefined,
-    baseVersion: oldData.baseVersion || undefined,
-    delta: oldData.delta || undefined,
-  };
-}
-
-/** 版本迁移链：每一步只处理相邻版本的差异 */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const MIGRATION_CHAIN: Array<(data: any) => any> = [
-  migrateV2ToV3, // index 0: v2→v3
-  migrateV3ToV4, // index 1: v3→v4
-  migrateV4ToV5, // index 2: v4→v5
-  migrateV5ToV6, // index 3: v5→v6
-  migrateV6ToV7, // index 4: v6→v7
-];
-
-/** 执行版本迁移：从当前版本逐步升级到最新版本 */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function migrateSaveData(oldData: any): SaveData {
-  let currentVersion = oldData.version || 2;
-  let migrated = { ...oldData };
-
-  // Handle raw v2 GameState (no version field, no wrapper)
-  if (!oldData.version && !oldData.gameState) {
-    migrated = { version: 2, gameState: oldData, savedAt: new Date().toISOString() };
-    currentVersion = 2;
-  }
-
-  // Step through migration chain
-  while (currentVersion < SAVE_VERSION) {
-    const migrationIndex = currentVersion - 2; // v2 is index 0
-    if (migrationIndex >= 0 && migrationIndex < MIGRATION_CHAIN.length) {
-      migrated = MIGRATION_CHAIN[migrationIndex](migrated);
-      currentVersion = migrated.version;
-    } else {
-      // Unknown version, force to current
-      console.warn(`Unknown save version ${currentVersion}, forcing to ${SAVE_VERSION}`);
-      migrated.version = SAVE_VERSION;
-      break;
-    }
-  }
-
-  // Ensure all required fields exist at final version
-  return {
-    version: SAVE_VERSION,
-    gameState: migrated.gameState || migrated,
-    savedAt: migrated.savedAt || new Date().toISOString(),
-    name: migrated.name,
-    skillTrees: migrated.skillTrees || {},
-    relationships: migrated.relationships || {},
-    achievements: migrated.achievements || [],
-    projectHistory: migrated.projectHistory || [],
-    quarterlyEvaluations: migrated.quarterlyEvaluations || [],
-    reputationScore: migrated.reputationScore ?? 0,
-    triggeredCheckpoints: migrated.triggeredCheckpoints || [],
-    teamDynamics: migrated.teamDynamics || { averageMorale: 0, totalFatigue: 0, averageLoyalty: 0 },
-    performanceHistory: migrated.performanceHistory || { bestSprintProgress: 0, worstSprintProgress: 0, averageSprintProgress: 0, totalBugsCreated: 0, totalBugsFixed: 0 },
-    strategyPreferences: migrated.strategyPreferences || {},
-    checksum: migrated.checksum,
-    baseVersion: migrated.baseVersion,
-    delta: migrated.delta,
-  };
-}
 
 /** 验证存档数据的完整性和结构 */
 export function validateSaveData(data: unknown): SaveValidationResult {

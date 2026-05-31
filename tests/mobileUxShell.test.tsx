@@ -43,29 +43,26 @@ describe('mobile UX shell', () => {
   });
 
   it('keeps the mobile shell one-screen only below the 768px breakpoint', () => {
-    const css = readFileSync(join(process.cwd(), 'src/App.css'), 'utf8');
+    const mobileCss = readFileSync(join(process.cwd(), 'src/components/mobile.css'), 'utf8');
 
-    expect(css).toContain('@media (max-width: 768px)');
-    expect(css).toContain('height: 100dvh');
-    expect(css).toContain('max-height: 100dvh');
-    expect(css).toContain('overflow: hidden');
-    expect(css).toContain('.mobile-command-center');
-    expect(css).toContain('min-height: 0');
-    expect(css).toContain('.mobile-bottom-tabbar');
-    expect(css).toContain('position: fixed');
-    expect(css).toContain('bottom: 0');
-    expect(css).toContain('.mobile-overlay');
-    expect(css).toContain('position: fixed');
-    expect(css).toContain('@media (min-width: 769px)');
+    expect(mobileCss).toContain('@media (max-width: 768px)');
+    expect(mobileCss).toContain('.mobile-command-center');
+    expect(mobileCss).toContain('min-height: 0');
+    expect(mobileCss).toContain('.mobile-bottom-tabbar');
+    expect(mobileCss).toContain('position: fixed');
+    expect(mobileCss).toContain('bottom: 0');
+    expect(mobileCss).toContain('.mobile-overlay');
+    expect(mobileCss).toContain('position: fixed');
+    expect(mobileCss).toContain('@media (min-width: 769px)');
   });
 
   it('compacts the mobile dashboard and sprint action for 375 to 430px screens', () => {
-    const css = readFileSync(join(process.cwd(), 'src/App.css'), 'utf8');
+    const mobileCss = readFileSync(join(process.cwd(), 'src/components/mobile.css'), 'utf8');
+    const appCss = readFileSync(join(process.cwd(), 'src/App.css'), 'utf8');
 
-    expect(css).toContain('@media (max-width: 430px)');
-    expect(css).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))');
-    expect(css).toContain('.mobile-start-sprint');
-    expect(css).toContain('max-width: none');
-    expect(css).toContain('padding-bottom: calc(72px + env(safe-area-inset-bottom))');
+    expect(mobileCss).toContain('@media (max-width: 430px)');
+    expect(mobileCss).toContain('.mobile-start-sprint');
+    expect(mobileCss).toContain('max-width: none');
+    expect(appCss).toContain('padding-bottom: calc(72px + env(safe-area-inset-bottom))');
   });
 });

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { Agent } from '../domain/agent';
 import { agentEffectiveness } from '../domain/agent';
+import './AgentCard.css';
 
 interface Props {
   agent: Agent;

@@ -1,7 +1,7 @@
 # AI Manager Tycoon — 项目交接文档
 
-> 最后更新: 2026-05-27
-> 项目状态: v9 开发中，核心功能完整可用
+> 最后更新: 2026-05-29
+> 项目状态: v9 抢救核心目标已完成，CONDITIONAL YES 恢复功能开发
 
 ## 快速概览
 
@@ -9,10 +9,10 @@
 |------|-----|
 | 仓库 | https://github.com/zeerd2/ai-manager-tycoon |
 | 技术栈 | React 19 + TypeScript 6 + Vite 8 |
-| 代码量 | ~7,600 行（54 个源文件） |
-| 测试 | 338 个测试，20 个测试文件，全部通过 |
+| 代码量 | ~7,900 行 TS/TSX 源码（61 个源文件，不含 CSS） |
+| 测试 | 414 个测试，24 个测试文件，全部通过 |
 | Build | TypeScript 编译 + Vite 构建通过 |
-| 当前版本 | v9 开发中（v1-v8 已完成） |
+| 当前版本 | v9 抢救中（详见 [three-agent-rescue-plan.md](three-agent-rescue-plan.md)） |
 
 ## 交接文档索引
 
@@ -24,6 +24,15 @@
 | [roadmap.md](roadmap.md) | 后续计划和待办事项 |
 | [architecture.md](architecture.md) | 技术架构、文件结构、核心系统说明 |
 | [team-config.md](team-config.md) | AI Agent 团队配置和运维指南 |
+| [rescue-plan.md](rescue-plan.md) | 原始抢救计划（Phase 0-7） |
+| [three-agent-rescue-plan.md](three-agent-rescue-plan.md) | 三模型分工抢救计划 |
+| [deepseek-handover.md](deepseek-handover.md) | DeepSeek → GPT-5.5 原始交接 |
+| [deepseek-work-report.md](deepseek-work-report.md) | DeepSeek 工作文档与审查请求 |
+| [migration-coverage-report.md](migration-coverage-report.md) | 存档迁移覆盖报告 |
+| [final-rescue-closeout.md](final-rescue-closeout.md) | 抢救最终收口报告 |
+| [v9-backlog-audit.md](v9-backlog-audit.md) | v9 待完成任务清点与风险评估 |
+| [v9-known-issues.md](v9-known-issues.md) | v9 已知问题记录（Claude 审计发现） |
+| [v9-status-after-checkpoint.md](v9-status-after-checkpoint.md) | v9 状态收口审计（434 tests / 27 files） |
 
 ## 版本历程
 
@@ -44,7 +53,9 @@
 ```
 ✅ TypeScript 编译: 0 errors
 ✅ Vite 构建: 通过
-✅ 测试: 338 passed, 0 failed
-✅ 测试文件: 20 个
+✅ 测试: 414 passed, 0 failed
+✅ 测试文件: 24 个
 ✅ 覆盖模块: 领域逻辑、UI组件、数据、工具
+✅ Lint: 0 errors
+✅ 抢救核心目标已完成；遗留项见 final-rescue-closeout.md
 ```

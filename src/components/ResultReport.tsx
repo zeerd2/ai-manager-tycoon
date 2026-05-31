@@ -1,29 +1,20 @@
 import { useState, useEffect, memo } from 'react';
 import type { SprintResult } from '../domain/simulation';
 import type { Incident } from '../domain/incident';
-import type { GameState } from '../domain/gameState';
-import {
-  generateQuarterTarget,
-  evaluateQuarterTarget,
-} from '../domain/quarterlyTarget';
 import {
   getReputationLabel,
   calculateReputationDelta,
 } from '../domain/reputation';
-import {
-  getDefaultCheckpoints,
-  getCheckpointsForQuarter,
-  evaluateQuarterCheckpoints,
-} from '../domain/financing';
-import { calculateRating } from '../domain/rating';
+import type { QuarterSettlementResult } from '../domain/quarterSettlement';
+import './ResultReport.css';
 
 interface Props {
   result: SprintResult;
   projectCompleted?: boolean;
   projectBonus?: number;
   newlyUnlockedAgents?: Array<{ name: string; avatar: string }>;
-  gameState?: GameState;
   reputationScore?: number;
+  quarterSettlement?: QuarterSettlementResult | null;
 }
 
 const severityColor: Record<string, string> = {
@@ -164,8 +155,8 @@ export const ResultReport = memo(function ResultReport({
   projectCompleted,
   projectBonus,
   newlyUnlockedAgents,
-  gameState,
   reputationScore = 0,
+  quarterSettlement = null,
 }: Props) {
   const [pulse, setPulse] = useState(false);
 
@@ -190,35 +181,19 @@ export const ResultReport = memo(function ResultReport({
   const isQuarter = result.sprintNumber > 0 && result.sprintNumber % 4 === 0;
   const quarterNumber = Math.ceil(result.sprintNumber / 4);
 
-  let target = null;
-  let targetEval = null;
   let repDelta = 0;
   let repLabel = '';
   let investorConfidence = 50;
-  let checkpoints: any[] = [];
-  let evaluatedCheckpoints: any[] = [];
+  const settlement = isQuarter ? quarterSettlement : null;
+  const target = settlement?.targetEvaluation.target ?? null;
+  const targetEval = settlement?.targetEvaluation ?? null;
+  const evaluatedCheckpoints = settlement?.financingResults ?? [];
 
   if (isQuarter) {
     repDelta = calculateReputationDelta(result, projectCompleted ?? false);
     repLabel = getReputationLabel(reputationScore);
     investorConfidence = Math.max(0, Math.min(100, 50 + reputationScore));
 
-    if (gameState) {
-      target = generateQuarterTarget(quarterNumber);
-      targetEval = evaluateQuarterTarget(target, gameState);
-
-      const ratingInput = {
-        completedProjects: gameState.completedProjectIds.length,
-        totalBugs: gameState.projects.reduce((sum, p) => sum + p.bugs, 0),
-        totalTechDebt: gameState.projects.reduce((sum, p) => sum + p.techDebt, 0),
-        totalSprintsCost: gameState.history.reduce((sum, h) => sum + h.cost, 0),
-        fundsRemaining: gameState.funds,
-        sprintCount: gameState.sprintCount,
-      };
-      const companyRating = calculateRating(ratingInput).rating;
-      checkpoints = getCheckpointsForQuarter(getDefaultCheckpoints(), quarterNumber);
-      evaluatedCheckpoints = evaluateQuarterCheckpoints(checkpoints, gameState, reputationScore, companyRating);
-    }
   }
 
   return (
@@ -235,8 +210,8 @@ export const ResultReport = memo(function ResultReport({
         </div>
       )}
 
-      {/* Quarterly KPI Result Notification */}
-      {result.quarterKpiResult && (
+      {/* Quarterly KPI Result Notification (legacy fallback) */}
+      {!quarterSettlement && result.quarterKpiResult && (
         <div className={`quarter-kpi-notification ${result.quarterKpiResult.passed ? 'passed' : 'failed'}`}>
           <div className="bg-glow"></div>
           <span className="celebration-title">
@@ -477,7 +452,7 @@ export const ResultReport = memo(function ResultReport({
           </div>
 
           {/* Financing Checkpoints */}
-          {checkpoints.length > 0 && (
+          {evaluatedCheckpoints.length > 0 && (
             <div>
               <h4 style={{ fontSize: '1rem', color: 'var(--text-h)', marginBottom: '8px' }}>
                 💰 季度融资评估

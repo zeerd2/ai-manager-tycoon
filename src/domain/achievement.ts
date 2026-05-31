@@ -138,6 +138,22 @@ export function checkAchievement(
     case 'fifty_bugs_total':
       return context.history.reduce((sum, h) => sum + h.bugsDelta, 0) >= 50;
 
+    // v9 low-risk achievements (G-2A) - exactly the 5 approved
+    case 'long_run_survivor':
+      return context.sprintCount >= 20;
+
+    case 'efficient_project':
+      return context.history.some(h => h.progressDelta >= 65 && (h.cost ?? 0) <= 350);
+
+    case 'fast_unlock':
+      return context.agents.filter(a => !a.locked).length >= 5 && context.sprintCount <= 10;
+
+    case 'bug_survivor_streak':
+      return context.history.some(h => h.bugsDelta >= 10 && h.progressDelta > 0);
+
+    case 'stable_team':
+      return context.agents.filter(a => !a.locked).every(a => a.morale >= 50) && context.sprintCount >= 8;
+
     default:
       return false;
   }
@@ -288,6 +304,56 @@ export function getAchievementProgress(
         current: Math.min(totalBugs, 50),
         target: 50,
         display: `${totalBugs} / 50`,
+      };
+    }
+
+    // v9 low-risk achievements progress support
+    case 'long_run_survivor':
+      return {
+        current: Math.min(gameState.sprintCount, 20),
+        target: 20,
+        display: `${Math.min(gameState.sprintCount, 20)} / 20`,
+      };
+
+    case 'fast_unlock': {
+      const unlocked = gameState.agents.filter(a => !a.locked).length;
+      return {
+        current: Math.min(unlocked, 5),
+        target: 5,
+        display: `${Math.min(unlocked, 5)} / 5`,
+      };
+    }
+
+    case 'stable_team': {
+      const active = gameState.agents.filter(a => !a.locked);
+      const stableCount = active.filter(a => a.morale >= 50).length;
+      return {
+        current: stableCount,
+        target: active.length || 1,
+        display: `${stableCount} / ${active.length || 1}`,
+      };
+    }
+
+    // v9 progress for the remaining two (G-2B)
+    case 'efficient_project': {
+      const bestLowCostProgress = gameState.history
+        .filter(h => (h.cost ?? 0) <= 350)
+        .reduce((max, h) => Math.max(max, h.progressDelta), 0);
+      return {
+        current: Math.min(bestLowCostProgress, 65),
+        target: 65,
+        display: `${Math.min(bestLowCostProgress, 65)} / 65`,
+      };
+    }
+
+    case 'bug_survivor_streak': {
+      const bestSurvivorBugs = gameState.history
+        .filter(h => h.progressDelta > 0)
+        .reduce((max, h) => Math.max(max, h.bugsDelta), 0);
+      return {
+        current: Math.min(bestSurvivorBugs, 10),
+        target: 10,
+        display: `${Math.min(bestSurvivorBugs, 10)} / 10`,
       };
     }
 

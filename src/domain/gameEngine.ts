@@ -3,6 +3,8 @@ import type { Project } from './project';
 import { getDifficultyReward } from './project';
 import type { SprintResult } from './simulation';
 import type { GameState } from './gameState';
+import type { RNG } from './random';
+import { pickRandom } from './random';
 
 export const INITIAL_FUNDS = 5000;
 
@@ -31,10 +33,13 @@ export function processPostSprint(
   state: GameState,
   result: SprintResult,
   participatingAgentIds: string[],
+  rng?: RNG,
 ): GameState {
   let newFunds = state.funds - result.cost;
+  const updatedResult: SprintResult = { ...result };
+  const participatingAgentIdSet = new Set(participatingAgentIds);
   const newAgents = state.agents.map((agent) => {
-    if (participatingAgentIds.includes(agent.id)) {
+    if (participatingAgentIdSet.has(agent.id)) {
       let morale = agent.morale;
       if (agent.consecutiveSprints >= 3) {
         morale -= 5;
@@ -42,7 +47,10 @@ export function processPostSprint(
       
       const newSkills = { ...agent.skills };
       const skillKeys = Object.keys(newSkills) as Array<keyof typeof newSkills>;
-      const randomSkill = skillKeys[Math.floor(Math.random() * skillKeys.length)];
+      if (!rng) {
+        throw new Error('processPostSprint requires an rng parameter for deterministic skill growth. Math.random fallback has been removed per quality requirements.');
+      }
+      const randomSkill = pickRandom(rng, skillKeys);
       newSkills[randomSkill] = Math.min(100, newSkills[randomSkill] + 1);
 
       return {
@@ -80,7 +88,7 @@ export function processPostSprint(
       newFunds += Math.round(getDifficultyReward(result.project) * 0.5);
       repDelta -= 10;
       confDelta -= 10;
-      result.summary += ` | 合同已逾期！完成奖励减半且扣除 10 点声望和 10 点信心。`;
+      updatedResult.summary += ` | 合同已逾期！完成奖励减半且扣除 10 点声望和 10 点信心。`;
     } else {
       newFunds += getDifficultyReward(result.project);
 
@@ -101,7 +109,7 @@ export function processPostSprint(
       }
       repDelta += repGain;
       confDelta += confGain;
-      result.summary += ` | 项目按时完成！获得丰厚资金、声望及信心奖励。`;
+      updatedResult.summary += ` | 项目按时完成！获得丰厚资金、声望及信心奖励。`;
     }
   }
 
@@ -120,8 +128,8 @@ export function processPostSprint(
   const nextSprintNumber = state.sprintCount + 1;
   if (nextSprintNumber % 4 === 0) {
     const endingQuarter = nextSprintNumber / 4;
-    let kpiPassed = false;
-    let kpiDesc = '';
+    let kpiPassed: boolean;
+    let kpiDesc: string;
 
     const completedCount = completedProjectIds.length;
 
@@ -145,8 +153,8 @@ export function processPostSprint(
     if (kpiPassed) {
       repDelta += 10;
       confDelta += 10;
-      result.summary += ` | 🎉 季度 KPI 达标！声望+10，信心+10。`;
-      result.quarterKpiResult = {
+      updatedResult.summary += ` | 🎉 季度 KPI 达标！声望+10，信心+10。`;
+      updatedResult.quarterKpiResult = {
         quarter: endingQuarter,
         passed: true,
         desc: kpiDesc
@@ -154,8 +162,8 @@ export function processPostSprint(
     } else {
       repDelta -= 15;
       confDelta -= 15;
-      result.summary += ` | ⚠️ 季度 KPI 未达标！声望-15，信心-15。`;
-      result.quarterKpiResult = {
+      updatedResult.summary += ` | ⚠️ 季度 KPI 未达标！声望-15，信心-15。`;
+      updatedResult.quarterKpiResult = {
         quarter: endingQuarter,
         passed: false,
         desc: kpiDesc
@@ -168,8 +176,8 @@ export function processPostSprint(
   newConfidence = Math.max(0, Math.min(100, newConfidence + confDelta));
 
   // Save actual deltas based on clamped values
-  result.reputationDelta = newReputation - (state.reputation ?? 50);
-  result.confidenceDelta = newConfidence - (state.confidence ?? 50);
+  updatedResult.reputationDelta = newReputation - (state.reputation ?? 50);
+  updatedResult.confidenceDelta = newConfidence - (state.confidence ?? 50);
 
   const newState: GameState = {
     ...state,
@@ -177,8 +185,9 @@ export function processPostSprint(
     sprintCount: state.sprintCount + 1,
     agents: newAgents,
     completedProjectIds,
-    history: [...state.history, result],
+    history: [...state.history, updatedResult],
     reputation: newReputation,
+    reputationScore: newReputation - 50,
     confidence: newConfidence,
   };
 

@@ -1,3 +1,5 @@
+import type { GameState } from './gameState';
+
 export type CompanyRating = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
 export interface RatingInput {
@@ -14,6 +16,17 @@ export interface RatingResult {
   score: number;      // 0-100 的综合分
   title: string;      // 中文称号
   description: string; // 搞笑评语
+}
+
+export function toRatingInput(state: GameState): RatingInput {
+  return {
+    completedProjects: state.completedProjectIds.length,
+    totalBugs: state.projects.reduce((sum, project) => sum + project.bugs, 0),
+    totalTechDebt: state.projects.reduce((sum, project) => sum + project.techDebt, 0),
+    totalSprintsCost: state.history.reduce((sum, sprint) => sum + sprint.cost, 0),
+    fundsRemaining: state.funds,
+    sprintCount: state.sprintCount,
+  };
 }
 
 /** 根据项目数、Bug、技术债、资金等计算公司评级及评语 */
