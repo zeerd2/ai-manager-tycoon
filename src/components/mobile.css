@@ -183,7 +183,7 @@
     bottom: 0;
     z-index: 900;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: 1.25fr repeat(5, minmax(0, 1fr));
     gap: 4px;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
     background: rgba(10, 14, 26, 0.96);
@@ -205,10 +205,28 @@
     font-weight: 800;
   }
 
+  .mobile-bottom-run {
+    border-color: rgba(0, 240, 255, 0.65);
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: var(--bg);
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+  }
+
+  .mobile-bottom-tab:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    filter: grayscale(0.4);
+  }
+
   .mobile-bottom-tab:focus-visible,
-  .mobile-bottom-tab:hover {
+  .mobile-bottom-tab:hover:not(:disabled) {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  .mobile-bottom-run:hover:not(:disabled),
+  .mobile-bottom-run:focus-visible {
+    color: var(--bg);
   }
 
   /* ─── Mobile: Overlay ──────────────────── */

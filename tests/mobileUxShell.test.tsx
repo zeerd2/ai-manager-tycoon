@@ -35,6 +35,8 @@ describe('mobile UX shell', () => {
     expect(html).toContain('class="mobile-bottom-tabbar"');
     expect(html).toContain('aria-label="移动端底部功能导航"');
     expect(html).toContain('aria-controls="mobile-overlay-team"');
+    expect(html).toContain('mobile-bottom-run');
+    expect(html).toContain('执行');
     expect(html).toContain('团队');
     expect(html).toContain('项目');
     expect(html).toContain('策略');
@@ -51,6 +53,7 @@ describe('mobile UX shell', () => {
     expect(mobileCss).toContain('.mobile-bottom-tabbar');
     expect(mobileCss).toContain('position: fixed');
     expect(mobileCss).toContain('bottom: 0');
+    expect(mobileCss).toContain('.mobile-bottom-run');
     expect(mobileCss).toContain('.mobile-overlay');
     expect(mobileCss).toContain('position: fixed');
     expect(mobileCss).toContain('@media (min-width: 769px)');

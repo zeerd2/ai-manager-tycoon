@@ -427,6 +427,14 @@ export default function App() {
         </section>
 
         <nav className="mobile-bottom-tabbar" aria-label="移动端底部功能导航">
+          <button
+            type="button"
+            className={`mobile-bottom-tab mobile-bottom-run ${highlightRun ? 'tutorial-highlight-btn' : ''}`}
+            disabled={!canRun}
+            onClick={handleRunSprint}
+          >
+            执行
+          </button>
           {MOBILE_TABS.map(tab => (
             <button
               key={tab.id}
